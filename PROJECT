@@ -1,0 +1,7 @@
+domain: airshipit.org
+repo: sipcluster
+resources:
+- group: airship
+  kind: SIPCluster
+  version: v1beta1
+version: "2"

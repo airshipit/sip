@@ -1,0 +1,5 @@
+mode: set
+sipcluster/controllers/sipcluster_controller.go:41.81,47.61 4 0
+sipcluster/controllers/sipcluster_controller.go:55.2,55.27 1 0
+sipcluster/controllers/sipcluster_controller.go:47.61,53.3 2 0
+sipcluster/controllers/sipcluster_controller.go:58.73,62.2 1 0
