@@ -1,0 +1,35 @@
+apiVersion: airship.airshipit.org/v1
+kind: SIPCluster
+metadata:
+  name: sipcluster-sample
+  namespace: clusterA
+spec:
+    nodes:
+     - vm-role: 'worker'
+       vm-flavor: 'foobar'
+       scheduling-constraints: ['per-node'] # Support dont'care option.
+       count:
+          active: 3 #driven by capi node number
+          standby: 1 #slew for upgrades etc
+     - vm-role: 'master'
+       vm-flavor: 'goober'
+       scheduling-constraints: ['per-node','per-rack']
+       count:
+          active: 3
+          standby: 1
+    infra:
+        loadbalancer:
+            clusterIp: 1.2.3.4 #<-- this aligns to the VIP IP for undercloud k8s
+            image: haproxy:foo
+            nodeLabels:
+              - airship-masters
+            nodePort: 7000
+            nodeInterfaceId: oam-ipv4
+        jump:
+            sshKey: rsa.... #<-- this needs to align to the ssh keys provided to cluster api objects
+            image: sshpod:foo
+            nodeLabels:
+              - airship-masters
+            nodePort: 7022
+            nodeInterfaceId: oam-ipv4
+
