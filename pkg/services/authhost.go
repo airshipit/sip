@@ -23,10 +23,11 @@ type AuthHost struct {
 }
 
 func newAuthHost(infraCfg airshipv1.InfraConfig) InfrastructureService {
-	return &AuthHost{
+	authhost := &AuthHost{
 		Service: Service{
 			serviceName: airshipv1.AuthHostService,
 			config:      infraCfg,
 		},
 	}
+	return authhost
 }

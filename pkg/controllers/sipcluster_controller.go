@@ -104,21 +104,26 @@ func (r *SIPClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 */
 
 // machines
-func (r *SIPClusterReconciler) gatherVM(sip airshipv1.SIPCluster) (error, airshipvms.MachineList) {
+func (r *SIPClusterReconciler) gatherVM(sip airshipv1.SIPCluster) (error, *airshipvms.MachineList) {
 	// 1- Let me retrieve all BMH  that are unlabeled or already labeled with the target Tenant/CNF
 	// 2- Let me now select the one's that meet teh scheduling criteria
 	// If I schedule successfully then
 	// If Not complete schedule , then throw an error.
-	return nil, airshipvms.MachineList{}
+	machines := &airshipvms.MachineList{}
+	err := machines.Schedule(sip.Spec.Nodes, r.Client)
+	if err != nil {
+		return err, machines
+	}
+	return nil, machines
 }
 
 /*
  */
-func (r *SIPClusterReconciler) extractFromVM(sip airshipv1.SIPCluster, machines airshipvms.MachineList) (error, airshipvms.MachineData) {
+func (r *SIPClusterReconciler) extractFromVM(sip airshipv1.SIPCluster, machines *airshipvms.MachineList) (error, airshipvms.MachineData) {
 	return nil, airshipvms.MachineData{}
 }
 
-func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines airshipvms.MachineList, machineData airshipvms.MachineData) error {
+func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *airshipvms.MachineList, machineData airshipvms.MachineData) error {
 	for sName, sConfig := range sip.Spec.InfraServices {
 		// Instantiate
 		service, err := airshipsvc.NewService(sName, sConfig)
@@ -127,7 +132,7 @@ func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines ai
 		}
 
 		// Lets deploy the Service
-		err = service.Deploy(machines, machineData)
+		err = service.Deploy(machines, machineData, r.Client)
 		if err != nil {
 			return err
 		}

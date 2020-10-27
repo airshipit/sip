@@ -15,6 +15,9 @@
 package services
 
 import (
+	"context"
+	helm "github.com/fluxcd/helm-controller/api/v2beta1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	airshipv1 "sipcluster/pkg/api/v1"
 	airshipvms "sipcluster/pkg/vbmh"
 )
@@ -27,7 +30,7 @@ import (
 // Validate : will make sure that the deployment is successfull
 type InfrastructureService interface {
 	//
-	Deploy(airshipvms.MachineList, airshipvms.MachineData) error
+	Deploy(*airshipvms.MachineList, airshipvms.MachineData, client.Client) error
 	Validate() error
 }
 
@@ -37,8 +40,18 @@ type Service struct {
 	config      airshipv1.InfraConfig
 }
 
-func (s *Service) Deploy(machines airshipvms.MachineList, machineData airshipvms.MachineData) error {
+func (s *Service) Deploy(machines *airshipvms.MachineList, machineData airshipvms.MachineData, c client.Client) error {
 	// do something, might decouple this a bit
+	// If the  serviucces are defined as Helm Chart , then deploy might be simply
+
+	// Take the data from teh appropriate Machines
+	// Prepare the Config
+
+	// Prepare the HelmReleasecd
+	helmRelease := &helm.HelmRelease{}
+	if err := c.Create(context.TODO(), helmRelease); err != nil {
+		return err
+	}
 	return nil
 }
 
