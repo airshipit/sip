@@ -68,7 +68,39 @@ type MachineList struct {
 
 }
 
-func (ml *MachineList) Schedule(nodes *airshipv1.NodeSet, c client.Client) error {
+func (ml *MachineList) Schedule(nodes map[airshipv1.VmRoles]airshipv1.NodeSet, c client.Client) error {
+	// Initialize teh Target list
+	ml.bmhs = ml.init(nodes)
+
+	// IDentify vBMH's that meet the appropriate selction criteria
+	bmList, err := ml.getVBMH(c)
+	if err != nil {
+		return err
+	}
+
+	//  Identify and Select the vBMH I actually will use
+	err = ml.identifyNodes(nodes, bmList)
+	if err != nil {
+		return err
+	}
+
+	// If I get here the MachineList should have a set of properly labeled Machine's
+	// We will also Flag these machines adequately so that we can extrapolate the data
+	// However we wil not be labelling yet.
+
+	return nil
+}
+
+func (ml *MachineList) init(nodes map[airshipv1.VmRoles]airshipv1.NodeSet) []Machine {
+	mlSize := 0
+	for _, nodeCfg := range nodes {
+		mlSize = mlSize + nodeCfg.Count.Active + nodeCfg.Count.Standby
+	}
+	return make([]Machine, mlSize)
+
+}
+
+func (ml *MachineList) getVBMH(c client.Client) (*metal3.BareMetalHostList, error) {
 	bmList := &metal3.BareMetalHostList{}
 	// I am thinking we can add a Label for unsccheduled.
 	// SIP Cluster can change it to scheduled.
@@ -80,7 +112,7 @@ func (ml *MachineList) Schedule(nodes *airshipv1.NodeSet, c client.Client) error
 	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{SipNotScheduled: "False"}}
 	bmhSelector, err := metav1.LabelSelectorAsSelector(&labelSelector)
 	if err != nil {
-		return err
+		return bmList, err
 	}
 	bmListOptions := &client.ListOptions{
 		LabelSelector: bmhSelector,
@@ -89,12 +121,29 @@ func (ml *MachineList) Schedule(nodes *airshipv1.NodeSet, c client.Client) error
 
 	err = c.List(context.TODO(), bmList, bmListOptions)
 	if err != nil {
-		return err
+		return bmList, err
 	}
+	return bmList, nil
+}
 
+func (ml *MachineList) identifyNodes(nodes map[airshipv1.VmRoles]airshipv1.NodeSet, bmList *metal3.BareMetalHostList) error {
 	// If using the SIP Sheduled label, we now have a list of vBMH;'s
 	// that are not scheduled
 	// Next I need to apply the constraints
+	for nodeRole, nodeCfg := range nodes {
 
+		for nodeIdx := 0; nodeIdx < (nodeCfg.Count.Active + nodeCfg.Count.Standby); nodeIdx++ {
+			err := ml.scheduler(nodeRole, nodeCfg.Scheduling, bmList)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (ml *MachineList) scheduler(nodeRole airshipv1.VmRoles, constraints []string, bmList *metal3.BareMetalHostList) error {
+	// nodeRole will drive labels
 	return nil
 }

@@ -30,7 +30,9 @@ type SIPClusterSpec struct {
 
 	// Nodes are the list of Nodes objects workers, or master that definee eexpectations
 	// of the Tenant cluster
-	Nodes *NodeSet `json:"nodes,omitempty"`
+	// VmRole is either Control or Workers
+	// VmRole VmRoles `json:"vm-role,omitempty"`
+	Nodes map[VmRoles]NodeSet `json:"nodes,omitempty"`
 
 	// Infra is the collection of expeected configuration details
 	// for the multiple infrastructure services or pods that SIP manages
@@ -67,8 +69,7 @@ const (
 // - Scale of the group of Nodes
 //
 type NodeSet struct {
-	// VmRole is either Control or Workers
-	VmRole VmRoles `json:"vm-role,omitempty"`
+
 	// VmFlavor is  essentially a Flavor label identifying the
 	// type of Node that meets the construction reqirements
 	VmFlavor string `json:"vm-flavor,omitempty"`
