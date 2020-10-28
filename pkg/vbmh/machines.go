@@ -59,8 +59,12 @@ type Machine struct {
 	ScheduleState ScheduledState
 	// scheduleLabels
 	ScheduleLabels map[string]string
+	Data           *MachineData
 }
 
+type MachineData struct {
+	// Some Data
+}
 type MachineList struct {
 	bmhs []Machine
 

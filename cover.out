@@ -1,5 +1,23 @@
 mode: set
-sipcluster/controllers/sipcluster_controller.go:41.81,47.61 4 0
-sipcluster/controllers/sipcluster_controller.go:55.2,55.27 1 0
-sipcluster/controllers/sipcluster_controller.go:47.61,53.3 2 0
-sipcluster/controllers/sipcluster_controller.go:58.73,62.2 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:43.81,49.61 4 0
+sipcluster/pkg/controllers/sipcluster_controller.go:57.2,58.16 2 0
+sipcluster/pkg/controllers/sipcluster_controller.go:64.2,65.16 2 0
+sipcluster/pkg/controllers/sipcluster_controller.go:69.2,70.16 2 0
+sipcluster/pkg/controllers/sipcluster_controller.go:73.2,73.27 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:49.61,55.3 2 0
+sipcluster/pkg/controllers/sipcluster_controller.go:58.16,60.3 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:65.16,67.3 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:70.16,72.3 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:76.73,80.2 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:107.100,114.16 3 0
+sipcluster/pkg/controllers/sipcluster_controller.go:117.2,117.22 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:114.16,116.3 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:122.112,124.2 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:126.110,127.53 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:146.2,146.12 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:127.53,130.17 2 0
+sipcluster/pkg/controllers/sipcluster_controller.go:135.3,136.17 2 0
+sipcluster/pkg/controllers/sipcluster_controller.go:141.3,142.17 2 0
+sipcluster/pkg/controllers/sipcluster_controller.go:130.17,132.4 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:136.17,138.4 1 0
+sipcluster/pkg/controllers/sipcluster_controller.go:142.17,144.4 1 0

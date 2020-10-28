@@ -35,67 +35,65 @@ spec:
           description: SIPClusterSpec defines the desired state of SIPCluster
           properties:
             infra:
-              description: Infra is the collection of expeected configuration details
-                for the multiple infrastructure services or pods that SIP manages
-              properties:
-                jumphost:
-                  properties:
-                    image:
+              additionalProperties:
+                properties:
+                  image:
+                    type: string
+                  nodeInterfaceId:
+                    type: string
+                  nodePort:
+                    type: integer
+                  nodelabels:
+                    additionalProperties:
                       type: string
-                    nodeInterfaceId:
-                      type: string
-                    nodePort:
-                      type: integer
-                    nodelabels:
-                      additionalProperties:
+                    type: object
+                  optional:
+                    properties:
+                      clusterIp:
                         type: string
-                      type: object
-                    sshkey:
-                      type: string
-                  type: object
-                loadbalancer:
-                  properties:
-                    clusterIp:
-                      type: string
-                    image:
-                      type: string
-                    nodeInterfaceId:
-                      type: string
-                    nodePort:
-                      type: integer
-                    nodelabels:
-                      additionalProperties:
+                      sshkey:
                         type: string
-                      type: object
-                  type: object
+                    type: object
+                type: object
+              description: List of Infrastructure Services
               type: object
             nodes:
-              description: Nodes are the list of Nodes objects workers, or master
-                that definee eexpectations of the Tenant cluster
-              properties:
-                count:
-                  description: VmCount
-                  properties:
-                    active:
-                      description: 'INSERT ADDITIONAL STATUS FIELD - define observed
-                        state of cluster Important: Run "make" to regenerate code
-                        after modifying this file'
-                      type: integer
-                    standby:
-                      type: integer
-                  type: object
-                scheduling-constraints:
-                  description: PlaceHolder until we define the real expected Implementation
-                  items:
+              additionalProperties:
+                description: 'NodeSet are the the list of Nodes objects workers, or
+                  master that definee eexpectations for  the Tenant Clusters Includes
+                  artifacts to associate with each defined namespace Such as : - Roles
+                  for the Nodes - Flavor for theh Nodes image - Scheduling expectations
+                  - Scale of the group of Nodes'
+                properties:
+                  count:
+                    description: Count defines the scale expectations for the Nodes
+                    properties:
+                      active:
+                        description: 'INSERT ADDITIONAL STATUS FIELD - define observed
+                          state of cluster Important: Run "make" to regenerate code
+                          after modifying this file'
+                        type: integer
+                      standby:
+                        type: integer
+                    type: object
+                  scheduling-constraints:
+                    description: PlaceHolder until we define the real expected Implementation
+                      Scheduling define constraints the allows the SIP Scheduler to
+                      identify the required  BMH's to allow CAPI to build a cluster
+                    items:
+                      type: string
+                    type: array
+                  vm-flavor:
+                    description: VmFlavor is  essentially a Flavor label identifying
+                      the type of Node that meets the construction reqirements
                     type: string
-                  type: array
-                vm-flavor:
-                  type: string
-                vm-role:
-                  description: VmRoles defines the states the provisioner will report
-                    the tenant has having.
-                  type: string
+                type: object
+              description: Nodes are the list of Nodes objects workers, or master
+                that definee eexpectations of the Tenant cluster VmRole is either
+                Control or Workers VmRole VmRoles `json:"vm-role,omitempty"`
               type: object
+          required:
+          - infra
           type: object
         status:
           description: SIPClusterStatus defines the observed state of SIPCluster

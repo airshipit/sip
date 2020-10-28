@@ -61,12 +61,12 @@ func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 
 	// Do we extra the information in a generic way
 	// So that LB and Jump Host can both leverage
-	err, machineData := r.extractFromVM(sip, machines)
+	err = r.extractFromVM(sip, machines)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	err = r.deployInfra(sip, machines, machineData)
+	err = r.deployInfra(sip, machines)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -119,11 +119,11 @@ func (r *SIPClusterReconciler) gatherVM(sip airshipv1.SIPCluster) (error, *airsh
 
 /*
  */
-func (r *SIPClusterReconciler) extractFromVM(sip airshipv1.SIPCluster, machines *airshipvms.MachineList) (error, airshipvms.MachineData) {
-	return nil, airshipvms.MachineData{}
+func (r *SIPClusterReconciler) extractFromVM(sip airshipv1.SIPCluster, machines *airshipvms.MachineList) error {
+	return nil
 }
 
-func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *airshipvms.MachineList, machineData airshipvms.MachineData) error {
+func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *airshipvms.MachineList) error {
 	for sName, sConfig := range sip.Spec.InfraServices {
 		// Instantiate
 		service, err := airshipsvc.NewService(sName, sConfig)
@@ -132,7 +132,7 @@ func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *a
 		}
 
 		// Lets deploy the Service
-		err = service.Deploy(machines, machineData, r.Client)
+		err = service.Deploy(machines, r.Client)
 		if err != nil {
 			return err
 		}

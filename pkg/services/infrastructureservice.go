@@ -30,7 +30,7 @@ import (
 // Validate : will make sure that the deployment is successfull
 type InfrastructureService interface {
 	//
-	Deploy(*airshipvms.MachineList, airshipvms.MachineData, client.Client) error
+	Deploy(*airshipvms.MachineList, client.Client) error
 	Validate() error
 }
 
@@ -40,7 +40,7 @@ type Service struct {
 	config      airshipv1.InfraConfig
 }
 
-func (s *Service) Deploy(machines *airshipvms.MachineList, machineData airshipvms.MachineData, c client.Client) error {
+func (s *Service) Deploy(machines *airshipvms.MachineList, c client.Client) error {
 	// do something, might decouple this a bit
 	// If the  serviucces are defined as Helm Chart , then deploy might be simply
 
