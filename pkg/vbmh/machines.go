@@ -146,13 +146,9 @@ func (ml *MachineList) identifyNodes(nodes map[airshipv1.VmRoles]airshipv1.NodeS
 		if err != nil {
 			return err
 		}
-		// I haveehave empty sets  initialized
-		for nodeIdx := 0; nodeIdx < (nodeCfg.Count.Active + nodeCfg.Count.Standby); nodeIdx++ {
-
-			err := ml.scheduleIt(nodeRole, nodeCfg.Scheduling, bmList, scheduleSetMap)
-			if err != nil {
-				return err
-			}
+		err = ml.scheduleIt(nodeRole, nodeCfg, bmList, scheduleSetMap)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -185,18 +181,20 @@ func (ml *MachineList) initScheduleMaps(constraints []airshipv1.SchedulingOption
 	return setMap, nil
 }
 
-func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, constraints []airshipv1.SchedulingOptions, bmList *metal3.BareMetalHostList, scheduleSetMap map[airshipv1.SchedulingOptions]*ScheduleSet) error {
+func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.NodeSet, bmList *metal3.BareMetalHostList, scheduleSetMap map[airshipv1.SchedulingOptions]*ScheduleSet) error {
 	validBmh := true
+	nodeTarget := (nodeCfg.Count.Active + nodeCfg.Count.Standby)
 	for _, bmh := range bmList.Items {
-		for _, constraint := range constraints {
+		for _, constraint := range nodeCfg.Scheduling {
 			// Do I care about this constraint
 
 			if scheduleSetMap[constraint].Active() {
 				// Check if bmh has the label
 				// There is a func (host *BareMetalHost) getLabel(name string) string {
 				// Not sure why its not Public, so sing our won method
-				cLabelValue := scheduleSetMap[constraint].GetLabel(bmh.Labels)
-				if cLabelValue != "" {
+				cLabelValue, cFlavorValue := scheduleSetMap[constraint].GetLabels(bmh.Labels, nodeCfg.VmFlavor)
+
+				if cLabelValue != "" && cFlavorValue != "" {
 					// If its in th elist , theen this bmh is disqualified. Skip it
 					if scheduleSetMap[constraint].Exists(cLabelValue) {
 						validBmh = false
@@ -205,20 +203,31 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, constraints []airs
 				}
 			}
 		}
-		// All the constraints have been checcked
+		// All the constraints have been checked
 		if validBmh {
 			// Lets add it to the list as a schedulable thing
 			m := &Machine{
 				Bmh:            bmh,
 				ScheduleStatus: ToBeScheduled,
 			}
+			// Probable need to use the nodeRole as a label here
 			ml.bmhs = append(ml.bmhs, m)
+			nodeTarget = nodeTarget - 1
+			if nodeTarget == 0 {
+				break
+			}
 		}
 
 		// ...
 		validBmh = true
 	}
 
+	if nodeTarget > 0 {
+		return ErrorUnableToFullySchedule{
+			TargetNode:   nodeRole,
+			TargetFlavor: nodeCfg.VmFlavor,
+		}
+	}
 	return nil
 }
 
@@ -241,9 +250,10 @@ func (ss *ScheduleSet) Exists(value string) bool {
 	return false
 }
 
-func (ss *ScheduleSet) GetLabel(labels map[string]string) string {
+func (ss *ScheduleSet) GetLabels(labels map[string]string, customLabel string) (string, string) {
 	if labels == nil {
-		return ""
+		return "", ""
 	}
-	return labels[ss.label]
+	return labels[ss.label], labels[customLabel]
+
 }
