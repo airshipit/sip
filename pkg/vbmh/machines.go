@@ -250,7 +250,7 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.
 
 // Extrapolate
 // The intention is to extract the IP information from the referenced networkData field for the BareMetalHost
-func (ml *MachineList) Extrapolate(sip airshipv1.SIPCluster, c client.Client) error {
+func (ml *MachineList) Extrapolate(sip airshipv1.SIPCluster, c client.Client) error { 
 	// Lets get the data for all selected BMH's.
 	for _, machine := range ml.bmhs {
 		bmh := machine.Bmh

@@ -112,7 +112,7 @@ func (r *SIPClusterReconciler) gatherVM(sip airshipv1.SIPCluster) (error, *airsh
 	// So that LB and Jump Host all leverage the same
 	err = machines.Extrapolate(sip, r.Client)
 	if err != nil {
-		return err, machines
+		return err, machines 
 	}
 
 	return nil, machines
