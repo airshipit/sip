@@ -49,13 +49,13 @@ type InfraService string
 // Possible Infra Structure Services
 const (
 	// LoadBalancer Service
-	LoadBalancerService InfraService = "LoadBalancer"
+	LoadBalancerService InfraService = "loadbalancer"
 
 	// JumpHostService Service
-	JumpHostService InfraService = "JumpHost"
+	JumpHostService InfraService = "jumppod"
 
 	// AuthHostService Service
-	AuthHostService InfraService = "AuthHost"
+	AuthHostService InfraService = "authpod"
 )
 
 // NodeSet are the the list of Nodes objects workers,
@@ -87,44 +87,11 @@ type SchedulingOptions string
 // Possible Node or VM Roles  for a Tenant
 const (
 	// RackAntiAffinity means the state is unknown
-	RackAntiAffinity SchedulingOptions = "rack"
+	RackAntiAffinity SchedulingOptions = "per-rack"
 
 	// ServerAntiAffinity means the state is unknown
-	ServerAntiAffinity SchedulingOptions = "server"
+	ServerAntiAffinity SchedulingOptions = "per-node"
 )
-
-/*
-type InfraSet struct {
-	// Load Balancer Infrastrcture Service that fronts a Tenant Cluster
-	// Kubernetes API Servers
-	// These provides the configuration expectations
-	LoadBalancer *LoadBalancerConfig `json:"loadbalancer,omitempty"`
-	// Jump Host is an Operation POD that allows operators to
-	// Manage the VM Node infrastcuture
-	// These provides the configuration expectations
-	JumpHost *JumpHostConfig `json:"jumphost,omitempty"`
-	// AuthHost is an Service  POD that provides an OIDC provider
-	// interface to the Tenant Cluster
-	// These provides the configuration expectations
-	AuthHost *AuthConfig `json:"authhost,omitempty"`
-
-}
-*/
-/*
-type LoadBalancerConfig struct {
-	ClusterIp string       `json:"clusterIp,omitempty"`
-	Config    *InfraConfig `json:"config,omitempty"`
-}
-
-type JumpHostConfig struct {
-	SshKey string       `json:"sshkey,omitempty"`
-	Config *InfraConfig `json:"config,omitempty"`
-}
-
-type AuthConfig struct {
-	Config *InfraConfig `json:"config,omitempty"`
-}
-*/
 
 type InfraConfig struct {
 	OptionalData  *OptsConfig       `json:"optional,omitempty"`

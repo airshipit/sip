@@ -21,6 +21,7 @@ import (
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	airshipv1 "sipcluster/pkg/api/v1"
+	"strings"
 	//corev1 "k8s.io/api/core/v1"
 	//rbacv1 "k8s.io/api/rbac/v1"
 	//"k8s.io/apimachinery/pkg/api/errors"
@@ -161,16 +162,16 @@ func (ml *MachineList) initScheduleMaps(constraints []airshipv1.SchedulingOption
 	for _, constraint := range constraints {
 		if constraint == airshipv1.RackAntiAffinity {
 			setMap[constraint] = &ScheduleSet{
-				active: true,
-				set:    make(map[string]bool),
-				label:  RackLabel,
+				active:    true,
+				set:       make(map[string]bool),
+				labelName: RackLabel,
 			}
 		}
 		if constraint == airshipv1.ServerAntiAffinity {
 			setMap[constraint] = &ScheduleSet{
-				active: true,
-				set:    make(map[string]bool),
-				label:  ServerLabel,
+				active:    true,
+				set:       make(map[string]bool),
+				labelName: ServerLabel,
 			}
 		}
 	}
@@ -192,9 +193,9 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.
 				// Check if bmh has the label
 				// There is a func (host *BareMetalHost) getLabel(name string) string {
 				// Not sure why its not Public, so sing our won method
-				cLabelValue, cFlavorValue := scheduleSetMap[constraint].GetLabels(bmh.Labels, nodeCfg.VmFlavor)
+				cLabelValue, cFlavorMatches := scheduleSetMap[constraint].GetLabels(bmh.Labels, nodeCfg.VmFlavor)
 
-				if cLabelValue != "" && cFlavorValue != "" {
+				if cLabelValue != "" && cFlavorMatches {
 					// If its in th elist , theen this bmh is disqualified. Skip it
 					if scheduleSetMap[constraint].Exists(cLabelValue) {
 						validBmh = false
@@ -236,8 +237,8 @@ type ScheduleSet struct {
 	active bool
 	// Holds list of elements in teh Set
 	set map[string]bool
-	// Holds the label that identifies the constraint
-	label string
+	// Holds the label name that identifies the constraint
+	labelName string
 }
 
 func (ss *ScheduleSet) Active() bool {
@@ -250,10 +251,13 @@ func (ss *ScheduleSet) Exists(value string) bool {
 	return false
 }
 
-func (ss *ScheduleSet) GetLabels(labels map[string]string, customLabel string) (string, string) {
+func (ss *ScheduleSet) GetLabels(labels map[string]string, flavorLabel string) (string, bool) {
 	if labels == nil {
-		return "", ""
+		return "", false
 	}
-	return labels[ss.label], labels[customLabel]
-
+	cl := strings.Split(flavorLabel, "=")
+	if len(cl) > 0 {
+		return labels[ss.labelName], labels[cl[0]] == cl[1]
+	}
+	return labels[ss.labelName], false
 }
