@@ -56,7 +56,7 @@ func (in *NodeSet) DeepCopyInto(out *NodeSet) {
 	*out = *in
 	if in.Scheduling != nil {
 		in, out := &in.Scheduling, &out.Scheduling
-		*out = make([]string, len(*in))
+		*out = make([]SchedulingOptions, len(*in))
 		copy(*out, *in)
 	}
 	if in.Count != nil {

@@ -77,10 +77,21 @@ type NodeSet struct {
 	// Implementation
 	// Scheduling define constraints the allows the SIP Scheduler
 	// to identify the required  BMH's to allow CAPI to build a cluster
-	Scheduling []string `json:"scheduling-constraints,omitempty"`
+	Scheduling []SchedulingOptions `json:"scheduling-constraints,omitempty"`
 	// Count defines the scale expectations for the Nodes
 	Count *VmCount `json:"count,omitempty"`
 }
+
+type SchedulingOptions string
+
+// Possible Node or VM Roles  for a Tenant
+const (
+	// RackAntiAffinity means the state is unknown
+	RackAntiAffinity SchedulingOptions = "rack"
+
+	// ServerAntiAffinity means the state is unknown
+	ServerAntiAffinity SchedulingOptions = "server"
+)
 
 /*
 type InfraSet struct {

@@ -49,14 +49,18 @@ const (
 	BaseAirshipSelector = "airshipit.org"
 	SipScheduled        = BaseAirshipSelector + "/sip-scheduled in (True, true)"
 	SipNotScheduled     = BaseAirshipSelector + "/sip-scheduled in (False, false)"
+
+	// This is a placeholder . Need to synchronize with ViNO
+	RackLabel   = BaseAirshipSelector + "/rack"
+	ServerLabel = BaseAirshipSelector + "/rack"
 )
 
 // MAchine represents an individual BMH CR, and teh appropriate
 // attributes required to manage the SIP Cluster scheduling and
 // rocesing needs about thhem
 type Machine struct {
-	Bmh           metal3.BareMetalHost
-	ScheduleState ScheduledState
+	Bmh            metal3.BareMetalHost
+	ScheduleStatus ScheduledState
 	// scheduleLabels
 	ScheduleLabels map[string]string
 	Data           *MachineData
@@ -66,10 +70,8 @@ type MachineData struct {
 	// Some Data
 }
 type MachineList struct {
-	bmhs []Machine
-
+	bmhs []*Machine
 	// I might have some index here of MAchines that have been actualy Selected to be Scheduled.
-
 }
 
 func (ml *MachineList) Schedule(nodes map[airshipv1.VmRoles]airshipv1.NodeSet, c client.Client) error {
@@ -95,12 +97,12 @@ func (ml *MachineList) Schedule(nodes map[airshipv1.VmRoles]airshipv1.NodeSet, c
 	return nil
 }
 
-func (ml *MachineList) init(nodes map[airshipv1.VmRoles]airshipv1.NodeSet) []Machine {
+func (ml *MachineList) init(nodes map[airshipv1.VmRoles]airshipv1.NodeSet) []*Machine {
 	mlSize := 0
 	for _, nodeCfg := range nodes {
 		mlSize = mlSize + nodeCfg.Count.Active + nodeCfg.Count.Standby
 	}
-	return make([]Machine, mlSize)
+	return make([]*Machine, mlSize)
 
 }
 
@@ -134,10 +136,20 @@ func (ml *MachineList) identifyNodes(nodes map[airshipv1.VmRoles]airshipv1.NodeS
 	// If using the SIP Sheduled label, we now have a list of vBMH;'s
 	// that are not scheduled
 	// Next I need to apply the constraints
-	for nodeRole, nodeCfg := range nodes {
 
+	// This willl be a poor mans simple scheduler
+	// Only deals with AntiAffinity at :
+	// - Racks  : Dont select two machines in the same rack
+	// - Server : Dont select two machines in the same server
+	for nodeRole, nodeCfg := range nodes {
+		scheduleSetMap, err := ml.initScheduleMaps(nodeCfg.Scheduling)
+		if err != nil {
+			return err
+		}
+		// I haveehave empty sets  initialized
 		for nodeIdx := 0; nodeIdx < (nodeCfg.Count.Active + nodeCfg.Count.Standby); nodeIdx++ {
-			err := ml.scheduler(nodeRole, nodeCfg.Scheduling, bmList)
+
+			err := ml.scheduleIt(nodeRole, nodeCfg.Scheduling, bmList, scheduleSetMap)
 			if err != nil {
 				return err
 			}
@@ -147,7 +159,91 @@ func (ml *MachineList) identifyNodes(nodes map[airshipv1.VmRoles]airshipv1.NodeS
 	return nil
 }
 
-func (ml *MachineList) scheduler(nodeRole airshipv1.VmRoles, constraints []string, bmList *metal3.BareMetalHostList) error {
-	// nodeRole will drive labels
+func (ml *MachineList) initScheduleMaps(constraints []airshipv1.SchedulingOptions) (map[airshipv1.SchedulingOptions]*ScheduleSet, error) {
+	setMap := make(map[airshipv1.SchedulingOptions]*ScheduleSet)
+
+	for _, constraint := range constraints {
+		if constraint == airshipv1.RackAntiAffinity {
+			setMap[constraint] = &ScheduleSet{
+				active: true,
+				set:    make(map[string]bool),
+				label:  RackLabel,
+			}
+		}
+		if constraint == airshipv1.ServerAntiAffinity {
+			setMap[constraint] = &ScheduleSet{
+				active: true,
+				set:    make(map[string]bool),
+				label:  ServerLabel,
+			}
+		}
+	}
+
+	if len(setMap) > 0 {
+		return setMap, ErrorConstraintNotFound{}
+	}
+	return setMap, nil
+}
+
+func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, constraints []airshipv1.SchedulingOptions, bmList *metal3.BareMetalHostList, scheduleSetMap map[airshipv1.SchedulingOptions]*ScheduleSet) error {
+	validBmh := true
+	for _, bmh := range bmList.Items {
+		for _, constraint := range constraints {
+			// Do I care about this constraint
+
+			if scheduleSetMap[constraint].Active() {
+				// Check if bmh has the label
+				// There is a func (host *BareMetalHost) getLabel(name string) string {
+				// Not sure why its not Public, so sing our won method
+				cLabelValue := scheduleSetMap[constraint].GetLabel(bmh.Labels)
+				if cLabelValue != "" {
+					// If its in th elist , theen this bmh is disqualified. Skip it
+					if scheduleSetMap[constraint].Exists(cLabelValue) {
+						validBmh = false
+						break
+					}
+				}
+			}
+		}
+		// All the constraints have been checcked
+		if validBmh {
+			// Lets add it to the list as a schedulable thing
+			m := &Machine{
+				Bmh:            bmh,
+				ScheduleStatus: ToBeScheduled,
+			}
+			ml.bmhs = append(ml.bmhs, m)
+		}
+
+		// ...
+		validBmh = true
+	}
+
 	return nil
+}
+
+type ScheduleSet struct {
+	// Defines if this set is actually active
+	active bool
+	// Holds list of elements in teh Set
+	set map[string]bool
+	// Holds the label that identifies the constraint
+	label string
+}
+
+func (ss *ScheduleSet) Active() bool {
+	return ss.active
+}
+func (ss *ScheduleSet) Exists(value string) bool {
+	if len(ss.set) > 0 {
+		return ss.set[value]
+	}
+	return false
+}
+
+func (ss *ScheduleSet) GetLabel(labels map[string]string) string {
+	if labels == nil {
+		return ""
+	}
+	return labels[ss.label]
 }
