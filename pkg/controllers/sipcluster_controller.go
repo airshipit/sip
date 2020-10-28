@@ -59,13 +59,6 @@ func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, err
 	}
 
-	// Do we extra the information in a generic way
-	// So that LB and Jump Host can both leverage
-	err = r.extractFromVM(sip, machines)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	err = r.deployInfra(sip, machines)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -114,13 +107,15 @@ func (r *SIPClusterReconciler) gatherVM(sip airshipv1.SIPCluster) (error, *airsh
 	if err != nil {
 		return err, machines
 	}
-	return nil, machines
-}
 
-/*
- */
-func (r *SIPClusterReconciler) extractFromVM(sip airshipv1.SIPCluster, machines *airshipvms.MachineList) error {
-	return nil
+	// we extra the information in a generic way
+	// So that LB and Jump Host all leverage the same
+	err = machines.Extrapolate(sip, r.Client)
+	if err != nil {
+		return err, machines
+	}
+
+	return nil, machines
 }
 
 func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *airshipvms.MachineList) error {
@@ -138,6 +133,7 @@ func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *a
 		}
 
 		// Did it deploy correctly, letcs check
+
 		err = service.Validate()
 		if err != nil {
 			return err
