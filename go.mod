@@ -6,8 +6,8 @@ require (
 	github.com/fluxcd/helm-controller/api v0.1.3
 	github.com/go-logr/logr v0.2.1
 	github.com/metal3-io/baremetal-operator v0.0.0-20201014161845-a6d4f1fc3228
-	github.com/onsi/ginkgo v1.12.1
-	github.com/onsi/gomega v1.10.1
+	github.com/onsi/ginkgo v1.14.2
+	github.com/onsi/gomega v1.10.3
 	github.com/prometheus/common v0.10.0
 	gonum.org/v1/netlib v0.0.0-20190331212654-76723241ea4e // indirect
 	k8s.io/api v0.19.0
