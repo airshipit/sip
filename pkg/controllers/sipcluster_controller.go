@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	// "github.com/prometheus/common/log"
@@ -39,6 +40,9 @@ type SIPClusterReconciler struct {
 
 // +kubebuilder:rbac:groups=airship.airshipit.org,resources=sipclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=airship.airshipit.org,resources=sipclusters/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=airship.airshipit.org,resources=sipclusters/status,verbs=get;update;patch
+
+// +kubebuilder:rbac:groups="metal3.io",resources=baremetalhosts,verbs=get;update;patch;list
 
 func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
@@ -54,8 +58,9 @@ func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		return ctrl.Result{}, nil
 	}
 	// machines
-	err, machines := r.gatherVM(sip)
+	err, machines := r.gatherVBMH(sip)
 	if err != nil {
+		log.Error(err, "unable to gather vBMHs")
 		return ctrl.Result{}, err
 	}
 
@@ -97,19 +102,21 @@ func (r *SIPClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 */
 
 // machines
-func (r *SIPClusterReconciler) gatherVM(sip airshipv1.SIPCluster) (error, *airshipvms.MachineList) {
+func (r *SIPClusterReconciler) gatherVBMH(sip airshipv1.SIPCluster) (error, *airshipvms.MachineList) {
 	// 1- Let me retrieve all BMH  that are unlabeled or already labeled with the target Tenant/CNF
 	// 2- Let me now select the one's that meet teh scheduling criteria
 	// If I schedule successfully then
 	// If Not complete schedule , then throw an error.
 	machines := &airshipvms.MachineList{}
+	fmt.Printf("gatherVBMH.Schedule sip:%v machines:%v\n", sip, machines)
 	err := machines.Schedule(sip.Spec.Nodes, r.Client)
 	if err != nil {
 		return err, machines
 	}
 
-	// we extra the information in a generic way
-	// So that LB and Jump Host all leverage the same
+	// we extract the information in a generic way
+	// So that LB ,  Jump and Ath POD  all leverage the same
+	fmt.Printf("gatherVBMH.Extrapolate sip:%v machines:%v\n", sip, machines)
 	err = machines.Extrapolate(sip, r.Client)
 	if err != nil {
 		return err, machines

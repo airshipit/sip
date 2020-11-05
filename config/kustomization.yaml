@@ -1,0 +1,11 @@
+# 
+# Adds namespace to all resources.
+namespace: sip-system
+
+resources:
+  - manager
+  - certmanager
+  - crd
+  - prometheus
+  - rbac
+  - webhook

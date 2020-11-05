@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
-  name: system
+  name: sip-system
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -27,7 +27,8 @@ spec:
         - /manager
         args:
         - --enable-leader-election
-        image: controller:latest
+        image: quay.io/jezogwza/airship:sip.v1
+        imagePullPolicy: Always
         name: manager
         resources:
           limits:

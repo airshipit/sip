@@ -28,7 +28,10 @@ import (
 
 	airshipv1 "sipcluster/pkg/api/v1"
 	"sipcluster/pkg/controllers"
+
 	// +kubebuilder:scaffold:imports
+
+	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 )
 
 var (
@@ -41,6 +44,9 @@ func init() {
 
 	_ = airshipv1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
+
+	// Add Metal3 CRD
+	_ = metal3.AddToScheme(scheme)
 }
 
 func main() {

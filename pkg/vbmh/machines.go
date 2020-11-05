@@ -25,11 +25,12 @@ import (
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	airshipv1 "sipcluster/pkg/api/v1"
 	//rbacv1 "k8s.io/api/rbac/v1"
 	//"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ScheduledState
@@ -51,21 +52,29 @@ const (
 )
 
 const (
-	BaseAirshipSelector = "airshipit.org"
-	SipScheduled        = BaseAirshipSelector + "/sip-scheduled in (True, true)"
-	SipNotScheduled     = BaseAirshipSelector + "/sip-scheduled in (False, false)"
+	BaseAirshipSelector  = "sip.airshipit.org"
+	SipScheduleLabelName = "sip-scheduled"
+	SipScheduleLabel     = BaseAirshipSelector + "/" + SipScheduleLabelName
+
+	SipScheduled    = SipScheduleLabel + "=true"
+	SipNotScheduled = SipScheduleLabel + "=false"
 
 	// This is a placeholder . Need to synchronize with ViNO the constants below
 	// Probable pll this or eqivakent values from a ViNO pkg
 	RackLabel   = BaseAirshipSelector + "/rack"
-	ServerLabel = BaseAirshipSelector + "/rack"
+	ServerLabel = BaseAirshipSelector + "/server"
+
+	// This should be a configurable thing
+	// But probable not in teh CR.. TBD
+	// TODO
+	VBMH_NAMESPACE = "metal3"
 )
 
 // MAchine represents an individual BMH CR, and teh appropriate
 // attributes required to manage the SIP Cluster scheduling and
 // rocesing needs about thhem
 type Machine struct {
-	Bmh            metal3.BareMetalHost
+	Bmh            *metal3.BareMetalHost
 	ScheduleStatus ScheduledState
 	// scheduleLabels
 	// I expect to build this over time / if not might not be needed
@@ -88,17 +97,18 @@ type MachineList struct {
 }
 
 func (ml *MachineList) Schedule(nodes map[airshipv1.VmRoles]airshipv1.NodeSet, c client.Client) error {
+
 	// Initialize teh Target list
 	ml.bmhs = ml.init(nodes)
 
 	// IDentify vBMH's that meet the appropriate selction criteria
-	bmList, err := ml.getVBMH(c)
+	bmhList, err := ml.getVBMH(c)
 	if err != nil {
 		return err
 	}
 
 	//  Identify and Select the vBMH I actually will use
-	err = ml.identifyNodes(nodes, bmList)
+	err = ml.identifyNodes(nodes, bmhList)
 	if err != nil {
 		return err
 	}
@@ -106,7 +116,7 @@ func (ml *MachineList) Schedule(nodes map[airshipv1.VmRoles]airshipv1.NodeSet, c
 	// If I get here the MachineList should have a selected set of  Machine's
 	// They are in the ScheduleStatus of ToBeScheduled as well as the Role
 	//
-
+	fmt.Printf("Schedule ml.bmhs size:%d\n", len(ml.bmhs))
 	return nil
 }
 
@@ -115,12 +125,16 @@ func (ml *MachineList) init(nodes map[airshipv1.VmRoles]airshipv1.NodeSet) []*Ma
 	for _, nodeCfg := range nodes {
 		mlSize = mlSize + nodeCfg.Count.Active + nodeCfg.Count.Standby
 	}
-	return make([]*Machine, mlSize)
+	//fmt.Printf("Schedule.init mlSize:%d\n", mlSize)
+
+	return make([]*Machine, 0)
 
 }
 
 func (ml *MachineList) getVBMH(c client.Client) (*metal3.BareMetalHostList, error) {
-	bmList := &metal3.BareMetalHostList{}
+
+	bmhList := &metal3.BareMetalHostList{}
+
 	// I am thinking we can add a Label for unsccheduled.
 	// SIP Cluster can change it to scheduled.
 	// We can then simple use this to select UNSCHEDULED
@@ -128,24 +142,42 @@ func (ml *MachineList) getVBMH(c client.Client) (*metal3.BareMetalHostList, erro
 		This possible will not be needed if I figured out how to provide a != label.
 		Then we can use DOESNT HAVE A TENANT LABEL
 	*/
-	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{SipNotScheduled: "False"}}
+	scheduleLabels := map[string]string{SipScheduleLabel: "false"}
+
+	/**
+	DELETE SOON, ..
+	labelSelector := metav1.LabelSelector{MatchLabels: scheduleLabels}
 	bmhSelector, err := metav1.LabelSelectorAsSelector(&labelSelector)
 	if err != nil {
-		return bmList, err
+		return bmhList, err
 	}
+
+	fmt.Printf("Schedule.getVBMH bmhSelector:%v\n", bmhSelector)
+	// TODO Namespace where vBMH needs to be found
+	// Might be in THE SIP CR Peerhaps
 	bmListOptions := &client.ListOptions{
 		LabelSelector: bmhSelector,
 		Limit:         100,
+		Namespace:     VBMH_NAMESPACE,
 	}
 
-	err = c.List(context.TODO(), bmList, bmListOptions)
+	fmt.Printf("Schedule.getVBMH bmList context.Background bmhList:%v\n bmListOptions:%v scheduleLabels:%v\n", bmhList, bmListOptions, scheduleLabels)
+	err = c.List(context.Background(), bmhList, bmListOptions, client.InNamespace(VBMH_NAMESPACE))
+	*/
+
+	err := c.List(context.Background(), bmhList, client.MatchingLabels(scheduleLabels))
 	if err != nil {
-		return bmList, err
+		fmt.Printf("Schedule.getVBMH bmhList err:%v\n", err)
+		return bmhList, err
 	}
-	return bmList, nil
+	fmt.Printf("Schedule.getVBMH bmhList size:%d\n", len(bmhList.Items))
+	if len(bmhList.Items) > 0 {
+		return bmhList, nil
+	}
+	return bmhList, fmt.Errorf("Unable to identify vBMH available for scheduling. Selecting  %v ", scheduleLabels)
 }
 
-func (ml *MachineList) identifyNodes(nodes map[airshipv1.VmRoles]airshipv1.NodeSet, bmList *metal3.BareMetalHostList) error {
+func (ml *MachineList) identifyNodes(nodes map[airshipv1.VmRoles]airshipv1.NodeSet, bmhList *metal3.BareMetalHostList) error {
 	// If using the SIP Sheduled label, we now have a list of vBMH;'s
 	// that are not scheduled
 	// Next I need to apply the constraints
@@ -154,17 +186,18 @@ func (ml *MachineList) identifyNodes(nodes map[airshipv1.VmRoles]airshipv1.NodeS
 	// Only deals with AntiAffinity at :
 	// - Racks  : Dont select two machines in the same rack
 	// - Server : Dont select two machines in the same server
+	fmt.Printf("Schedule.identifyNodes bmList size:%d\n", len(bmhList.Items))
 	for nodeRole, nodeCfg := range nodes {
 		scheduleSetMap, err := ml.initScheduleMaps(nodeCfg.Scheduling)
 		if err != nil {
 			return err
 		}
-		err = ml.scheduleIt(nodeRole, nodeCfg, bmList, scheduleSetMap)
+		err = ml.scheduleIt(nodeRole, nodeCfg, bmhList, scheduleSetMap)
 		if err != nil {
 			return err
 		}
 	}
-
+	fmt.Printf("Schedule.identifyNodes ml.bmhs size:%d\n", len(ml.bmhs))
 	return nil
 }
 
@@ -188,39 +221,50 @@ func (ml *MachineList) initScheduleMaps(constraints []airshipv1.SchedulingOption
 		}
 	}
 
+	fmt.Printf("Schedule.initScheduleMaps  setMap:%v\n", setMap)
 	if len(setMap) > 0 {
-		return setMap, ErrorConstraintNotFound{}
+		return setMap, nil
 	}
-	return setMap, nil
+	return setMap, ErrorConstraintNotFound{}
 }
 
 func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.NodeSet, bmList *metal3.BareMetalHostList, scheduleSetMap map[airshipv1.SchedulingOptions]*ScheduleSet) error {
 	validBmh := true
 	nodeTarget := (nodeCfg.Count.Active + nodeCfg.Count.Standby)
+	fmt.Printf("Schedule.scheduleIt  nodeRole:%v nodeTarget:%d nodeCfg.VmFlavor:%s  ml.bmhs len:%d \n", nodeRole, nodeTarget, nodeCfg.VmFlavor, len(ml.bmhs))
 	for _, bmh := range bmList.Items {
+		fmt.Printf("---------------\n Schedule.scheduleIt  bmh.ObjectMeta.Name:%s \n", bmh.ObjectMeta.Name)
 		for _, constraint := range nodeCfg.Scheduling {
 			// Do I care about this constraint
 
 			if scheduleSetMap[constraint].Active() {
 				// Check if bmh has the label
 				// There is a func (host *BareMetalHost) getLabel(name string) string {
-				// Not sure why its not Public, so sing our won method
+				// Not sure why its not Public, so using our own method
 				cLabelValue, cFlavorMatches := scheduleSetMap[constraint].GetLabels(bmh.Labels, nodeCfg.VmFlavor)
 
+				// If it doesnt match the flavor its not valid
+				validBmh = cFlavorMatches
+				// If it does match the flavor
 				if cLabelValue != "" && cFlavorMatches {
-					// If its in th elist , theen this bmh is disqualified. Skip it
+					// If its in the list already for the constraint , theen this bmh is disqualified. Skip it
 					if scheduleSetMap[constraint].Exists(cLabelValue) {
 						validBmh = false
 						break
+					} else {
+						scheduleSetMap[constraint].Add(cLabelValue)
 					}
 				}
+				fmt.Printf("Schedule.scheduleIt cLabelValue:%s, cFlavorMatches:%t scheduleSetMap[%v]:%v\n", cLabelValue, cFlavorMatches, constraint, scheduleSetMap[constraint])
+
 			}
 		}
+		fmt.Printf("Schedule.scheduleIt nodeTarget:%d, validBmh:%t  ml.bmhs len:%d\n", nodeTarget, validBmh, len(ml.bmhs))
 		// All the constraints have been checked
 		if validBmh {
 			// Lets add it to the list as a schedulable thing
 			m := &Machine{
-				Bmh:            bmh,
+				Bmh:            &bmh,
 				ScheduleStatus: ToBeScheduled,
 				VmRole:         nodeRole,
 				Data: &MachineData{
@@ -229,6 +273,7 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.
 			}
 			// Probable need to use the nodeRole as a label here
 			ml.bmhs = append(ml.bmhs, m)
+			fmt.Printf("Schedule.scheduleIt ADDED   ml.bmhs len:%d machine:%v \n", len(ml.bmhs), m)
 			nodeTarget = nodeTarget - 1
 			if nodeTarget == 0 {
 				break
@@ -239,6 +284,7 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.
 		validBmh = true
 	}
 
+	fmt.Printf("Schedule.scheduleIt  nodeTarget:%d, ml.bmhs:%d\n", nodeTarget, len(ml.bmhs))
 	if nodeTarget > 0 {
 		return ErrorUnableToFullySchedule{
 			TargetNode:   nodeRole,
@@ -252,7 +298,9 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.
 // The intention is to extract the IP information from the referenced networkData field for the BareMetalHost
 func (ml *MachineList) Extrapolate(sip airshipv1.SIPCluster, c client.Client) error {
 	// Lets get the data for all selected BMH's.
+	fmt.Printf("Schedule.Extrapolate  ml.bmhs:%d\n", len(ml.bmhs))
 	for _, machine := range ml.bmhs {
+		fmt.Printf("Schedule.Extrapolate  machine:%v\n", machine)
 		bmh := machine.Bmh
 		// Identify Network Data Secret name
 
@@ -492,7 +540,11 @@ func (ss *ScheduleSet) Exists(value string) bool {
 	return false
 }
 
+func (ss *ScheduleSet) Add(labelValue string) {
+	ss.set[labelValue] = true
+}
 func (ss *ScheduleSet) GetLabels(labels map[string]string, flavorLabel string) (string, bool) {
+	fmt.Printf("Schedule.scheduleIt.GetLabels  labels:%v, flavorLabel:%s\n", labels, flavorLabel)
 	if labels == nil {
 		return "", false
 	}
