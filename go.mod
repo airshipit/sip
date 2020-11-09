@@ -3,6 +3,7 @@ module sipcluster
 go 1.13
 
 require (
+	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/fluxcd/helm-controller/api v0.1.3
 	github.com/go-logr/logr v0.2.1
 	github.com/metal3-io/baremetal-operator v0.0.0-20201014161845-a6d4f1fc3228

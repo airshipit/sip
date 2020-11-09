@@ -26,8 +26,9 @@ type ErrorHostIpNotFound struct {
 	HostName    string
 	ServiceName airshipv1.InfraService
 	IPInterface string
+	Message     string
 }
 
 func (e ErrorHostIpNotFound) Error() string {
-	return fmt.Sprintf("Unable to identify the vBMH Host %v IP address on interface %v required by Infrastructure Service %v ", e.HostName, e.IPInterface, e.ServiceName)
+	return fmt.Sprintf("Unable to identify the vBMH Host %v IP address on interface %v required by Infrastructure Service %v %s ", e.HostName, e.IPInterface, e.ServiceName, e.Message)
 }

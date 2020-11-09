@@ -28,6 +28,7 @@ type SIPClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	Config *SipConfig `json:"config,omitempty"`
 	// Nodes are the list of Nodes objects workers, or master that definee eexpectations
 	// of the Tenant cluster
 	// VmRole is either Control or Workers
@@ -40,6 +41,12 @@ type SIPClusterSpec struct {
 
 	// List of Infrastructure Services
 	InfraServices map[InfraService]InfraConfig `json:"infra"`
+}
+
+// SIPClusterSpec defines the desired state of SIPCluster
+type SipConfig struct {
+	// Cluster NAme to be used for labeling vBMH
+	ClusterName string `json:"cluster-name,omitempty"`
 }
 
 // VmRoles defines the states the provisioner will report

@@ -29,6 +29,8 @@ import (
 	airshipv1 "sipcluster/pkg/api/v1"
 	"sipcluster/pkg/controllers"
 
+	corev1 "k8s.io/api/core/v1"
+
 	// +kubebuilder:scaffold:imports
 
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
@@ -47,6 +49,10 @@ func init() {
 
 	// Add Metal3 CRD
 	_ = metal3.AddToScheme(scheme)
+
+	// Add Kubernetes Coree??
+	_ = corev1.AddToScheme(scheme)
+
 }
 
 func main() {

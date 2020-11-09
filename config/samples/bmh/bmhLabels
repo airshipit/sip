@@ -1,0 +1,6 @@
+k label baremetalhosts -n metal3 --overwrite rdm9r006o001 sip.airshipit.org/rack=r006 sip.airshipit.org/server=rdm9r006o001 airshipit.org/vino-flavor=master sip.airshipit.org/sip-scheduled:false
+k label baremetalhosts -n metal3 --overwrite rdm9r006o002 sip.airshipit.org/rack=r006 sip.airshipit.org/server=rdm9r006o002 airshipit.org/vino-flavor=master sip.airshipit.org/sip-scheduled:false
+k label baremetalhosts -n metal3 --overwrite rdm9r007o001 sip.airshipit.org/rack=r007 sip.airshipit.org/server=rdm9r007o001 airshipit.org/vino-flavor=master sip.airshipit.org/sip-scheduled:false
+k label baremetalhosts -n metal3 --overwrite rdm9r007o002 sip.airshipit.org/rack=r007 sip.airshipit.org/server=rdm9r007o002 airshipit.org/vino-flavor=worker sip.airshipit.org/sip-scheduled:false
+k label baremetalhosts -n metal3 --overwrite rdm9r008c002 sip.airshipit.org/rack=r008 sip.airshipit.org/server=rdm9r008c002 airshipit.org/vino-flavor=worker sip.airshipit.org/sip-scheduled:false
+k label baremetalhosts -n metal3 --overwrite rdm9r009c002 sip.airshipit.org/rack=r009 sip.airshipit.org/server=rdm9r009c002 airshipit.org/vino-flavor=worker sip.airshipit.org/sip-scheduled:false

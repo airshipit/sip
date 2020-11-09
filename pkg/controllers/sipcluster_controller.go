@@ -66,6 +66,13 @@ func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 
 	err = r.deployInfra(sip, machines)
 	if err != nil {
+		log.Error(err, "unable to deploy infrastructure services")
+		return ctrl.Result{}, err
+	}
+
+	err = r.finish(sip, machines)
+	if err != nil {
+		log.Error(err, "unable to finalize ..")
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
@@ -109,7 +116,7 @@ func (r *SIPClusterReconciler) gatherVBMH(sip airshipv1.SIPCluster) (error, *air
 	// If Not complete schedule , then throw an error.
 	machines := &airshipvms.MachineList{}
 	fmt.Printf("gatherVBMH.Schedule sip:%v machines:%v\n", sip, machines)
-	err := machines.Schedule(sip.Spec.Nodes, r.Client)
+	err := machines.Schedule(sip, r.Client)
 	if err != nil {
 		return err, machines
 	}
@@ -147,4 +154,18 @@ func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *a
 		}
 	}
 	return nil
+}
+
+/*
+finish shoulld  take care of any wrpa up tasks..
+*/
+func (r *SIPClusterReconciler) finish(sip airshipv1.SIPCluster, machines *airshipvms.MachineList) error {
+
+	// Label the vBMH's
+	err := machines.ApplyLabels(sip, r.Client)
+	if err != nil {
+		return err
+	}
+	return nil
+
 }

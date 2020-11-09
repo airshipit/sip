@@ -1,21 +1,23 @@
 apiVersion: airship.airshipit.org/v1
 kind: SIPCluster
 metadata:
-  name: sipcluster-sample
-  namespace: clusterA
+  name: sipcluster-test1
+  namespace: sip-cluster-system
 spec:
+    config:
+        cluster-name: cname
     nodes:
       worker:
           vm-flavor: 'airshipit.org/vino-flavor=worker'
           scheduling-constraints: ['per-node'] # Support dont'care option.
           count:
-              active: 3 #driven by capi node number
+              active: 1 #driven by capi node number
               standby: 1 #slew for upgrades etc
       master:
           vm-flavor: 'airshipit.org/vino-flavor=master'
           scheduling-constraints: ['per-node','per-rack']
           count:
-              active: 3
+              active: 1
               standby: 1
     infra:
         loadbalancer:

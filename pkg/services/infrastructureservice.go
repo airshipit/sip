@@ -15,11 +15,10 @@
 package services
 
 import (
-	"context"
-	helm "github.com/fluxcd/helm-controller/api/v2beta1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	airshipv1 "sipcluster/pkg/api/v1"
 	airshipvms "sipcluster/pkg/vbmh"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Infrastructure interface should be implemented by each Tenant Required
@@ -47,11 +46,6 @@ func (s *Service) Deploy(machines *airshipvms.MachineList, c client.Client) erro
 	// Take the data from teh appropriate Machines
 	// Prepare the Config
 
-	// Prepare the HelmReleasecd
-	helmRelease := &helm.HelmRelease{}
-	if err := c.Create(context.TODO(), helmRelease); err != nil {
-		return err
-	}
 	return nil
 }
 
