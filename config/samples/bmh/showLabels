@@ -1,2 +1,2 @@
 SCHEDULED=$1
-kubectl get baremetalhosts --all-namespaces -l sip.airshipit.org/sip-scheduled=$SCHEDULED --show-labels|awk '{print $1,$2,$5,$6}'
+kubectl get baremetalhosts --all-namespaces -l sip.airshipit.org/sip-scheduled=$SCHEDULED --show-labels|grep -v NAME|awk '{print "____________\n",$2,"\n\t",$5,$6}'|sed -e's/,/\n\t/g'

@@ -56,23 +56,35 @@ func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		// on deleted requests.
 		return ctrl.Result{}, nil
 	}
-	// machines
-	err, machines := r.gatherVBMH(sip)
-	if err != nil {
-		log.Error(err, "unable to gather vBMHs")
-		return ctrl.Result{}, err
-	}
 
-	err = r.deployInfra(sip, machines)
-	if err != nil {
-		log.Error(err, "unable to deploy infrastructure services")
-		return ctrl.Result{}, err
-	}
+	// Check for Deletion
+	if sip.ObjectMeta.DeletionTimestamp.IsZero() {
+		// machines
+		err, machines := r.gatherVBMH(sip)
+		if err != nil {
+			//log.Error(err, "unable to gather vBMHs")
+			return ctrl.Result{}, err
+		}
 
-	err = r.finish(sip, machines)
-	if err != nil {
-		log.Error(err, "unable to finalize ..")
-		return ctrl.Result{}, err
+		err = r.deployInfra(sip, machines)
+		if err != nil {
+			log.Error(err, "unable to deploy infrastructure services")
+			return ctrl.Result{}, err
+		}
+
+		err = r.finish(sip, machines)
+		if err != nil {
+			log.Error(err, "unable to finish creation/update ..")
+			return ctrl.Result{}, err
+		}
+	} else {
+		// Deleting the SIP , what do we do now
+		err := r.finalize(sip)
+		if err != nil {
+			log.Error(err, "unable to finalize")
+			return ctrl.Result{}, err
+		}
+
 	}
 	return ctrl.Result{}, nil
 }
@@ -168,4 +180,29 @@ func (r *SIPClusterReconciler) finish(sip airshipv1.SIPCluster, machines *airshi
 	}
 	return nil
 
+}
+
+/**
+
+Deal with Deletion andd Finalizers if any is needed
+Such as i'e what are we doing with the lables on teh vBMH's
+**/
+func (r *SIPClusterReconciler) finalize(sip airshipv1.SIPCluster) error {
+	// 1- Let me retrieve all vBMH mapped for this SIP Cluster
+	// 2- Let me now select the one's that meet teh scheduling criteria
+	// If I schedule successfully then
+	// If Not complete schedule , then throw an error.
+	machines := &airshipvms.MachineList{}
+	fmt.Printf("finalize sip:%v machines:%s\n", sip, machines.String())
+	// Update the list of  Machines.
+	err := machines.GetCluster(sip, r.Client)
+	if err != nil {
+		return err
+	}
+	// Placeholder unsuree whether this is what we want
+	err = machines.RemoveLabels(sip, r.Client)
+	if err != nil {
+		return err
+	}
+	return nil
 }

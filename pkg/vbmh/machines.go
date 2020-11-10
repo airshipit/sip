@@ -297,7 +297,7 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.
 		if validBmh && !ml.hasMachine(bmh) {
 			// Lets add it to the list as a schedulable thing
 			ml.bmhs[bmh.ObjectMeta.Name] = NewMachine(bmh, nodeRole)
-			fmt.Printf("---------------\nSchedule.scheduleIt ADDED machine:%s ml.bmhs %s \n", ml.bmhs[bmh.ObjectMeta.Name].String())
+			fmt.Printf("---------------\nSchedule.scheduleIt ADDED machine:%s \n", ml.bmhs[bmh.ObjectMeta.Name].String())
 			// TODO Probable should remove the bmh from the list so if there are other node targets they dont even take it into account
 			nodeTarget = nodeTarget - 1
 			if nodeTarget == 0 {
@@ -601,5 +601,62 @@ func (ml *MachineList) ApplyLabels(sip airshipv1.SIPCluster, c client.Client) er
 			return err
 		}
 	}
+	return nil
+}
+
+/*
+RemoveLabels
+*/
+func (ml *MachineList) RemoveLabels(sip airshipv1.SIPCluster, c client.Client) error {
+
+	fmt.Printf("ApplyLabels  %s size:%d\n", ml.String(), len(ml.bmhs))
+	for _, machine := range ml.bmhs {
+
+		bmh := &machine.Bmh
+		fmt.Printf("ApplyLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
+		bmh.Labels[SipClusterLabel] = "-" // REMOVE IT
+		bmh.Labels[SipScheduleLabel] = "false"
+		bmh.Labels[SipNodeTypeLabel] = "-" // REMOVE IT
+
+		// This is bombing when it find 1 error
+		// Might be better to acculumalte the errors, and
+		// Allow it  to continue.
+		err := c.Update(context.Background(), bmh)
+		if err != nil {
+			fmt.Printf("ApplyLabel bmh:%s err:%v\n", bmh.ObjectMeta.Name, err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (ml *MachineList) addLabels(bmh metal3.BareMetalHost, m *Machine) {
+
+}
+func (ml *MachineList) GetCluster(sip airshipv1.SIPCluster, c client.Client) error {
+
+	bmhList := &metal3.BareMetalHostList{}
+	scheduleLabels := map[string]string{
+		SipScheduleLabel: "true",
+		SipClusterLabel:  sip.Spec.Config.ClusterName,
+	}
+
+	err := c.List(context.Background(), bmhList, client.MatchingLabels(scheduleLabels))
+	if err != nil {
+		return err
+	}
+
+	for _, bmh := range bmhList.Items {
+		ml.bmhs[bmh.ObjectMeta.Name] = &Machine{
+			Bmh:            bmh,
+			ScheduleStatus: Scheduled,
+			VmRole:         airshipv1.VmRoles(bmh.Labels[SipNodeTypeLabel]),
+			Data: &MachineData{
+				IpOnInterface: make(map[string]string),
+			},
+		}
+	}
+
+	fmt.Printf("GetCluster %s \n", ml.String())
 	return nil
 }
