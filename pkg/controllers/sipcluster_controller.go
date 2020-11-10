@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	// "github.com/prometheus/common/log"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,7 +50,7 @@ func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	// Lets retrieve the SIPCluster
 	sip := airshipv1.SIPCluster{}
 	if err := r.Get(ctx, req.NamespacedName, &sip); err != nil {
-		log.Error(err, "unable to fetch SIP Cluster")
+		//log.Error(err, "unable to fetch SIP Cluster")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
@@ -123,6 +122,7 @@ func (r *SIPClusterReconciler) gatherVBMH(sip airshipv1.SIPCluster) (error, *air
 
 	// we extract the information in a generic way
 	// So that LB ,  Jump and Ath POD  all leverage the same
+	// If there are some issues finnding information then the machines ??
 	fmt.Printf("gatherVBMH.Extrapolate sip:%v machines:%v\n", sip, machines)
 	err = machines.Extrapolate(sip, r.Client)
 	if err != nil {
