@@ -58,6 +58,9 @@ func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	}
 
 	// Check for Deletion
+	// name of our custom finalizer
+	sipFinalizerName := "sip.airship.airshipit.org/finalizer"
+	// Tghis only works if I add a finalizer to CRD TODO
 	if sip.ObjectMeta.DeletionTimestamp.IsZero() {
 		// machines
 		err, machines := r.gatherVBMH(sip)
@@ -79,10 +82,19 @@ func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		}
 	} else {
 		// Deleting the SIP , what do we do now
-		err := r.finalize(sip)
-		if err != nil {
-			log.Error(err, "unable to finalize")
-			return ctrl.Result{}, err
+		if containsString(sip.ObjectMeta.Finalizers, sipFinalizerName) {
+			// our finalizer is present, so lets handle any external dependency
+			err := r.finalize(sip)
+			if err != nil {
+				log.Error(err, "unable to finalize")
+				return ctrl.Result{}, err
+			}
+
+			// remove our finalizer from the list and update it.
+			sip.ObjectMeta.Finalizers = removeString(sip.ObjectMeta.Finalizers, sipFinalizerName)
+			if err := r.Update(context.Background(), &sip); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 
 	}
@@ -93,6 +105,27 @@ func (r *SIPClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&airshipv1.SIPCluster{}).
 		Complete(r)
+}
+
+// Helper functions to check and remove string from a slice of strings.
+// There might be a golang funuction to do this . Will check later
+func containsString(slice []string, s string) bool {
+	for _, item := range slice {
+		if item == s {
+			return true
+		}
+	}
+	return false
+}
+
+func removeString(slice []string, s string) (result []string) {
+	for _, item := range slice {
+		if item == s {
+			continue
+		}
+		result = append(result, item)
+	}
+	return
 }
 
 /*

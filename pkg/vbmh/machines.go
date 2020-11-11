@@ -613,27 +613,27 @@ func (ml *MachineList) RemoveLabels(sip airshipv1.SIPCluster, c client.Client) e
 	for _, machine := range ml.bmhs {
 
 		bmh := &machine.Bmh
-		fmt.Printf("ApplyLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
-		bmh.Labels[SipClusterLabel] = "-" // REMOVE IT
+		fmt.Printf("RemoveLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
+		bmh.Labels[SipClusterLabel] = "" // REMOVE IT TODO This only blanks it out doesnt remove the label
 		bmh.Labels[SipScheduleLabel] = "false"
-		bmh.Labels[SipNodeTypeLabel] = "-" // REMOVE IT
+		bmh.Labels[SipNodeTypeLabel] = "" // REMOVE IT
 
 		// This is bombing when it find 1 error
 		// Might be better to acculumalte the errors, and
 		// Allow it  to continue.
 		err := c.Update(context.Background(), bmh)
 		if err != nil {
-			fmt.Printf("ApplyLabel bmh:%s err:%v\n", bmh.ObjectMeta.Name, err)
+			fmt.Printf("RemoveLabels bmh:%s err:%v\n", bmh.ObjectMeta.Name, err)
 			return err
 		}
 	}
 	return nil
 }
 
-func (ml *MachineList) addLabels(bmh metal3.BareMetalHost, m *Machine) {
-
-}
 func (ml *MachineList) GetCluster(sip airshipv1.SIPCluster, c client.Client) error {
+
+	// Initialize teh Target list
+	ml.bmhs = ml.init(sip.Spec.Nodes)
 
 	bmhList := &metal3.BareMetalHostList{}
 	scheduleLabels := map[string]string{
