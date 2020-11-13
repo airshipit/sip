@@ -159,19 +159,24 @@ func (r *SIPClusterReconciler) gatherVBMH(sip airshipv1.SIPCluster) (error, *air
 	// If I schedule successfully then
 	// If Not complete schedule , then throw an error.
 	machines := &airshipvms.MachineList{}
-	fmt.Printf("gatherVBMH.Schedule sip:%v machines:%v\n", sip, machines)
-	err := machines.Schedule(sip, r.Client)
-	if err != nil {
-		return err, machines
-	}
 
-	// we extract the information in a generic way
-	// So that LB ,  Jump and Ath POD  all leverage the same
-	// If there are some issues finnding information then the machines ??
-	fmt.Printf("gatherVBMH.Extrapolate sip:%v machines:%v\n", sip, machines)
-	err = machines.Extrapolate(sip, r.Client)
-	if err != nil {
-		return err, machines
+	// TODO : this is a loop until we succeed or cannot find a schedule
+	for {
+		fmt.Printf("gatherVBMH.Schedule sip:%v machines:%v\n", sip, machines)
+		err := machines.Schedule(sip, r.Client)
+		if err != nil {
+			return err, machines
+		}
+
+		// we extract the information in a generic way
+		// So that LB ,  Jump and Ath POD  all leverage the same
+		// If there are some issues finnding information the vBMH
+		// Are flagged Unschedulable
+		// Loop and Try to find new vBMH to complete tge schedule
+		//fmt.Printf("gatherVBMH.Extrapolate sip:%v machines:%v\n", sip, machines)
+		if machines.Extrapolate(sip, r.Client) {
+			break
+		}
 	}
 
 	return nil, machines

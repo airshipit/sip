@@ -15,6 +15,7 @@
 package services
 
 import (
+	"fmt"
 	airshipv1 "sipcluster/pkg/api/v1"
 	airshipvms "sipcluster/pkg/vbmh"
 
@@ -45,12 +46,14 @@ func (s *Service) Deploy(machines *airshipvms.MachineList, c client.Client) erro
 
 	// Take the data from teh appropriate Machines
 	// Prepare the Config
-
+	fmt.Printf("Deploy Service:%v \n", s.serviceName)
 	return nil
 }
 
 func (s *Service) Validate() error {
 	// do something, might decouple this a bit
+	fmt.Printf("Validate Service:%v \n", s.serviceName)
+
 	return nil
 
 }

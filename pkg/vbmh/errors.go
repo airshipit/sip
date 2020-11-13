@@ -19,7 +19,7 @@ type ErrorUnableToFullySchedule struct {
 }
 
 func (e ErrorUnableToFullySchedule) Error() string {
-	return fmt.Sprintf("Unable to complete a schedule targetting %v nodes, which a floavor of %v ", e.TargetNode, e.TargetFlavor)
+	return fmt.Sprintf("Unable to complete a schedule with a target of  %v nodes, with a flavor of %v ", e.TargetNode, e.TargetFlavor)
 }
 
 type ErrorHostIpNotFound struct {
