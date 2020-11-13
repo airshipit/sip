@@ -68,3 +68,46 @@ Pseudo Algorithm at a high level after reading the `SIPCluster` CR:
 
 SIPCluster CR will exists within the Control phase for a Tenant cluster.
 
+## Development environment
+
+### Kind kubernetes cluster
+Fastest way to set up a k8s cluster for development env is to use kind to set it up
+
+#### Install kind on linux (amd64 arch)
+
+```
+# curl -Lo kind https://kind.sigs.k8s.io/dl/v0.9.0/kind-linux-amd64
+# sudo install  -m 755 --owner=root --group=root kind /usr/local/bin
+# rm kind
+```
+
+More information on how to install kind binary can be found be found [here](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
+
+#### Create k8s cluster with kind
+
+```
+# make kind-create
+# kubectl get nodes
+```
+
+### Deploy sip operator on top of kind cluster
+kind-load-image target will build docker image from the current state of your local
+git repository and upload it to kind cluster to be available for kubelet.
+
+```
+# make kind-load-image
+# make deploy
+```
+
+Now you have a working k8s cluster with sip installed on it with your changes to SIP operator
+
+### Deliver sip CRs to kubernetes
+
+Use kubectl apply to deliver SIP CRs and BaremetalHost CRDs to kubernetes cluster
+
+```
+# kubectl apply -f config/samples/airship_v1beta1_sipcluster.yaml
+# kubectl apply -f config/samples/bmh/baremetalhosts.metal3.io.yaml
+```
+Now you are ready to craft and add BaremetalHost CRs into cluster, check samples directory
+to find BaremetalHost examples there.
