@@ -2,7 +2,7 @@ apiVersion: airship.airshipit.org/v1
 kind: SIPCluster
 metadata:
   name: sipcluster-test1
-  namespace: sip-cluster-system
+  namespace: sipcluster-system
 spec:
     config:
         cluster-name: cname

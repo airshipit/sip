@@ -6,12 +6,20 @@ IMG ?= quay.io/jezogwza/airship:sip.v2
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
+# Name of the kind cluster that will be created by kind-create target
+KIND_CLUSTER_NAME ?= sip-cluster
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
 else
 GOBIN=$(shell go env GOBIN)
 endif
+
+# Docker proxy flags
+DOCKER_PROXY_FLAGS  := --build-arg http_proxy=$(HTTP_PROXY)
+DOCKER_PROXY_FLAGS  += --build-arg https_proxy=$(HTTPS_PROXY)
+DOCKER_PROXY_FLAGS  += --build-arg NO_PROXY=$(NO_PROXY)
 
 all: manager
 
@@ -57,14 +65,22 @@ generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # Build the docker image
-#docker-build: test
+# If DOCKER_PROXY_FLAGS values are empty, we are fine with that 
 docker-build:
-	docker build . -t ${IMG}
+	docker build ${DOCKER_PROXY_FLAGS} . -t ${IMG}
 
 # Push the docker image
 docker-push:
 	docker push ${IMG}
 
+# Create kind cluster
+kind-create:
+	kind create cluster --name ${KIND_CLUSTER_NAME}
+
+# Build docker container and load it into running kind cluster
+kind-load-image: docker-build
+	kind load docker-image ${IMG} --name ${KIND_CLUSTER_NAME}
+    
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:
