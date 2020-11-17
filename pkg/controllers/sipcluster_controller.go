@@ -191,7 +191,7 @@ func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *a
 		}
 
 		// Lets deploy the Service
-		err = service.Deploy(machines, r.Client)
+		err = service.Deploy(sip, machines, r.Client)
 		if err != nil {
 			return err
 		}
@@ -211,7 +211,7 @@ finish shoulld  take care of any wrpa up tasks..
 */
 func (r *SIPClusterReconciler) finish(sip airshipv1.SIPCluster, machines *airshipvms.MachineList) error {
 
-	// Label the vBMH's
+	// UnLabel the vBMH's
 	err := machines.ApplyLabels(sip, r.Client)
 	if err != nil {
 		return err
@@ -226,6 +226,23 @@ Deal with Deletion andd Finalizers if any is needed
 Such as i'e what are we doing with the lables on teh vBMH's
 **/
 func (r *SIPClusterReconciler) finalize(sip airshipv1.SIPCluster) error {
+
+	for sName, sConfig := range sip.Spec.InfraServices {
+		// Instantiate
+		service, err := airshipsvc.NewService(sName, sConfig)
+		if err != nil {
+			return err
+		}
+
+		// Lets clean  Service specific stuff
+		err = service.Finalize(sip, r.Client)
+		if err != nil {
+			return err
+		}
+	}
+	// Clean Up common servicce stuff
+	airshipsvc.FinalizeCommon(sip, r.Client)
+
 	// 1- Let me retrieve all vBMH mapped for this SIP Cluster
 	// 2- Let me now select the one's that meet teh scheduling criteria
 	// If I schedule successfully then

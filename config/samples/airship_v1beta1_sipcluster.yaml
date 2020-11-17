@@ -3,15 +3,17 @@ kind: SIPCluster
 metadata:
   name: sipcluster-test1
   namespace: sipcluster-system
+  finalizers:
+    - sip.airship.airshipit.org/finalizer
 spec:
     config:
-        cluster-name: cname
+        cluster-name: subcluster-test1
     nodes:
       worker:
           vm-flavor: 'airshipit.org/vino-flavor=worker'
           scheduling-constraints: ['per-node'] # Support dont'care option.
           count:
-              active: 1 #driven by capi node number
+              active: 2 #driven by capi node number
               standby: 1 #slew for upgrades etc
       master:
           vm-flavor: 'airshipit.org/vino-flavor=master'
@@ -26,7 +28,10 @@ spec:
           image: haproxy:foo
           nodeLabels:
               - airship-masters
-          nodePort: 7000
+          nodePorts:
+              - 7000
+              - 7001
+              - 7002
           nodeInterfaceId: oam-ipv4
         jumppod:
           optional:
@@ -34,12 +39,14 @@ spec:
           image: sshpod:foo
           nodeLabels:
             - airship-masters
-          nodePort: 7022
+          nodePorts:
+            -  7022
           nodeInterfaceId: oam-ipv4
         authpod:
           image: sshpod:foo
           nodeLabels:
             - airship-masters
-          nodePort: 7022
+          nodePorts:
+            - 7023
           nodeInterfaceId: oam-ipv4
 

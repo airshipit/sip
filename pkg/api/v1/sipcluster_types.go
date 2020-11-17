@@ -104,7 +104,7 @@ type InfraConfig struct {
 	OptionalData  *OptsConfig       `json:"optional,omitempty"`
 	Image         string            `json:"image,omitempty"`
 	NodeLabels    map[string]string `json:"nodelabels,omitempty"`
-	NodePort      int               `json:"nodePort,omitempty"`
+	NodePorts     []int             `json:"nodePorts,omitempty"`
 	NodeInterface string            `json:"nodeInterfaceId,omitempty"`
 }
 
@@ -120,10 +120,10 @@ type VmRoles string
 // Possible Node or VM Roles  for a Tenant
 const (
 	// VmMaster means the state is unknown
-	VmMaster VmRoles = "Master"
+	VmMaster VmRoles = "master"
 
 	// VmWorker means the state is unknown
-	VmWorker VmRoles = "Worker"
+	VmWorker VmRoles = "worker"
 )
 
 // VmCount

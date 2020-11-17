@@ -15,11 +15,39 @@
 package services
 
 import (
+	"fmt"
 	airshipv1 "sipcluster/pkg/api/v1"
+	airshipvms "sipcluster/pkg/vbmh"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type LoadBalancer struct {
 	Service
+}
+
+func (l *LoadBalancer) Deploy(sip airshipv1.SIPCluster, machines *airshipvms.MachineList, c client.Client) error {
+	// do something, might decouple this a bit
+	// If the  serviucces are defined as Helm Chart , then deploy might be simply
+
+	// Take the data from teh appropriate Machines
+	// Prepare the Config
+	l.Service.Deploy(sip, machines, c)
+	err := l.Prepare(sip, machines, c)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (l *LoadBalancer) Prepare(sip airshipv1.SIPCluster, machines *airshipvms.MachineList, c client.Client) error {
+	fmt.Printf("%s.Prepare machines:%s \n", l.Service.serviceName, machines)
+	for _, machine := range machines.Vbmhs {
+		if machine.VmRole == airshipv1.VmMaster {
+			fmt.Printf("%s.Prepare for machine:%s ip is %s\n", l.Service.serviceName, machine, machine.Data.IpOnInterface[sip.Spec.InfraServices[l.Service.serviceName].NodeInterface])
+		}
+	}
+	return nil
 }
 
 func newLoadBalancer(infraCfg airshipv1.InfraConfig) InfrastructureService {

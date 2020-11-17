@@ -114,7 +114,8 @@ type MachineData struct {
 
 // MachineList contains the list of Scheduled or ToBeScheduled machines
 type MachineList struct {
-	bmhs map[string]*Machine
+	// ViNO BMH
+	Vbmhs map[string]*Machine
 	// Keep track  of how many we have mark for scheduled.
 	Scheduled map[airshipv1.VmRoles]int
 }
@@ -124,14 +125,14 @@ func (ml *MachineList) hasMachine(bmh metal3.BareMetalHost) bool {
 	if &bmh == nil {
 		return false
 	}
-	fmt.Printf("Schedule.hasMachine  bmh.ObjectMeta.Name:%s ml.bmhs[bmh.ObjectMeta.Name] :%v , answer :%t \n", bmh.ObjectMeta.Name, ml.bmhs[bmh.ObjectMeta.Name], (ml.bmhs[bmh.ObjectMeta.Name] != nil))
-	return ml.bmhs[bmh.ObjectMeta.Name] != nil
+	fmt.Printf("Schedule.hasMachine  bmh.ObjectMeta.Name:%s ml.Vbmhs[bmh.ObjectMeta.Name] :%v , answer :%t \n", bmh.ObjectMeta.Name, ml.Vbmhs[bmh.ObjectMeta.Name], (ml.Vbmhs[bmh.ObjectMeta.Name] != nil))
+	return ml.Vbmhs[bmh.ObjectMeta.Name] != nil
 }
 
 func (ml *MachineList) String() string {
 	var sb strings.Builder
 
-	for mName, machine := range ml.bmhs {
+	for mName, machine := range ml.Vbmhs {
 
 		sb.WriteString("[" + mName + "]:" + machine.String())
 	}
@@ -159,14 +160,14 @@ func (ml *MachineList) Schedule(sip airshipv1.SIPCluster, c client.Client) error
 	// If I get here the MachineList should have a selected set of  Machine's
 	// They are in the ScheduleStatus of ToBeScheduled as well as the Role
 	//
-	fmt.Printf("Schedule ml.bmhs size:%d\n", len(ml.bmhs))
+	fmt.Printf("Schedule ml.Vbmhs size:%d\n", len(ml.Vbmhs))
 	return nil
 }
 
 func (ml *MachineList) init(nodes map[airshipv1.VmRoles]airshipv1.NodeSet) {
 	// Only Initialize 1st time
-	fmt.Printf("Schedule.init len(ml.bmhs):%d\n", len(ml.bmhs))
-	if len(ml.bmhs) == 0 {
+	fmt.Printf("Schedule.init len(ml.Vbmhs):%d\n", len(ml.Vbmhs))
+	if len(ml.Vbmhs) == 0 {
 		mlSize := 0
 		mlNodeTypes := 0
 		for _, nodeCfg := range nodes {
@@ -175,7 +176,7 @@ func (ml *MachineList) init(nodes map[airshipv1.VmRoles]airshipv1.NodeSet) {
 		}
 		//fmt.Printf("Schedule.init mlSize:%d\n", mlSize)
 		ml.Scheduled = make(map[airshipv1.VmRoles]int, mlNodeTypes)
-		ml.bmhs = make(map[string]*Machine, 0)
+		ml.Vbmhs = make(map[string]*Machine, 0)
 	}
 
 }
@@ -226,7 +227,7 @@ func (ml *MachineList) identifyNodes(sip airshipv1.SIPCluster, bmhList *metal3.B
 			return err
 		}
 	}
-	fmt.Printf("Schedule.identifyNodes %s size:%d\n", ml.String(), len(ml.bmhs))
+	fmt.Printf("Schedule.identifyNodes %s size:%d\n", ml.String(), len(ml.Vbmhs))
 	return nil
 }
 
@@ -278,7 +279,7 @@ func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.VmRoles
 	for _, bmh := range bmhList.Items {
 		if !ml.hasMachine(bmh) {
 			// Add it to the list.
-			ml.bmhs[bmh.ObjectMeta.Name] = NewMachine(bmh, nodeRole, Scheduled)
+			ml.Vbmhs[bmh.ObjectMeta.Name] = NewMachine(bmh, nodeRole, Scheduled)
 			ml.Scheduled[nodeRole] = ml.Scheduled[nodeRole] + 1
 		}
 	}
@@ -297,7 +298,7 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.
 	// 	Reduce from the list of BMH's already scheduled and  labeled with the Cluster Name
 	// 	Reduce from the number of Machines I have identified  already to be Labeled
 	nodeTarget := (nodeCfg.Count.Active + nodeCfg.Count.Standby) - ml.countScheduledAndTobeScheduled(nodeRole, c, sipCfg)
-	fmt.Printf("Schedule.scheduleIt  nodeRole:%v nodeTarget:%d nodeCfg.VmFlavor:%s  ml.bmhs len:%d \n", nodeRole, nodeTarget, nodeCfg.VmFlavor, len(ml.bmhs))
+	fmt.Printf("Schedule.scheduleIt  nodeRole:%v nodeTarget:%d nodeCfg.VmFlavor:%s  ml.Vbmhs len:%d \n", nodeRole, nodeTarget, nodeCfg.VmFlavor, len(ml.Vbmhs))
 	// Nothing to schedule
 	if nodeTarget == 0 {
 		return nil
@@ -332,14 +333,14 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.
 
 				}
 			}
-			fmt.Printf("Schedule.scheduleIt validBmh:%t, bmh.ObjectMeta.Name:%s  ml.bmhs len:%d\n", validBmh, bmh.ObjectMeta.Name, len(ml.bmhs))
+			fmt.Printf("Schedule.scheduleIt validBmh:%t, bmh.ObjectMeta.Name:%s  ml.Vbmhs len:%d\n", validBmh, bmh.ObjectMeta.Name, len(ml.Vbmhs))
 			// All the constraints have been checked
 			// Only if its not in the list already
 			if validBmh {
 				// Lets add it to the list as a schedulable thing
-				ml.bmhs[bmh.ObjectMeta.Name] = NewMachine(bmh, nodeRole, ToBeScheduled)
+				ml.Vbmhs[bmh.ObjectMeta.Name] = NewMachine(bmh, nodeRole, ToBeScheduled)
 				ml.Scheduled[nodeRole] = ml.Scheduled[nodeRole] + 1
-				fmt.Printf("---------------\nSchedule.scheduleIt ADDED machine:%s \n", ml.bmhs[bmh.ObjectMeta.Name].String())
+				fmt.Printf("---------------\nSchedule.scheduleIt ADDED machine:%s \n", ml.Vbmhs[bmh.ObjectMeta.Name].String())
 				// TODO Probable should remove the bmh from the list so if there are other node targets they dont even take it into account
 				nodeTarget = nodeTarget - 1
 				if nodeTarget == 0 {
@@ -367,8 +368,8 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.
 func (ml *MachineList) Extrapolate(sip airshipv1.SIPCluster, c client.Client) bool {
 	// Lets get the data for all selected BMH's.
 	extrapolateSuccess := true
-	fmt.Printf("Schedule.Extrapolate  ml.bmhs:%d\n", len(ml.bmhs))
-	for _, machine := range ml.bmhs {
+	fmt.Printf("Schedule.Extrapolate  ml.Vbmhs:%d\n", len(ml.Vbmhs))
+	for _, machine := range ml.Vbmhs {
 		fmt.Printf("Schedule.Extrapolate  machine.Data.IpOnInterface len:%d machine:%v \n", len(machine.Data.IpOnInterface), machine)
 
 		// Skip if I alread extrapolated tehh data for this machine
@@ -639,8 +640,8 @@ This is done only after the Infrastcuture Services have been  deployed
 */
 func (ml *MachineList) ApplyLabels(sip airshipv1.SIPCluster, c client.Client) error {
 
-	fmt.Printf("ApplyLabels  %s size:%d\n", ml.String(), len(ml.bmhs))
-	for _, machine := range ml.bmhs {
+	fmt.Printf("ApplyLabels  %s size:%d\n", ml.String(), len(ml.Vbmhs))
+	for _, machine := range ml.Vbmhs {
 		// Only Add LAbels to Machines that are not amrked to be scheduled
 		if machine.ScheduleStatus == ToBeScheduled {
 			bmh := &machine.Bmh
@@ -667,8 +668,8 @@ RemoveLabels
 */
 func (ml *MachineList) RemoveLabels(sip airshipv1.SIPCluster, c client.Client) error {
 
-	fmt.Printf("ApplyLabels  %s size:%d\n", ml.String(), len(ml.bmhs))
-	for _, machine := range ml.bmhs {
+	fmt.Printf("ApplyLabels  %s size:%d\n", ml.String(), len(ml.Vbmhs))
+	for _, machine := range ml.Vbmhs {
 
 		bmh := &machine.Bmh
 		fmt.Printf("RemoveLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
@@ -705,7 +706,7 @@ func (ml *MachineList) GetCluster(sip airshipv1.SIPCluster, c client.Client) err
 	}
 
 	for _, bmh := range bmhList.Items {
-		ml.bmhs[bmh.ObjectMeta.Name] = &Machine{
+		ml.Vbmhs[bmh.ObjectMeta.Name] = &Machine{
 			Bmh:            bmh,
 			ScheduleStatus: Scheduled,
 			VmRole:         airshipv1.VmRoles(bmh.Labels[SipNodeTypeLabel]),
