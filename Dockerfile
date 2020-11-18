@@ -1,6 +1,8 @@
 # Build the manager binary
 FROM gcr.io/gcp-runtimes/go1-builder:1.13 as builder
 
+ENV PATH "/usr/local/go/bin:$PATH"
+
 WORKDIR /workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod

@@ -27,7 +27,7 @@ spec:
         - /manager
         args:
         - --enable-leader-election
-        image: quay.io/jezogwza/airship:sip.v1
+        image: quay.io/airshipit/sip
         imagePullPolicy: IfNotPresent
         name: manager
         resources:

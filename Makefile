@@ -1,7 +1,7 @@
 
 # Image URL to use all building/pushing image targets
 #IMG ?= controller:latest
-IMG ?= quay.io/jezogwza/airship:sip.v2
+IMG ?= quay.io/airshipit/sip
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
