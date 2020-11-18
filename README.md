@@ -90,7 +90,7 @@ More information on how to install kind binary can be found be found [here](http
 # kubectl get nodes
 ```
 
-### Deploy sip operator on top of kind cluster
+### Deploy SIP operator on top of kind cluster
 kind-load-image target will build docker image from the current state of your local
 git repository and upload it to kind cluster to be available for kubelet.
 
@@ -101,13 +101,13 @@ git repository and upload it to kind cluster to be available for kubelet.
 
 Now you have a working k8s cluster with sip installed on it with your changes to SIP operator
 
-### Deliver sip CRs to kubernetes
+### Deliver SIP CRs to kubernetes
+
+Now you are ready to craft and add BaremetalHost CRs into cluster, check samples directory
+to find BaremetalHost examples there.
 
 Use kubectl apply to deliver SIP CRs and BaremetalHost CRDs to kubernetes cluster
 
 ```
-# kubectl apply -f config/samples/airship_v1beta1_sipcluster.yaml
-# kubectl apply -f config/samples/bmh/baremetalhosts.metal3.io.yaml
+# kustomize build config/samples | kubectl apply -f -
 ```
-Now you are ready to craft and add BaremetalHost CRs into cluster, check samples directory
-to find BaremetalHost examples there.
