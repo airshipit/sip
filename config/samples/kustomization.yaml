@@ -1,0 +1,4 @@
+resources:
+- airship_v1beta1_sipcluster.yaml
+- bmh
+namespace: sipcluster-system

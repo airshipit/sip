@@ -49,4 +49,3 @@ spec:
           nodePorts:
             - 7023
           nodeInterfaceId: oam-ipv4
-

@@ -1,0 +1,4 @@
+resources:
+- crd.yaml
+- bmh.yaml
+- bmh_secrets.yaml
