@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,7 +44,7 @@ type SIPClusterReconciler struct {
 
 func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	log := r.Log.WithValues("sipcluster", req.NamespacedName)
+	log := r.Log.WithValues("SIPcluster", req.NamespacedName)
 
 	// Lets retrieve the SIPCluster
 	sip := airshipv1.SIPCluster{}
@@ -158,11 +157,13 @@ func (r *SIPClusterReconciler) gatherVBMH(sip airshipv1.SIPCluster) (error, *air
 	// 2- Let me now select the one's that meet teh scheduling criteria
 	// If I schedule successfully then
 	// If Not complete schedule , then throw an error.
+	logger := r.Log.WithValues("SIPCluster", sip.GetNamespace()+"/"+sip.GetName())
+	logger.Info("starting to gather BaremetalHost machines for SIPcluster")
 	machines := &airshipvms.MachineList{}
 
 	// TODO : this is a loop until we succeed or cannot find a schedule
 	for {
-		fmt.Printf("gatherVBMH.Schedule sip:%v machines:%v\n", sip, machines)
+		logger.Info("gathering machines, so these machines are collected", "machines", machines.String())
 		err := machines.Schedule(sip, r.Client)
 		if err != nil {
 			return err, machines
@@ -175,6 +176,7 @@ func (r *SIPClusterReconciler) gatherVBMH(sip airshipv1.SIPCluster) (error, *air
 		// Loop and Try to find new vBMH to complete tge schedule
 		//fmt.Printf("gatherVBMH.Extrapolate sip:%v machines:%v\n", sip, machines)
 		if machines.Extrapolate(sip, r.Client) {
+			logger.Info("successfuly extrapolated machines")
 			break
 		}
 	}
@@ -226,7 +228,7 @@ Deal with Deletion andd Finalizers if any is needed
 Such as i'e what are we doing with the lables on teh vBMH's
 **/
 func (r *SIPClusterReconciler) finalize(sip airshipv1.SIPCluster) error {
-
+	logger := r.Log.WithValues("SIPCluster", sip.GetNamespace()+"/"+sip.GetName())
 	for sName, sConfig := range sip.Spec.InfraServices {
 		// Instantiate
 		service, err := airshipsvc.NewService(sName, sConfig)
@@ -248,7 +250,7 @@ func (r *SIPClusterReconciler) finalize(sip airshipv1.SIPCluster) error {
 	// If I schedule successfully then
 	// If Not complete schedule , then throw an error.
 	machines := &airshipvms.MachineList{}
-	fmt.Printf("finalize sip:%v machines:%s\n", sip, machines.String())
+	logger.Info("finalize sip machines", "machines", machines.String())
 	// Update the list of  Machines.
 	err := machines.GetCluster(sip, r.Client)
 	if err != nil {
