@@ -58,7 +58,7 @@ spec:
     credentialsName: rdm9r007o001-bmc-credentials
     disableCertificateVerification: true
   networkData:
-    name: rdm9r007o001-networkdata
+    name: rdm9r006o002-networkdata
     namespace: sipcluster-system
   userData:
     name: controlplane-l5vvf
@@ -80,7 +80,7 @@ spec:
     credentialsName: rdm9r007o001-bmc-credentials
     disableCertificateVerification: true
   networkData:
-    name: rdm9r007o001-networkdata
+    name: rdm9r006o002-networkdata
     namespace: sipcluster-system
   userData:
     name: controlplane-l5vvf
@@ -102,7 +102,7 @@ spec:
     credentialsName: rdm9r007o001-bmc-credentials
     disableCertificateVerification: true
   networkData:
-    name: rdm9r007o001-networkdata
+    name: rdm9r006o002-networkdata
     namespace: sipcluster-system
   userData:
     name: controlplane-l5vvf
@@ -124,7 +124,7 @@ spec:
     credentialsName: rdm9r007o001-bmc-credentials
     disableCertificateVerification: true
   networkData:
-    name: rdm9r007o001-networkdata
+    name: rdm9r006o002-networkdata
     namespace: sipcluster-system
   userData:
     name: controlplane-l5vvf
