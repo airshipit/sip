@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -32,8 +33,9 @@ import (
 // SIPClusterReconciler reconciles a SIPCluster object
 type SIPClusterReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	Log            logr.Logger
+	Scheme         *runtime.Scheme
+	NamespacedName types.NamespacedName
 }
 
 // +kubebuilder:rbac:groups=airship.airshipit.org,resources=sipclusters,verbs=get;list;watch;create;update;patch;delete
@@ -44,7 +46,8 @@ type SIPClusterReconciler struct {
 
 func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	log := r.Log.WithValues("SIPcluster", req.NamespacedName)
+	r.NamespacedName = req.NamespacedName
+	log := r.Log.WithValues("SIPCluster", r.NamespacedName)
 
 	// Lets retrieve the SIPCluster
 	sip := airshipv1.SIPCluster{}
@@ -157,13 +160,15 @@ func (r *SIPClusterReconciler) gatherVBMH(sip airshipv1.SIPCluster) (error, *air
 	// 2- Let me now select the one's that meet teh scheduling criteria
 	// If I schedule successfully then
 	// If Not complete schedule , then throw an error.
-	logger := r.Log.WithValues("SIPCluster", sip.GetNamespace()+"/"+sip.GetName())
+	logger := r.Log.WithValues("SIPCluster", r.NamespacedName)
 	logger.Info("starting to gather BaremetalHost machines for SIPcluster")
-	machines := &airshipvms.MachineList{}
-
+	machines := &airshipvms.MachineList{
+		Log:            r.Log.WithName("machines"),
+		NamespacedName: r.NamespacedName,
+	}
 	// TODO : this is a loop until we succeed or cannot find a schedule
 	for {
-		logger.Info("gathering machines, so these machines are collected", "machines", machines.String())
+		logger.Info("gathering machines", "machines", machines.String())
 		err := machines.Schedule(sip, r.Client)
 		if err != nil {
 			return err, machines

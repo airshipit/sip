@@ -42,8 +42,8 @@ func (l *LoadBalancer) Deploy(sip airshipv1.SIPCluster, machines *airshipvms.Mac
 
 func (l *LoadBalancer) Prepare(sip airshipv1.SIPCluster, machines *airshipvms.MachineList, c client.Client) error {
 	fmt.Printf("%s.Prepare machines:%s \n", l.Service.serviceName, machines)
-	for _, machine := range machines.Vbmhs {
-		if machine.VmRole == airshipv1.VmMaster {
+	for _, machine := range machines.Machines {
+		if machine.VMRole == airshipv1.VmMaster {
 			fmt.Printf("%s.Prepare for machine:%s ip is %s\n", l.Service.serviceName, machine, machine.Data.IpOnInterface[sip.Spec.InfraServices[l.Service.serviceName].NodeInterface])
 		}
 	}
