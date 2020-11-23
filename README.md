@@ -111,3 +111,8 @@ Use kubectl apply to deliver SIP CRs and BaremetalHost CRDs to kubernetes cluste
 ```
 # kustomize build config/samples | kubectl apply -f -
 ```
+
+## Testing
+
+Run `make test` to execute a suite of unit and integration tests against the SIP
+operator.
