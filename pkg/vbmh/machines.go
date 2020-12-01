@@ -375,8 +375,8 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.
 
 	}
 
-	logger.Info("failed to get enough BMHs to complete scheduling")
 	if nodeTarget > 0 {
+		logger.Info("Failed to get enough BMHs to complete scheduling")
 		return ErrorUnableToFullySchedule{
 			TargetNode:   nodeRole,
 			TargetFlavor: nodeCfg.VmFlavor,
