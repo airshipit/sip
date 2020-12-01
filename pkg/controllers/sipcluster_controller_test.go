@@ -27,14 +27,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	airshipv1 "sipcluster/pkg/api/v1"
 	"sipcluster/pkg/vbmh"
 )
 
 var _ = Describe("SIPCluster controller", func() {
-	Context("When it detects a SIPCluster", func() {
-		It("Should schedule BMHs accordingly", func() {
+	Context("When it detects a new SIPCluster", func() {
+		It("Should schedule available nodes", func() {
 			By("Labelling nodes")
 
 			// Create vBMH test objects
@@ -67,7 +68,83 @@ var _ = Describe("SIPCluster controller", func() {
 				}
 
 				return compareLabels(expectedLabels, bmh.GetLabels())
-			}, 60, 5).Should(Succeed())
+			}, 30, 5).Should(Succeed())
+
+			cleanTestResources()
+		})
+
+		It("Should not schedule nodes when there is an insufficient number of available master nodes", func() {
+			By("Not labelling any nodes")
+
+			// Create vBMH test objects
+			nodes := []string{"master", "master", "worker", "worker", "worker", "worker"}
+			namespace := "default"
+			for node, role := range nodes {
+				vBMH, networkData := createBMH(node, namespace, role, 6)
+				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
+				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
+			}
+
+			// Create SIP cluster
+			clusterName := "subcluster-test2"
+			sipCluster := createSIPCluster(clusterName, namespace, 3, 4)
+			Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
+
+			// Poll BMHs and validate they are not scheduled
+			Consistently(func() error {
+				expectedLabels := map[string]string{
+					vbmh.SipScheduleLabel: "false",
+				}
+
+				var bmh metal3.BareMetalHost
+				for node := range nodes {
+					Expect(k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      fmt.Sprintf("node%d", node),
+						Namespace: namespace,
+					}, &bmh)).Should(Succeed())
+				}
+
+				return compareLabels(expectedLabels, bmh.GetLabels())
+			}, 30, 5).Should(Succeed())
+
+			cleanTestResources()
+		})
+
+		It("Should not schedule nodes when there is an insufficient number of available worker nodes", func() {
+			By("Not labelling any nodes")
+
+			// Create vBMH test objects
+			nodes := []string{"master", "master", "master", "worker", "worker"}
+			namespace := "default"
+			for node, role := range nodes {
+				vBMH, networkData := createBMH(node, namespace, role, 6)
+				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
+				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
+			}
+
+			// Create SIP cluster
+			clusterName := "subcluster-test3"
+			sipCluster := createSIPCluster(clusterName, namespace, 3, 4)
+			Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
+
+			// Poll BMHs and validate they are not scheduled
+			Consistently(func() error {
+				expectedLabels := map[string]string{
+					vbmh.SipScheduleLabel: "false",
+				}
+
+				var bmh metal3.BareMetalHost
+				for node := range nodes {
+					Expect(k8sClient.Get(context.Background(), types.NamespacedName{
+						Name:      fmt.Sprintf("node%d", node),
+						Namespace: namespace,
+					}, &bmh)).Should(Succeed())
+				}
+
+				return compareLabels(expectedLabels, bmh.GetLabels())
+			}, 30, 5).Should(Succeed())
+
+			cleanTestResources()
 		})
 	})
 })
@@ -86,6 +163,13 @@ func compareLabels(expected map[string]string, actual map[string]string) error {
 	}
 
 	return nil
+}
+
+func cleanTestResources() {
+	opts := []client.DeleteAllOfOption{client.InNamespace("default")}
+	Expect(k8sClient.DeleteAllOf(context.Background(), &metal3.BareMetalHost{}, opts...)).Should(Succeed())
+	Expect(k8sClient.DeleteAllOf(context.Background(), &airshipv1.SIPCluster{}, opts...)).Should(Succeed())
+	Expect(k8sClient.DeleteAllOf(context.Background(), &corev1.Secret{}, opts...)).Should(Succeed())
 }
 
 func createBMH(node int, namespace string, role string, rack int) (*metal3.BareMetalHost, *corev1.Secret) {
