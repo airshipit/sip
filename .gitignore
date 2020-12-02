@@ -1,0 +1,22 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+
+# Test binary, build with `go test -c`
+*.test
+*.example
+
+# Output of the go coverage tool
+*.out
+.coverage/
+
+# Various user specific files
+.DS_Store
+.idea/
+.vimrc
+*.swp
+.vscode/

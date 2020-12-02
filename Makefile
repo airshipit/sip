@@ -65,7 +65,7 @@ generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
 # Build the docker image
-# If DOCKER_PROXY_FLAGS values are empty, we are fine with that 
+# If DOCKER_PROXY_FLAGS values are empty, we are fine with that
 docker-build:
 	docker build ${DOCKER_PROXY_FLAGS} . -t ${IMG}
 
@@ -80,7 +80,7 @@ kind-create:
 # Build docker container and load it into running kind cluster
 kind-load-image: docker-build
 	kind load docker-image ${IMG} --name ${KIND_CLUSTER_NAME}
-    
+
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:

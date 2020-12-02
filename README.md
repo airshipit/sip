@@ -1,5 +1,7 @@
 # SIP Cluster Operator
 
+[![Docker Repository on Quay](https://quay.io/repository/airshipit/sip/status "Docker Repository on Quay")](https://quay.io/repository/airshipit/sip)
+
 ## Overview
 
 The lifecycle of the VM's and their relationship to Cluster will be managed using two operators: vNode-Operator(ViNO) and the Support Infra Provider Operator (SIP) .
