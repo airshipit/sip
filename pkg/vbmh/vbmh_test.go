@@ -1,13 +1,9 @@
 package vbmh
 
 import (
-	"fmt"
-
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -15,6 +11,7 @@ import (
 	mockClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	airshipv1 "sipcluster/pkg/api/v1"
+	"sipcluster/testutil"
 )
 
 const (
@@ -27,26 +24,8 @@ var _ = Describe("MachineList", func() {
 	BeforeEach(func() {
 		nodes := map[string]*Machine{}
 		for n := 0; n < numNodes; n++ {
-			bmh := metal3.BareMetalHost{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf("node0%d", n),
-					Namespace: "default",
-					Labels: map[string]string{
-						"airshipit.org/vino-flavor": "master",
-						SipScheduleLabel:            "false",
-						RackLabel:                   "r002",
-						ServerLabel:                 fmt.Sprintf("node0%dr002", n),
-					},
-				},
-				Spec: metal3.BareMetalHostSpec{
-					NetworkData: &corev1.SecretReference{
-						Namespace: "default",
-						Name:      "fake-network-data",
-					},
-				},
-			}
-
-			nodes[bmh.Name] = NewMachine(bmh, airshipv1.VmMaster, NotScheduled)
+			bmh, _ := testutil.CreateBMH(n, "default", "master", 6)
+			nodes[bmh.Name] = NewMachine(*bmh, airshipv1.VmMaster, NotScheduled)
 		}
 
 		machineList = &MachineList{
