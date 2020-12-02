@@ -11,13 +11,13 @@ spec:
     nodes:
       worker:
           vm-flavor: 'airshipit.org/vino-flavor=worker'
-          scheduling-constraints: ['per-node'] # Support dont'care option.
+          spreadTopology: 'per-node' # Support dont'care option.
           count:
               active: 2 #driven by capi node number
               standby: 1 #slew for upgrades etc
       master:
           vm-flavor: 'airshipit.org/vino-flavor=master'
-          scheduling-constraints: ['per-node','per-rack']
+          spreadTopology: 'per-rack'
           count:
               active: 1
               standby: 1

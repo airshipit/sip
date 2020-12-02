@@ -219,21 +219,17 @@ func createSIPCluster(name string, namespace string, masters int, workers int) *
 				ClusterName: name,
 			},
 			Nodes: map[airshipv1.VmRoles]airshipv1.NodeSet{
-				airshipv1.VmMaster: airshipv1.NodeSet{
-					VmFlavor: "airshipit.org/vino-flavor=master",
-					Scheduling: []airshipv1.SchedulingOptions{
-						airshipv1.ServerAntiAffinity,
-					},
+				airshipv1.VmMaster: {
+					VmFlavor:   "airshipit.org/vino-flavor=master",
+					Scheduling: airshipv1.ServerAntiAffinity,
 					Count: &airshipv1.VmCount{
 						Active:  masters,
 						Standby: 0,
 					},
 				},
-				airshipv1.VmWorker: airshipv1.NodeSet{
-					VmFlavor: "airshipit.org/vino-flavor=worker",
-					Scheduling: []airshipv1.SchedulingOptions{
-						airshipv1.ServerAntiAffinity,
-					},
+				airshipv1.VmWorker: {
+					VmFlavor:   "airshipit.org/vino-flavor=worker",
+					Scheduling: airshipv1.ServerAntiAffinity,
 					Count: &airshipv1.VmCount{
 						Active:  workers,
 						Standby: 0,

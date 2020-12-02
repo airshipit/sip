@@ -43,7 +43,7 @@ type SIPClusterSpec struct {
 	InfraServices map[InfraService]InfraConfig `json:"infra"`
 }
 
-// SIPClusterSpec defines the desired state of SIPCluster
+// SipConfig defines the desired state of SIPCluster
 type SipConfig struct {
 	// Cluster NAme to be used for labeling vBMH
 	ClusterName string `json:"cluster-name,omitempty"`
@@ -84,20 +84,20 @@ type NodeSet struct {
 	// Implementation
 	// Scheduling define constraints the allows the SIP Scheduler
 	// to identify the required  BMH's to allow CAPI to build a cluster
-	Scheduling []SchedulingOptions `json:"scheduling-constraints,omitempty"`
+	Scheduling SpreadTopology `json:"spreadTopology,omitempty"`
 	// Count defines the scale expectations for the Nodes
 	Count *VmCount `json:"count,omitempty"`
 }
 
-type SchedulingOptions string
+type SpreadTopology string
 
 // Possible Node or VM Roles  for a Tenant
 const (
 	// RackAntiAffinity means the state is unknown
-	RackAntiAffinity SchedulingOptions = "per-rack"
+	RackAntiAffinity SpreadTopology = "per-rack"
 
 	// ServerAntiAffinity means the state is unknown
-	ServerAntiAffinity SchedulingOptions = "per-node"
+	ServerAntiAffinity SpreadTopology = "per-node"
 )
 
 type InfraConfig struct {
