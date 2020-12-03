@@ -239,34 +239,26 @@ func (ml *MachineList) identifyNodes(sip airshipv1.SIPCluster, bmhList *metal3.B
 	return nil
 }
 
-func (ml *MachineList) initScheduleMaps(role airshipv1.VmRoles, constraints []airshipv1.SchedulingOptions) (map[airshipv1.SchedulingOptions]*ScheduleSet, error) {
-	logger := ml.Log.WithValues("SIPCluster", ml.NamespacedName, "role", role)
-	setMap := make(map[airshipv1.SchedulingOptions]*ScheduleSet)
-	for _, constraint := range constraints {
-		logger := logger.WithValues("constraint", constraint)
-		var labelName string
-		switch constraint {
-		case airshipv1.RackAntiAffinity:
-			labelName = RackLabel
-		case airshipv1.ServerAntiAffinity:
-			labelName = ServerLabel
-		default:
-			logger.Info("constraint not supported")
-			continue
-		}
-
-		logger.Info("Marking constraint as active")
-		setMap[constraint] = &ScheduleSet{
-			active:    true,
-			set:       make(map[string]bool),
-			labelName: labelName,
-		}
+func (ml *MachineList) initScheduleMaps(role airshipv1.VmRoles, constraint airshipv1.SpreadTopology) (*ScheduleSet, error) {
+	logger := ml.Log.WithValues("SIPCluster", ml.NamespacedName, "role", role, "spread topology", constraint)
+	var labelName string
+	switch constraint {
+	case airshipv1.RackAntiAffinity:
+		labelName = RackLabel
+	case airshipv1.ServerAntiAffinity:
+		labelName = ServerLabel
+	default:
+		logger.Info("constraint not supported")
+		return nil, ErrorUknownSpreadTopology{Topology: constraint}
 	}
 
-	if len(setMap) > 0 {
-		return setMap, nil
-	}
-	return setMap, ErrorConstraintNotFound{}
+	logger.Info("Marking constraint as active")
+	return &ScheduleSet{
+		active:    true,
+		set:       make(map[string]bool),
+		labelName: labelName,
+	}, nil
+
 }
 
 func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.VmRoles, c client.Client, sipCfg *airshipv1.SipConfig) int {
@@ -308,7 +300,7 @@ func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.VmRoles
 }
 
 func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.NodeSet, bmList *metal3.BareMetalHostList,
-	scheduleSetMap map[airshipv1.SchedulingOptions]*ScheduleSet, c client.Client, sipCfg *airshipv1.SipConfig) error {
+	scheduleSet *ScheduleSet, c client.Client, sipCfg *airshipv1.SipConfig) error {
 	logger := ml.Log.WithValues("SIPCluster", ml.NamespacedName, "role", nodeRole)
 	validBmh := true
 	// Count the expectations stated in the CR
@@ -328,30 +320,27 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VmRoles, nodeCfg airshipv1.
 
 		if !ml.hasMachine(bmh) {
 			logger.Info("BaremetalHost not yet marked as ready to be scheduled")
-			for _, constraint := range nodeCfg.Scheduling {
-				// Do I care about this constraint
-				logger := logger.WithValues("constraint", constraint)
-				scheduleRule := scheduleSetMap[constraint]
-				if scheduleRule.Active() {
-					logger.Info("constraint is active")
-					// Check if bmh has the label
-					bmhConstraintCondition, flavorMatch := scheduleRule.GetLabels(bmh.Labels, nodeCfg.VmFlavor)
-					logger.Info("Checked BMH constraint condition and flavor match",
-						"constraint condition", bmhConstraintCondition,
-						"flavor match", flavorMatch)
-					validBmh = flavorMatch
-					// If it does match the flavor
-					if bmhConstraintCondition != "" && flavorMatch {
-						// If its in the list already for the constraint , theen this bmh is disqualified. Skip it
-						if scheduleRule.Exists(bmhConstraintCondition) {
-							logger.Info("Constraint slot is alrady taken some BMH from this constraint is already allocated, skipping it")
-							validBmh = false
-							break
-						} else {
-							scheduleRule.Add(bmhConstraintCondition)
-						}
+			constraint := nodeCfg.Scheduling
+			// Do I care about this constraint
+			logger := logger.WithValues("constraint", constraint)
+			if scheduleSet.Active() {
+				logger.Info("constraint is active")
+				// Check if bmh has the label
+				bmhConstraintCondition, flavorMatch := scheduleSet.GetLabels(bmh.Labels, nodeCfg.VmFlavor)
+				logger.Info("Checked BMH constraint condition and flavor match",
+					"constraint condition", bmhConstraintCondition,
+					"flavor match", flavorMatch)
+				validBmh = flavorMatch
+				// If it does match the flavor
+				if bmhConstraintCondition != "" && flavorMatch {
+					// If its in the list already for the constraint , theen this bmh is disqualified. Skip it
+					if scheduleSet.Exists(bmhConstraintCondition) {
+						logger.Info("Constraint slot is alrady taken some BMH from this constraint is already allocated, skipping it")
+						validBmh = false
+						break
+					} else {
+						scheduleSet.Add(bmhConstraintCondition)
 					}
-
 				}
 			}
 			// All the constraints have been checked

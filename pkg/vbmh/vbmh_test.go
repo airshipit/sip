@@ -3,16 +3,16 @@ package vbmh
 import (
 	"fmt"
 
+	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	mockClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	mockClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	airshipv1 "sipcluster/pkg/api/v1"
 )
@@ -33,9 +33,9 @@ var _ = Describe("MachineList", func() {
 					Namespace: "default",
 					Labels: map[string]string{
 						"airshipit.org/vino-flavor": "master",
-						SipScheduleLabel:       "false",
-						RackLabel:              "r002",
-						ServerLabel:            fmt.Sprintf("node0%dr002", n),
+						SipScheduleLabel:            "false",
+						RackLabel:                   "r002",
+						ServerLabel:                 fmt.Sprintf("node0%dr002", n),
 					},
 				},
 				Spec: metal3.BareMetalHostSpec{
@@ -51,11 +51,11 @@ var _ = Describe("MachineList", func() {
 
 		machineList = &MachineList{
 			NamespacedName: types.NamespacedName{
-				Name: "vbmh",
+				Name:      "vbmh",
 				Namespace: "default",
 			},
 			Machines: nodes,
-			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
+			Log:      ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
 
 		err := metal3.AddToScheme(scheme.Scheme)

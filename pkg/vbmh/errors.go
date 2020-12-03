@@ -5,7 +5,7 @@ import (
 	airshipv1 "sipcluster/pkg/api/v1"
 )
 
-// ErrAuthTypeNotSupported is returned when wrong AuthType is provided
+// ErrorConstraintNotFound is returned when wrong AuthType is provided
 type ErrorConstraintNotFound struct {
 }
 
@@ -31,4 +31,13 @@ type ErrorHostIpNotFound struct {
 
 func (e ErrorHostIpNotFound) Error() string {
 	return fmt.Sprintf("Unable to identify the vBMH Host %v IP address on interface %v required by Infrastructure Service %v %s ", e.HostName, e.IPInterface, e.ServiceName, e.Message)
+}
+
+// ErrorUknownSpreadTopology is returned when wrong AuthType is provided
+type ErrorUknownSpreadTopology struct {
+	Topology airshipv1.SpreadTopology
+}
+
+func (e ErrorUknownSpreadTopology) Error() string {
+	return fmt.Sprintf("Uknown spread topology '%s'", e.Topology)
 }

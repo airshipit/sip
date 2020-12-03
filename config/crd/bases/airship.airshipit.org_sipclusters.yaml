@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.2.5
+    controller-gen.kubebuilder.io/version: (devel)
   creationTimestamp: null
   name: sipclusters.airship.airshipit.org
 spec:
@@ -35,7 +35,7 @@ spec:
           description: SIPClusterSpec defines the desired state of SIPCluster
           properties:
             config:
-              description: SIPClusterSpec defines the desired state of SIPCluster
+              description: SipConfig defines the desired state of SIPCluster
               properties:
                 cluster-name:
                   description: Cluster NAme to be used for labeling vBMH
@@ -85,13 +85,11 @@ spec:
                       standby:
                         type: integer
                     type: object
-                  scheduling-constraints:
+                  spreadTopology:
                     description: PlaceHolder until we define the real expected Implementation
                       Scheduling define constraints the allows the SIP Scheduler to
                       identify the required  BMH's to allow CAPI to build a cluster
-                    items:
-                      type: string
-                    type: array
+                    type: string
                   vm-flavor:
                     description: VmFlavor is  essentially a Flavor label identifying
                       the type of Node that meets the construction reqirements
@@ -117,5 +115,5 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: []
-  storedVersions: []
+  conditions: null
+  storedVersions: null
