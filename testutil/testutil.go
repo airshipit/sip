@@ -15,6 +15,152 @@ const (
 	sipRackLabel     = "sip.airshipit.org/rack"
 	sipScheduleLabel = "sip.airshipit.org/sip-scheduled"
 	sipServerLabel   = "sip.airshipit.org/server"
+
+	networkDataContent = `
+{
+    "links": [
+        {
+            "id": "eno4",
+            "name": "eno4",
+            "type": "phy",
+            "mtu": 1500
+        },
+        {
+            "id": "enp59s0f1",
+            "name": "enp59s0f1",
+            "type": "phy",
+            "mtu": 9100
+        },
+        {
+            "id": "enp216s0f0",
+            "name": "enp216s0f0",
+            "type": "phy",
+            "mtu": 9100
+        },
+        {
+            "id": "bond0",
+            "name": "bond0",
+            "type": "bond",
+            "bond_links": [
+                "enp59s0f1",
+                "enp216s0f0"
+            ],
+            "bond_mode": "802.3ad",
+            "bond_xmit_hash_policy": "layer3+4",
+            "bond_miimon": 100,
+            "mtu": 9100
+        },
+        {
+            "id": "bond0.41",
+            "name": "bond0.41",
+            "type": "vlan",
+            "vlan_link": "bond0",
+            "vlan_id": 41,
+            "mtu": 9100,
+            "vlan_mac_address": null
+        },
+        {
+            "id": "bond0.42",
+            "name": "bond0.42",
+            "type": "vlan",
+            "vlan_link": "bond0",
+            "vlan_id": 42,
+            "mtu": 9100,
+            "vlan_mac_address": null
+        },
+        {
+            "id": "bond0.44",
+            "name": "bond0.44",
+            "type": "vlan",
+            "vlan_link": "bond0",
+            "vlan_id": 44,
+            "mtu": 9100,
+            "vlan_mac_address": null
+        },
+        {
+            "id": "bond0.45",
+            "name": "bond0.45",
+            "type": "vlan",
+            "vlan_link": "bond0",
+            "vlan_id": 45,
+            "mtu": 9100,
+            "vlan_mac_address": null
+        }
+    ],
+    "networks": [
+        {
+            "id": "oam-ipv6",
+            "type": "ipv6",
+            "link": "bond0.41",
+            "ip_address": "2001:1890:1001:293d::139",
+            "routes": [
+                {
+                    "network": "::/0",
+                    "netmask": "::/0",
+                    "gateway": "2001:1890:1001:293d::1"
+                }
+            ]
+        },
+        {
+            "id": "oam-ipv4",
+            "type": "ipv4",
+            "link": "bond0.41",
+            "ip_address": "32.68.51.139",
+            "netmask": "255.255.255.128",
+            "dns_nameservers": [
+                "135.188.34.124",
+                "135.38.244.16",
+                "135.188.34.84"
+            ],
+            "routes": [
+                {
+                    "network": "0.0.0.0",
+                    "netmask": "0.0.0.0",
+                    "gateway": "32.68.51.129"
+                }
+            ]
+        },
+        {
+            "id": "pxe-ipv6",
+            "link": "eno4",
+            "type": "ipv6",
+            "ip_address": "fd00:900:100:138::11"
+        },
+        {
+            "id": "pxe-ipv4",
+            "link": "eno4",
+            "type": "ipv4",
+            "ip_address": "172.30.0.11",
+            "netmask": "255.255.255.128"
+        },
+        {
+            "id": "storage-ipv6",
+            "link": "bond0.42",
+            "type": "ipv6",
+            "ip_address": "fd00:900:100:139::15"
+        },
+        {
+            "id": "storage-ipv4",
+            "link": "bond0.42",
+            "type": "ipv4",
+            "ip_address": "172.31.1.15",
+            "netmask": "255.255.255.128"
+        },
+        {
+            "id": "ksn-ipv6",
+            "link": "bond0.44",
+            "type": "ipv6",
+            "ip_address": "fd00:900:100:13a::11"
+        },
+        {
+            "id": "ksn-ipv4",
+            "link": "bond0.44",
+            "type": "ipv4",
+            "ip_address": "172.29.0.11",
+            "netmask": "255.255.255.128"
+        }
+    ]
+}`
 )
 
 // CreateBMH initializes a BaremetalHost with specific parameteres for use in test cases.
@@ -44,7 +190,7 @@ func CreateBMH(node int, namespace string, role string, rack int) (*metal3.BareM
 				Namespace: namespace,
 			},
 			Data: map[string][]byte{
-				"networkData": []byte("ewoKICAgICJsaW5rcyI6IFsKICAgICAgICB7CiAgICAgICAgICAgICJpZCI6ICJlbm80IiwKICAgICAgICAgICAgIm5hbWUiOiAiZW5vNCIsCiAgICAgICAgICAgICJ0eXBlIjogInBoeSIsCiAgICAgICAgICAgICJtdHUiOiAxNTAwCiAgICAgICAgfSwKICAgICAgICB7CiAgICAgICAgICAgICJpZCI6ICJlbnA1OXMwZjEiLAogICAgICAgICAgICAibmFtZSI6ICJlbnA1OXMwZjEiLAogICAgICAgICAgICAidHlwZSI6ICJwaHkiLAogICAgICAgICAgICAibXR1IjogOTEwMAogICAgICAgIH0sCiAgICAgICAgewogICAgICAgICAgICAiaWQiOiAiZW5wMjE2czBmMCIsCiAgICAgICAgICAgICJuYW1lIjogImVucDIxNnMwZjAiLAogICAgICAgICAgICAidHlwZSI6ICJwaHkiLAogICAgICAgICAgICAibXR1IjogOTEwMAogICAgICAgIH0sCiAgICAgICAgewogICAgICAgICAgICAiaWQiOiAiYm9uZDAiLAogICAgICAgICAgICAibmFtZSI6ICJib25kMCIsCiAgICAgICAgICAgICJ0eXBlIjogImJvbmQiLAogICAgICAgICAgICAiYm9uZF9saW5rcyI6IFsKICAgICAgICAgICAgICAgICJlbnA1OXMwZjEiLAogICAgICAgICAgICAgICAgImVucDIxNnMwZjAiCiAgICAgICAgICAgIF0sCiAgICAgICAgICAgICJib25kX21vZGUiOiAiODAyLjNhZCIsCiAgICAgICAgICAgICJib25kX3htaXRfaGFzaF9wb2xpY3kiOiAibGF5ZXIzKzQiLAogICAgICAgICAgICAiYm9uZF9taWltb24iOiAxMDAsCiAgICAgICAgICAgICJtdHUiOiA5MTAwCiAgICAgICAgfSwKICAgICAgICB7CiAgICAgICAgICAgICJpZCI6ICJib25kMC40MSIsCiAgICAgICAgICAgICJuYW1lIjogImJvbmQwLjQxIiwKICAgICAgICAgICAgInR5cGUiOiAidmxhbiIsCiAgICAgICAgICAgICJ2bGFuX2xpbmsiOiAiYm9uZDAiLAogICAgICAgICAgICAidmxhbl9pZCI6IDQxLAogICAgICAgICAgICAibXR1IjogOTEwMCwKICAgICAgICAgICAgInZsYW5fbWFjX2FkZHJlc3MiOiBudWxsCiAgICAgICAgfSwKICAgICAgICB7CiAgICAgICAgICAgICJpZCI6ICJib25kMC40MiIsCiAgICAgICAgICAgICJuYW1lIjogImJvbmQwLjQyIiwKICAgICAgICAgICAgInR5cGUiOiAidmxhbiIsCiAgICAgICAgICAgICJ2bGFuX2xpbmsiOiAiYm9uZDAiLAogICAgICAgICAgICAidmxhbl9pZCI6IDQyLAogICAgICAgICAgICAibXR1IjogOTEwMCwKICAgICAgICAgICAgInZsYW5fbWFjX2FkZHJlc3MiOiBudWxsCiAgICAgICAgfSwKICAgICAgICB7CiAgICAgICAgICAgICJpZCI6ICJib25kMC40NCIsCiAgICAgICAgICAgICJuYW1lIjogImJvbmQwLjQ0IiwKICAgICAgICAgICAgInR5cGUiOiAidmxhbiIsCiAgICAgICAgICAgICJ2bGFuX2xpbmsiOiAiYm9uZDAiLAogICAgICAgICAgICAidmxhbl9pZCI6IDQ0LAogICAgICAgICAgICAibXR1IjogOTEwMCwKICAgICAgICAgICAgInZsYW5fbWFjX2FkZHJlc3MiOiBudWxsCiAgICAgICAgfSwKICAgICAgICB7CiAgICAgICAgICAgICJpZCI6ICJib25kMC40NSIsCiAgICAgICAgICAgICJuYW1lIjogImJvbmQwLjQ1IiwKICAgICAgICAgICAgInR5cGUiOiAidmxhbiIsCiAgICAgICAgICAgICJ2bGFuX2xpbmsiOiAiYm9uZDAiLAogICAgICAgICAgICAidmxhbl9pZCI6IDQ1LAogICAgICAgICAgICAibXR1IjogOTEwMCwKICAgICAgICAgICAgInZsYW5fbWFjX2FkZHJlc3MiOiBudWxsCiAgICAgICAgfQogICAgXSwKICAgICJuZXR3b3JrcyI6IFsKICAgICAgICB7CiAgICAgICAgICAgICJpZCI6ICJvYW0taXB2NiIsCiAgICAgICAgICAgICJ0eXBlIjogImlwdjYiLAogICAgICAgICAgICAibGluayI6ICJib25kMC40MSIsCiAgICAgICAgICAgICJpcF9hZGRyZXNzIjogIjIwMDE6MTg5MDoxMDAxOjI5M2Q6OjE0MCIsCiAgICAgICAgICAgICJyb3V0ZXMiOiBbCiAgICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgICAgIm5ldHdvcmsiOiAiOjovMCIsCiAgICAgICAgICAgICAgICAgICAgIm5ldG1hc2siOiAiOjovMCIsCiAgICAgICAgICAgICAgICAgICAgImdhdGV3YXkiOiAiMjAwMToxODkwOjEwMDE6MjkzZDo6MSIKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgXQogICAgICAgIH0sCiAgICAgICAgewogICAgICAgICAgICAiaWQiOiAib2FtLWlwdjQiLAogICAgICAgICAgICAidHlwZSI6ICJpcHY0IiwKICAgICAgICAgICAgImxpbmsiOiAiYm9uZDAuNDEiLAogICAgICAgICAgICAiaXBfYWRkcmVzcyI6ICIzMi42OC41MS4xNDAiLAogICAgICAgICAgICAibmV0bWFzayI6ICIyNTUuMjU1LjI1NS4xMjgiLAogICAgICAgICAgICAiZG5zX25hbWVzZXJ2ZXJzIjogWwogICAgICAgICAgICAgICAgIjEzNS4xODguMzQuMTI0IiwKICAgICAgICAgICAgICAgICIxMzUuMzguMjQ0LjE2IiwKICAgICAgICAgICAgICAgICIxMzUuMTg4LjM0Ljg0IgogICAgICAgICAgICBdLAogICAgICAgICAgICAicm91dGVzIjogWwogICAgICAgICAgICAgICAgewogICAgICAgICAgICAgICAgICAgICJuZXR3b3JrIjogIjAuMC4wLjAiLAogICAgICAgICAgICAgICAgICAgICJuZXRtYXNrIjogIjAuMC4wLjAiLAogICAgICAgICAgICAgICAgICAgICJnYXRld2F5IjogIjMyLjY4LjUxLjEyOSIKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgXQogICAgICAgIH0sCiAgICAgICAgewogICAgICAgICAgICAiaWQiOiAicHhlLWlwdjYiLAogICAgICAgICAgICAibGluayI6ICJlbm80IiwKICAgICAgICAgICAgInR5cGUiOiAiaXB2NiIsCiAgICAgICAgICAgICJpcF9hZGRyZXNzIjogImZkMDA6OTAwOjEwMDoxMzg6OjEyIgogICAgICAgIH0sCiAgICAgICAgewogICAgICAgICAgICAiaWQiOiAicHhlLWlwdjQiLAogICAgICAgICAgICAibGluayI6ICJlbm80IiwKICAgICAgICAgICAgInR5cGUiOiAiaXB2NCIsCiAgICAgICAgICAgICJpcF9hZGRyZXNzIjogIjE3Mi4zMC4wLjEyIiwKICAgICAgICAgICAgIm5ldG1hc2siOiAiMjU1LjI1NS4yNTUuMTI4IgogICAgICAgIH0sCiAgICAgICAgewogICAgICAgICAgICAiaWQiOiAic3RvcmFnZS1pcHY2IiwKICAgICAgICAgICAgImxpbmsiOiAiYm9uZDAuNDIiLAogICAgICAgICAgICAidHlwZSI6ICJpcHY2IiwKICAgICAgICAgICAgImlwX2FkZHJlc3MiOiAiZmQwMDo5MDA6MTAwOjEzOTo6MTYiCiAgICAgICAgfSwKICAgICAgICB7CiAgICAgICAgICAgICJpZCI6ICJzdG9yYWdlLWlwdjQiLAogICAgICAgICAgICAibGluayI6ICJib25kMC40MiIsCiAgICAgICAgICAgICJ0eXBlIjogImlwdjQiLAogICAgICAgICAgICAiaXBfYWRkcmVzcyI6ICIxNzIuMzEuMC4xNiIsCiAgICAgICAgICAgICJuZXRtYXNrIjogIjI1NS4yNTUuMjU1LjEyOCIKICAgICAgICB9LAogICAgICAgIHsKICAgICAgICAgICAgImlkIjogImtzbi1pcHY2IiwKICAgICAgICAgICAgImxpbmsiOiAiYm9uZDAuNDQiLAogICAgICAgICAgICAidHlwZSI6ICJpcHY2IiwKICAgICAgICAgICAgImlwX2FkZHJlc3MiOiAiZmQwMDo5MDA6MTAwOjEzYTo6MTIiCiAgICAgICAgfSwKICAgICAgICB7CiAgICAgICAgICAgICJpZCI6ICJrc24taXB2NCIsCiAgICAgICAgICAgICJsaW5rIjogImJvbmQwLjQ0IiwKICAgICAgICAgICAgInR5cGUiOiAiaXB2NCIsCiAgICAgICAgICAgICJpcF9hZGRyZXNzIjogIjE3Mi4yOS4wLjEyIiwKICAgICAgICAgICAgIm5ldG1hc2siOiAiMjU1LjI1NS4yNTUuMTI4IgogICAgICAgIH0KICAgIF0KfQo="),
+				"networkData": []byte(networkDataContent),
 			},
 			Type: corev1.SecretTypeOpaque,
 		}
