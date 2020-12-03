@@ -675,9 +675,7 @@ func (ml *MachineList) ApplyLabels(sip airshipv1.SIPCluster, c client.Client) er
 	return nil
 }
 
-/*
-RemoveLabels
-*/
+// RemoveLabels removes sip related labels
 func (ml *MachineList) RemoveLabels(sip airshipv1.SIPCluster, c client.Client) error {
 
 	fmt.Printf("ApplyLabels  %s size:%d\n", ml.String(), len(ml.Machines))
@@ -685,9 +683,9 @@ func (ml *MachineList) RemoveLabels(sip airshipv1.SIPCluster, c client.Client) e
 
 		bmh := &machine.BMH
 		fmt.Printf("RemoveLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
-		bmh.Labels[SipClusterLabel] = "" // REMOVE IT TODO This only blanks it out doesnt remove the label
+		delete(bmh.Labels, SipClusterLabel)
+		delete(bmh.Labels, SipNodeTypeLabel)
 		bmh.Labels[SipScheduleLabel] = "false"
-		bmh.Labels[SipNodeTypeLabel] = "" // REMOVE IT
 
 		// This is bombing when it find 1 error
 		// Might be better to acculumalte the errors, and
