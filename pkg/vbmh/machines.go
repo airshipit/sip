@@ -74,7 +74,7 @@ const (
 	SipClusterLabelName = "workload-cluster"
 	SipClusterLabel     = BaseAirshipSelector + "/" + SipClusterLabelName
 
-	SipNodeTypeLabelName = "note-type"
+	SipNodeTypeLabelName = "node-type"
 	SipNodeTypeLabel     = BaseAirshipSelector + "/" + SipNodeTypeLabelName
 )
 
