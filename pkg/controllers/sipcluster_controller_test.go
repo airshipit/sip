@@ -36,7 +36,7 @@ import (
 var _ = Describe("SIPCluster controller", func() {
 	Context("When it detects a new SIPCluster", func() {
 		It("Should schedule available nodes", func() {
-			By("Labelling nodes")
+			By("Labeling nodes")
 
 			// Create vBMH test objects
 			nodes := []string{"master", "master", "master", "worker", "worker", "worker", "worker"}
@@ -74,7 +74,7 @@ var _ = Describe("SIPCluster controller", func() {
 		})
 
 		It("Should not schedule nodes when there is an insufficient number of available master nodes", func() {
-			By("Not labelling any nodes")
+			By("Not labeling any nodes")
 
 			// Create vBMH test objects
 			nodes := []string{"master", "master", "worker", "worker", "worker", "worker"}
@@ -111,7 +111,7 @@ var _ = Describe("SIPCluster controller", func() {
 		})
 
 		It("Should not schedule nodes when there is an insufficient number of available worker nodes", func() {
-			By("Not labelling any nodes")
+			By("Not labeling any nodes")
 
 			// Create vBMH test objects
 			nodes := []string{"master", "master", "master", "worker", "worker"}

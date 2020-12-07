@@ -33,9 +33,15 @@ func newJumpHost(infraCfg airshipv1.InfraConfig) InfrastructureService {
 
 /*
 
-The SIP Cluster operator will manufacture a jump host pod specifically for this tenant cluster.  Much like we did above for master nodes by extracting IP addresses, we would need to extract the `oam-ipv4` ip address for all nodes and create a configmap to bind mount into the pod so it understands what host IPs represent the clusters.
+The SIP Cluster operator will manufacture a jump host pod specifically for this
+tenant cluster.  Much like we did above for master nodes by extracting IP
+addresses, we would need to extract the `oam-ipv4` ip address for all nodes and
+create a configmap to bind mount into the pod so it understands what host IPs
+represent the clusters.
 
-The expectation is the Jump Pod runs `sshd` protected by `uam` to allow operators to SSH directly to the Jump Pod and authenticate via UAM to immediately access their cluster.
+The expectation is the Jump Pod runs `sshd` protected by `uam` to allow
+operators to SSH directly to the Jump Pod and authenticate via UAM to
+immediately access their cluster.
 
 It will provide the following functionality over SSH:
 
@@ -46,6 +52,8 @@ It will provide the following functionality over SSH:
 - A kubectl binary and kubeconfig (cluster-admin) for the cluster
 - SSH access to the cluster node VMs
 - Libvirt console logs for the VMs
-	- We will secure libvirt with tls and provide keys to every jump host with curated interfaces to extract logs remotely for all VMs for their clusters.
+  - We will secure libvirt with tls and provide keys to every jump host
+    with curated interfaces to extract logs remotely for all VMs for their
+    clusters.
 
 */

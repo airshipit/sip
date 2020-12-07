@@ -163,7 +163,7 @@ const (
 }`
 )
 
-// CreateBMH initializes a BaremetalHost with specific parameteres for use in test cases.
+// CreateBMH initializes a BaremetalHost with specific parameters for use in test cases.
 func CreateBMH(node int, namespace string, role string, rack int) (*metal3.BareMetalHost, *corev1.Secret) {
 	rackLabel := fmt.Sprintf("r%d", rack)
 	networkDataName := fmt.Sprintf("node%d-network-data", node)
@@ -211,19 +211,19 @@ func CreateSIPCluster(name string, namespace string, masters int, workers int) *
 			Config: &airshipv1.SipConfig{
 				ClusterName: name,
 			},
-			Nodes: map[airshipv1.VmRoles]airshipv1.NodeSet{
-				airshipv1.VmMaster: airshipv1.NodeSet{
-					VmFlavor:   "airshipit.org/vino-flavor=master",
+			Nodes: map[airshipv1.VMRoles]airshipv1.NodeSet{
+				airshipv1.VMMaster: {
+					VMFlavor:   "airshipit.org/vino-flavor=master",
 					Scheduling: airshipv1.ServerAntiAffinity,
-					Count: &airshipv1.VmCount{
+					Count: &airshipv1.VMCount{
 						Active:  masters,
 						Standby: 0,
 					},
 				},
-				airshipv1.VmWorker: airshipv1.NodeSet{
-					VmFlavor:   "airshipit.org/vino-flavor=worker",
+				airshipv1.VMWorker: {
+					VMFlavor:   "airshipit.org/vino-flavor=worker",
 					Scheduling: airshipv1.ServerAntiAffinity,
-					Count: &airshipv1.VmCount{
+					Count: &airshipv1.VMCount{
 						Active:  workers,
 						Standby: 0,
 					},

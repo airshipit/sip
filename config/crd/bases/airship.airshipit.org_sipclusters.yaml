@@ -58,7 +58,7 @@ spec:
                     type: object
                   optional:
                     properties:
-                      clusterIp:
+                      clusterIP:
                         type: string
                       sshkey:
                         type: string
@@ -91,13 +91,13 @@ spec:
                       identify the required  BMH's to allow CAPI to build a cluster
                     type: string
                   vm-flavor:
-                    description: VmFlavor is  essentially a Flavor label identifying
+                    description: VMFlavor is  essentially a Flavor label identifying
                       the type of Node that meets the construction reqirements
                     type: string
                 type: object
               description: Nodes are the list of Nodes objects workers, or master
-                that definee eexpectations of the Tenant cluster VmRole is either
-                Control or Workers VmRole VmRoles `json:"vm-role,omitempty"`
+                that definee eexpectations of the Tenant cluster VMRole is either
+                Control or Workers VMRole VMRoles `json:"vm-role,omitempty"`
               type: object
           required:
           - infra
