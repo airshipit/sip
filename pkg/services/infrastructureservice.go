@@ -31,7 +31,7 @@ import (
 
 // Init   : prepares the Service
 // Deploy : deploys the service
-// Validate : will make sure that the deployment is successfull
+// Validate : will make sure that the deployment is successful
 type InfrastructureService interface {
 	//
 	Deploy(airshipv1.SIPCluster, *airshipvms.MachineList, client.Client) error
@@ -49,10 +49,12 @@ func (s *Service) Deploy(sip airshipv1.SIPCluster, machines *airshipvms.MachineL
 	// do something, might decouple this a bit
 	// If the  serviucces are defined as Helm Chart , then deploy might be simply
 
-	//. Lets make sure that teh namespace is in pace.
+	// Lets make sure that the namespace is in place.
 	// will be called the name of the cluster.
-	s.createNS(sip.Spec.Config.ClusterName, c)
-	// Take the data from teh appropriate Machines
+	if err := s.createNS(sip.Spec.Config.ClusterName, c); err != nil {
+		return err
+	}
+	// Take the data from the appropriate Machines
 	// Prepare the Config
 	fmt.Printf("Deploy Service:%v \n", s.serviceName)
 	return nil
@@ -83,14 +85,12 @@ func (s *Service) createNS(serviceNamespaceName string, c client.Client) error {
 	}
 
 	return nil
-
 }
 func (s *Service) Validate() error {
 	// do something, might decouple this a bit
 	fmt.Printf("Validate Service:%v \n", s.serviceName)
 
 	return nil
-
 }
 
 func (s *Service) Finalize(sip airshipv1.SIPCluster, c client.Client) error {
@@ -112,16 +112,16 @@ func FinalizeCommon(sip airshipv1.SIPCluster, c client.Client) error {
 	}
 
 	return nil
-
 }
 
 // Service Factory
 func NewService(infraName airshipv1.InfraService, infraCfg airshipv1.InfraConfig) (InfrastructureService, error) {
-	if infraName == airshipv1.LoadBalancerService {
+	switch infraName {
+	case airshipv1.LoadBalancerService:
 		return newLoadBalancer(infraCfg), nil
-	} else if infraName == airshipv1.JumpHostService {
+	case airshipv1.JumpHostService:
 		return newJumpHost(infraCfg), nil
-	} else if infraName == airshipv1.AuthHostService {
+	case airshipv1.AuthHostService:
 		return newAuthHost(infraCfg), nil
 	}
 	return nil, ErrInfraServiceNotSupported{}

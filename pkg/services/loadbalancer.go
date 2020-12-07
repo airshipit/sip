@@ -30,21 +30,21 @@ func (l *LoadBalancer) Deploy(sip airshipv1.SIPCluster, machines *airshipvms.Mac
 	// do something, might decouple this a bit
 	// If the  serviucces are defined as Helm Chart , then deploy might be simply
 
-	// Take the data from teh appropriate Machines
+	// Take the data from the appropriate Machines
 	// Prepare the Config
-	l.Service.Deploy(sip, machines, c)
-	err := l.Prepare(sip, machines, c)
+	err := l.Service.Deploy(sip, machines, c)
 	if err != nil {
 		return err
 	}
-	return nil
+	return l.Prepare(sip, machines, c)
 }
 
 func (l *LoadBalancer) Prepare(sip airshipv1.SIPCluster, machines *airshipvms.MachineList, c client.Client) error {
 	fmt.Printf("%s.Prepare machines:%s \n", l.Service.serviceName, machines)
 	for _, machine := range machines.Machines {
-		if machine.VMRole == airshipv1.VmMaster {
-			fmt.Printf("%s.Prepare for machine:%s ip is %s\n", l.Service.serviceName, machine, machine.Data.IpOnInterface[sip.Spec.InfraServices[l.Service.serviceName].NodeInterface])
+		if machine.VMRole == airshipv1.VMMaster {
+			ip := machine.Data.IPOnInterface[sip.Spec.InfraServices[l.Service.serviceName].NodeInterface]
+			fmt.Printf("%s.Prepare for machine:%s ip is %s\n", l.Service.serviceName, machine, ip)
 		}
 	}
 	return nil
@@ -63,11 +63,20 @@ func newLoadBalancer(infraCfg airshipv1.InfraConfig) InfrastructureService {
 
 
 :::warning
-For the loadbalanced interface a **static asignment** via network data is required. For now, we will not support updates to this field without manual intervention.  In other words, there is no expectation that the SIP operator watches `BareMetalHost` objects and reacts to changes in the future.  The expectation would instead to re-deliver the `SIPCluster` object to force a no-op update to load balancer configuration is updated.
+For the loadbalanced interface a **static asignment** via network data is
+required. For now, we will not support updates to this field without manual
+intervention.  In other words, there is no expectation that the SIP operator
+watches `BareMetalHost` objects and reacts to changes in the future.  The
+expectation would instead to re-deliver the `SIPCluster` object to force a
+no-op update to load balancer configuration is updated.
 :::
 
 
-By extracting these IP address from the appropriate/defined interface for each master node, we can build our loadbalancer service endpoint list to feed to haproxy. In other words, the SIP Cluster will now manufacture an haproxy configuration file that directs traffic to all IP endpoints found above over port 6443.  For example:
+By extracting these IP address from the appropriate/defined interface for each
+master node, we can build our loadbalancer service endpoint list to feed to
+haproxy. In other words, the SIP Cluster will now manufacture an haproxy
+configuration file that directs traffic to all IP endpoints found above over
+port 6443.  For example:
 
 
 ``` gotpl
@@ -93,10 +102,14 @@ backend kube-apiservers
 {% end %}
 ```
 
-This will be saved as a configmap and mounted into the cluster specific haproxy daemonset across all undercloud control nodes.
+This will be saved as a configmap and mounted into the cluster specific haproxy
+daemonset across all undercloud control nodes.
 
-We will then create a Kubernetes NodePort `Service` that will direct traffic on the infrastructure `nodePort` defined in the SIP Cluster definition to these haproxy workloads.
+We will then create a Kubernetes NodePort `Service` that will direct traffic on
+the infrastructure `nodePort` defined in the SIP Cluster definition to these
+haproxy workloads.
 
-At this point, the SIP Cluster controller can now label the VMs appropriately so they'll be scheduled by the Cluster-API process.
+At this point, the SIP Cluster controller can now label the VMs appropriately
+so they'll be scheduled by the Cluster-API process.
 
 */

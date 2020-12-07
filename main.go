@@ -41,6 +41,7 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
+//nolint:errcheck
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
@@ -52,7 +53,6 @@ func init() {
 
 	// Add Kubernetes Coree??
 	_ = corev1.AddToScheme(scheme)
-
 }
 
 func main() {

@@ -65,9 +65,9 @@ func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	// Tghis only works if I add a finalizer to CRD TODO
 	if sip.ObjectMeta.DeletionTimestamp.IsZero() {
 		// machines
-		err, machines := r.gatherVBMH(sip)
+		machines, err := r.gatherVBMH(sip)
 		if err != nil {
-			//log.Error(err, "unable to gather vBMHs")
+			log.Error(err, "unable to gather vBMHs")
 			return ctrl.Result{}, err
 		}
 
@@ -82,24 +82,22 @@ func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 			log.Error(err, "unable to finish creation/update ..")
 			return ctrl.Result{}, err
 		}
-	} else {
+	} else if containsString(sip.ObjectMeta.Finalizers, sipFinalizerName) {
 		// Deleting the SIP , what do we do now
-		if containsString(sip.ObjectMeta.Finalizers, sipFinalizerName) {
-			// our finalizer is present, so lets handle any external dependency
-			err := r.finalize(sip)
-			if err != nil {
-				log.Error(err, "unable to finalize")
-				return ctrl.Result{}, err
-			}
-
-			// remove our finalizer from the list and update it.
-			sip.ObjectMeta.Finalizers = removeString(sip.ObjectMeta.Finalizers, sipFinalizerName)
-			if err := r.Update(context.Background(), &sip); err != nil {
-				return ctrl.Result{}, err
-			}
+		// our finalizer is present, so lets handle any external dependency
+		err := r.finalize(sip)
+		if err != nil {
+			log.Error(err, "unable to finalize")
+			return ctrl.Result{}, err
 		}
 
+		// remove our finalizer from the list and update it.
+		sip.ObjectMeta.Finalizers = removeString(sip.ObjectMeta.Finalizers, sipFinalizerName)
+		if err := r.Update(context.Background(), &sip); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
+
 	return ctrl.Result{}, nil
 }
 
@@ -155,9 +153,9 @@ func removeString(slice []string, s string) (result []string) {
 */
 
 // machines
-func (r *SIPClusterReconciler) gatherVBMH(sip airshipv1.SIPCluster) (error, *airshipvms.MachineList) {
+func (r *SIPClusterReconciler) gatherVBMH(sip airshipv1.SIPCluster) (*airshipvms.MachineList, error) {
 	// 1- Let me retrieve all BMH  that are unlabeled or already labeled with the target Tenant/CNF
-	// 2- Let me now select the one's that meet teh scheduling criteria
+	// 2- Let me now select the one's that meet the scheduling criteria
 	// If I schedule successfully then
 	// If Not complete schedule , then throw an error.
 	logger := r.Log.WithValues("SIPCluster", r.NamespacedName)
@@ -171,7 +169,7 @@ func (r *SIPClusterReconciler) gatherVBMH(sip airshipv1.SIPCluster) (error, *air
 		logger.Info("gathering machines", "machines", machines.String())
 		err := machines.Schedule(sip, r.Client)
 		if err != nil {
-			return err, machines
+			return machines, err
 		}
 
 		// we extract the information in a generic way
@@ -179,14 +177,13 @@ func (r *SIPClusterReconciler) gatherVBMH(sip airshipv1.SIPCluster) (error, *air
 		// If there are some issues finnding information the vBMH
 		// Are flagged Unschedulable
 		// Loop and Try to find new vBMH to complete tge schedule
-		//fmt.Printf("gatherVBMH.Extrapolate sip:%v machines:%v\n", sip, machines)
 		if machines.Extrapolate(sip, r.Client) {
-			logger.Info("successfuly extrapolated machines")
+			logger.Info("successfully extrapolated machines")
 			break
 		}
 	}
 
-	return nil, machines
+	return machines, nil
 }
 
 func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *airshipvms.MachineList) error {
@@ -217,20 +214,14 @@ func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *a
 finish shoulld  take care of any wrpa up tasks..
 */
 func (r *SIPClusterReconciler) finish(sip airshipv1.SIPCluster, machines *airshipvms.MachineList) error {
-
 	// UnLabel the vBMH's
-	err := machines.ApplyLabels(sip, r.Client)
-	if err != nil {
-		return err
-	}
-	return nil
-
+	return machines.ApplyLabels(sip, r.Client)
 }
 
 /**
 
-Deal with Deletion andd Finalizers if any is needed
-Such as i'e what are we doing with the lables on teh vBMH's
+Deal with Deletion and Finalizers if any is needed
+Such as i'e what are we doing with the lables on the vBMH's
 **/
 func (r *SIPClusterReconciler) finalize(sip airshipv1.SIPCluster) error {
 	logger := r.Log.WithValues("SIPCluster", sip.GetNamespace()+"/"+sip.GetName())
@@ -248,16 +239,19 @@ func (r *SIPClusterReconciler) finalize(sip airshipv1.SIPCluster) error {
 		}
 	}
 	// Clean Up common servicce stuff
-	airshipsvc.FinalizeCommon(sip, r.Client)
+	err := airshipsvc.FinalizeCommon(sip, r.Client)
+	if err != nil {
+		return err
+	}
 
 	// 1- Let me retrieve all vBMH mapped for this SIP Cluster
-	// 2- Let me now select the one's that meet teh scheduling criteria
+	// 2- Let me now select the one's that meet the scheduling criteria
 	// If I schedule successfully then
 	// If Not complete schedule , then throw an error.
 	machines := &airshipvms.MachineList{}
 	logger.Info("finalize sip machines", "machines", machines.String())
 	// Update the list of  Machines.
-	err := machines.GetCluster(sip, r.Client)
+	err = machines.GetCluster(sip, r.Client)
 	if err != nil {
 		return err
 	}

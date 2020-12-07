@@ -14,8 +14,6 @@
 
 package services
 
-import ()
-
 // ErrAuthTypeNotSupported is returned when wrong AuthType is provided
 type ErrInfraServiceNotSupported struct {
 }

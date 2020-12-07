@@ -31,9 +31,9 @@ type SIPClusterSpec struct {
 	Config *SipConfig `json:"config,omitempty"`
 	// Nodes are the list of Nodes objects workers, or master that definee eexpectations
 	// of the Tenant cluster
-	// VmRole is either Control or Workers
-	// VmRole VmRoles `json:"vm-role,omitempty"`
-	Nodes map[VmRoles]NodeSet `json:"nodes,omitempty"`
+	// VMRole is either Control or Workers
+	// VMRole VMRoles `json:"vm-role,omitempty"`
+	Nodes map[VMRoles]NodeSet `json:"nodes,omitempty"`
 
 	// Infra is the collection of expeected configuration details
 	// for the multiple infrastructure services or pods that SIP manages
@@ -49,7 +49,7 @@ type SipConfig struct {
 	ClusterName string `json:"cluster-name,omitempty"`
 }
 
-// VmRoles defines the states the provisioner will report
+// VMRoles defines the states the provisioner will report
 // the tenant has having.
 type InfraService string
 
@@ -77,16 +77,16 @@ const (
 //
 type NodeSet struct {
 
-	// VmFlavor is  essentially a Flavor label identifying the
+	// VMFlavor is  essentially a Flavor label identifying the
 	// type of Node that meets the construction reqirements
-	VmFlavor string `json:"vm-flavor,omitempty"`
+	VMFlavor string `json:"vm-flavor,omitempty"`
 	// PlaceHolder until we define the real expected
 	// Implementation
 	// Scheduling define constraints the allows the SIP Scheduler
 	// to identify the required  BMH's to allow CAPI to build a cluster
 	Scheduling SpreadTopology `json:"spreadTopology,omitempty"`
 	// Count defines the scale expectations for the Nodes
-	Count *VmCount `json:"count,omitempty"`
+	Count *VMCount `json:"count,omitempty"`
 }
 
 type SpreadTopology string
@@ -109,25 +109,22 @@ type InfraConfig struct {
 }
 
 type OptsConfig struct {
-	SshKey    string `json:"sshkey,omitempty"`
-	ClusterIp string `json:"clusterIp,omitempty"`
+	SSHKey    string `json:"sshkey,omitempty"`
+	ClusterIP string `json:"clusterIP,omitempty"`
 }
 
-// VmRoles defines the states the provisioner will report
+// VMRoles defines the states the provisioner will report
 // the tenant has having.
-type VmRoles string
+type VMRoles string
 
 // Possible Node or VM Roles  for a Tenant
 const (
-	// VmMaster means the state is unknown
-	VmMaster VmRoles = "master"
-
-	// VmWorker means the state is unknown
-	VmWorker VmRoles = "worker"
+	VMMaster VMRoles = "master"
+	VMWorker         = "worker"
 )
 
-// VmCount
-type VmCount struct {
+// VMCount
+type VMCount struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Active  int `json:"active,omitempty"`

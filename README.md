@@ -23,13 +23,13 @@ While ViNO is responsible for setting up VM infrastructure, such as:
 - networking
 - bmh objects, with labels:
     * location - i.e. `rack: 8` and `node: rdm8r008c002` - should follow k8s semi-standard
-    * vm role - i.e. `node-type: worker` 
+    * vm role - i.e. `node-type: worker`
     * vm flavor - i.e `node-flavor: foobar`
     * networks - i.e. `networks: [foo, bar]`
-and the details for ViNO can be found [here](https://hackmd.io/KSu8p4QeTc2kXIjlrso2eA) 
+and the details for ViNO can be found [here](https://hackmd.io/KSu8p4QeTc2kXIjlrso2eA)
 
 The Cluster Support Infrastructure Provider, or SIP, is responsible for the lifecycle of:
-- identifying the correct `BareMetalHost` resources to label (or unlabel) based on scheduling constraints. 
+- identifying the correct `BareMetalHost` resources to label (or unlabel) based on scheduling constraints.
 - extract IP address information from `BareMetalHost` objects to use in the creation of supporting infrastructure.
 - creating support infra for the tenant k8s cluster:
     * load balancers (for tenant k8s api)
@@ -49,9 +49,9 @@ Pseudo Algorithm at a high level after reading the `SIPCluster` CR:
 
 #### Identity BMH VM's
 - Gather BMH's that meet the criteria expected for the groups
-- Check for existing labeled BMH's 
+- Check for existing labeled BMH's
 - Complete the expected scheduling contraints :
-    - If master 
+    - If master
         -  collect into list of bmh's to label
     - If worker
         - collect into list of bmh's to label

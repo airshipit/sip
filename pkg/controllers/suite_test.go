@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	airshipv1 "sipcluster/pkg/api/v1"
+
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -31,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	airshipv1 "sipcluster/pkg/api/v1"
 	// +kubebuilder:scaffold:imports
 )
 

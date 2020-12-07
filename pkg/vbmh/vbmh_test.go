@@ -25,7 +25,7 @@ var _ = Describe("MachineList", func() {
 		nodes := map[string]*Machine{}
 		for n := 0; n < numNodes; n++ {
 			bmh, _ := testutil.CreateBMH(n, "default", "master", 6)
-			nodes[bmh.Name] = NewMachine(*bmh, airshipv1.VmMaster, NotScheduled)
+			nodes[bmh.Name] = NewMachine(*bmh, airshipv1.VMMaster, NotScheduled)
 		}
 
 		machineList = &MachineList{
@@ -105,19 +105,19 @@ var _ = Describe("MachineList", func() {
 				Namespace: "default",
 			},
 			Machines: map[string]*Machine{
-				bmh.Name: NewMachine(*bmh, airshipv1.VmMaster, NotScheduled),
+				bmh.Name: NewMachine(*bmh, airshipv1.VMMaster, NotScheduled),
 			},
-			Log:      ctrl.Log.WithName("controllers").WithName("SIPCluster"),
+			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
 
 		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.InfraServices = map[airshipv1.InfraService]airshipv1.InfraConfig{
-			airshipv1.LoadBalancerService: airshipv1.InfraConfig{
+			airshipv1.LoadBalancerService: {
 				Image: "haproxy:latest",
 				NodeLabels: map[string]string{
 					"test": "true",
 				},
-				NodePorts: []int{7000, 7001, 7002},
+				NodePorts:     []int{7000, 7001, 7002},
 				NodeInterface: "oam-ipv4",
 			},
 		}
@@ -125,7 +125,7 @@ var _ = Describe("MachineList", func() {
 		Expect(ml.Extrapolate(*sipCluster, k8sClient)).To(BeTrue())
 
 		// NOTE(drewwalters96): Interface data is b64 encoded in the testutil convenience function.
-		Expect(ml.Machines[bmh.Name].Data.IpOnInterface).To(Equal(map[string]string{"oam-ipv4": "32.68.51.139"}))
+		Expect(ml.Machines[bmh.Name].Data.IPOnInterface).To(Equal(map[string]string{"oam-ipv4": "32.68.51.139"}))
 	})
 
 	It("Should not retrieve the BMH IP from the BMH's NetworkData secret if no infraServices are defined", func() {
@@ -142,23 +142,22 @@ var _ = Describe("MachineList", func() {
 				Namespace: "default",
 			},
 			Machines: map[string]*Machine{
-				bmh.Name: NewMachine(*bmh, airshipv1.VmMaster, NotScheduled),
+				bmh.Name: NewMachine(*bmh, airshipv1.VMMaster, NotScheduled),
 			},
-			Log:      ctrl.Log.WithName("controllers").WithName("SIPCluster"),
+			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
 
 		k8sClient := mockClient.NewFakeClient(objs...)
 		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		Expect(ml.Extrapolate(*sipCluster, k8sClient)).To(BeTrue())
-		Expect(len(ml.Machines[bmh.Name].Data.IpOnInterface)).To(Equal(0))
+		Expect(len(ml.Machines[bmh.Name].Data.IPOnInterface)).To(Equal(0))
 	})
-
 
 	It("Should not retrieve the BMH IP if it has been previously extrapolated", func() {
 		// Store an IP address for each machine
 		var objs []runtime.Object
 		for _, machine := range machineList.Machines {
-			machine.Data.IpOnInterface = map[string]string{
+			machine.Data.IPOnInterface = map[string]string{
 				"oam-ipv4": "32.68.51.139",
 			}
 			objs = append(objs, &machine.BMH)
