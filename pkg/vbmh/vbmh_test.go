@@ -120,7 +120,7 @@ var _ = Describe("MachineList", func() {
 				NodeLabels: map[string]string{
 					"test": "true",
 				},
-				NodePorts:     []int{7000, 7001, 7002},
+				NodePort:      30000,
 				NodeInterface: "oam-ipv4",
 			},
 		}

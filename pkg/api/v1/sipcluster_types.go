@@ -125,7 +125,7 @@ type InfraConfig struct {
 	OptionalData  *OptsConfig       `json:"optional,omitempty"`
 	Image         string            `json:"image,omitempty"`
 	NodeLabels    map[string]string `json:"nodelabels,omitempty"`
-	NodePorts     []int             `json:"nodePorts,omitempty"`
+	NodePort      int               `json:"nodePort,omitempty"`
 	NodeInterface string            `json:"nodeInterfaceId,omitempty"`
 }
 

@@ -24,13 +24,10 @@ spec:
         loadbalancer:
           optional:
             clusterIP: 1.2.3.4 #<-- this aligns to the VIP IP for undercloud k8s
-          image: haproxy:foo
+          image: haproxy:2.3.2
           nodeLabels:
               - airship-masters
-          nodePorts:
-              - 7000
-              - 7001
-              - 7002
+          nodePort: 30000
           nodeInterfaceId: oam-ipv4
         jumppod:
           optional:
@@ -38,13 +35,11 @@ spec:
           image: sshpod:foo
           nodeLabels:
             - airship-masters
-          nodePorts:
-            -  7022
+          nodePort: 7022
           nodeInterfaceId: oam-ipv4
         authpod:
           image: sshpod:foo
           nodeLabels:
             - airship-masters
-          nodePorts:
-            - 7023
+          nodePort: 7023
           nodeInterfaceId: oam-ipv4

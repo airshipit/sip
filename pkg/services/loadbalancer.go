@@ -15,71 +15,228 @@
 package services
 
 import (
-	"fmt"
+	"bytes"
+	"github.com/go-logr/logr"
+	"html/template"
+	"k8s.io/apimachinery/pkg/types"
 	airshipv1 "sipcluster/pkg/api/v1"
 	airshipvms "sipcluster/pkg/vbmh"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type LoadBalancer struct {
-	Service
-}
+const (
+	// ConfigSecretName name of the haproxy config secret name/volume/mount
+	ConfigSecretName = "haproxy-config"
+	// DefaultBalancerImage is the image that will be used as load balancer
+	DefaultBalancerImage = "haproxy:2.3.2"
+)
 
-func (l *LoadBalancer) Deploy(sip airshipv1.SIPCluster, machines *airshipvms.MachineList, c client.Client) error {
-	// Take the data from the appropriate Machines
-	// Prepare the Config
-	err := l.Service.Deploy(sip, machines, c)
+func (lb loadBalancer) Deploy() error {
+	if lb.config.Image == "" {
+		lb.config.Image = DefaultBalancerImage
+	}
+	if lb.config.NodePort < 30000 || lb.config.NodePort > 32767 {
+        lb.logger.Info("Either NodePort is not defined in the CR or NodePort is not in the required range of 30000-32767")
+        return nil
+    }
+
+	pod, secret, err := lb.generatePodAndSecret()
 	if err != nil {
 		return err
 	}
-	return l.Prepare(sip, machines, c)
-}
 
-func (l *LoadBalancer) Prepare(sip airshipv1.SIPCluster, machines *airshipvms.MachineList, c client.Client) error {
-	fmt.Printf("%s.Prepare machines:%s \n", l.Service.serviceName, machines)
-	for _, machine := range machines.Machines {
-		if machine.VMRole == airshipv1.VMMaster {
-			ip := machine.Data.IPOnInterface[sip.Spec.InfraServices[l.Service.serviceName].NodeInterface]
-			fmt.Printf("%s.Prepare for machine:%s ip is %s\n", l.Service.serviceName, machine, ip)
-		}
+	lb.logger.Info("Applying loadbalancer secret", "secret", secret.GetNamespace()+"/"+secret.GetName())
+	err = applyRuntimeObject(client.ObjectKey{Name: secret.GetName(), Namespace: secret.GetNamespace()}, secret, lb.client)
+	if err != nil {
+		return err
+	}
+
+	lb.logger.Info("Applying loadbalancer pod", "pod", pod.GetNamespace()+"/"+pod.GetName())
+	err = applyRuntimeObject(client.ObjectKey{Name: pod.GetName(), Namespace: pod.GetNamespace()}, pod, lb.client)
+	if err != nil {
+		return err
+	}
+
+	lbService, err := lb.generateService()
+	if err != nil {
+		return err
+	}
+	lb.logger.Info("Applying loadbalancer service", "service", lbService.GetNamespace()+"/"+lbService.GetName())
+	err = applyRuntimeObject(client.ObjectKey{Name: lbService.GetName(), Namespace: lbService.GetNamespace()}, lbService, lb.client)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-func newLoadBalancer(infraCfg airshipv1.InfraConfig) InfrastructureService {
-	return &LoadBalancer{
-		Service: Service{
-			serviceName: airshipv1.LoadBalancerService,
-			config:      infraCfg,
+func (lb loadBalancer) generatePodAndSecret() (*corev1.Pod, *corev1.Secret, error) {
+	secret, err := lb.generateSecret()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      lb.sipName.Name + "-load-balancer",
+			Namespace: lb.sipName.Namespace,
+			Labels:    map[string]string{"lb-name": lb.sipName.Namespace + "-haproxy"},
 		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "balancer",
+					Image: lb.config.Image,
+					Ports: []corev1.ContainerPort{
+						{
+							Name:          "http",
+							ContainerPort: 6443,
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      ConfigSecretName,
+							MountPath: "/usr/local/etc/haproxy",
+						},
+					},
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: ConfigSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: secret.GetName(),
+						},
+					},
+				},
+			},
+		},
+	}
+	return pod, secret, nil
+}
+
+func (lb loadBalancer) generateSecret() (*corev1.Secret, error) {
+	p := proxy{
+		FrontPort: 6443,
+		Backends:  make([]backend, 0),
+	}
+	for _, machine := range lb.machines.Machines {
+		if machine.VMRole == airshipv1.VMMaster {
+			name := machine.BMH.Name
+			namespace := machine.BMH.Namespace
+			ip, exists := machine.Data.IPOnInterface[lb.config.NodeInterface]
+			if !exists {
+				lb.logger.Info("Machine does not have backend interface to be forwarded to",
+					"interface", lb.config.NodeInterface,
+					"machine", namespace+"/"+name,
+				)
+				continue
+			}
+			p.Backends = append(p.Backends, backend{IP: ip, Name: machine.BMH.Name, Port: 6443})
+		}
+	}
+	secretData, err := generateTemplate(p)
+	if err != nil {
+		return nil, err
+	}
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      lb.sipName.Name + "-load-balancer",
+			Namespace: lb.sipName.Namespace,
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			"haproxy.cfg": secretData,
+		},
+	}, nil
+}
+
+func (lb loadBalancer) generateService() (*corev1.Service, error) {
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      lb.sipName.Name + "-load-balancer-service",
+			Namespace: lb.sipName.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "http",
+					Port:     6443,
+					NodePort: int32(lb.config.NodePort),
+				},
+			},
+			Selector: map[string]string{"lb-name": lb.sipName.Namespace + "-haproxy"},
+			Type:     corev1.ServiceTypeNodePort,
+		},
+	}, nil
+}
+
+type proxy struct {
+	FrontPort int
+	Backends  []backend
+}
+
+type backend struct {
+	IP   string
+	Name string
+	Port int
+}
+
+type loadBalancer struct {
+        client   client.Client
+        sipName  types.NamespacedName
+        logger   logr.Logger
+        config   airshipv1.InfraConfig
+        machines *airshipvms.MachineList
+}
+
+func newLB(name, namespace string,
+	logger logr.Logger,
+	config airshipv1.InfraConfig,
+	machines *airshipvms.MachineList,
+	client client.Client) loadBalancer {
+	return loadBalancer{
+		sipName: types.NamespacedName{
+			Name:      name,
+			Namespace: namespace,
+		},
+		logger:   logger,
+		config:   config,
+		machines: machines,
+		client:   client,
 	}
 }
 
-/*
+func (lb loadBalancer) Finalize() error {
+       // implete to delete loadbalancer
+       return nil
+}
 
+// Type type of the service
+func (lb loadBalancer) Type() airshipv1.InfraService {
+       return airshipv1.LoadBalancerService
+}
 
-:::warning
-For the loadbalanced interface a **static asignment** via network data is
-required. For now, we will not support updates to this field without manual
-intervention.  In other words, there is no expectation that the SIP operator
-watches `BareMetalHost` objects and reacts to changes in the future.  The
-expectation would instead to re-deliver the `SIPCluster` object to force a
-no-op update to load balancer configuration is updated.
-:::
+func generateTemplate(p proxy) ([]byte, error) {
+	tmpl, err := template.New("haproxy-config").Parse(defaultTemplate)
+	if err != nil {
+		return nil, err
+	}
 
+	w := bytes.NewBuffer([]byte{})
+	if err := tmpl.Execute(w, p); err != nil {
+		return nil, err
+	}
 
-By extracting these IP address from the appropriate/defined interface for each
-master node, we can build our loadbalancer service endpoint list to feed to
-haproxy. In other words, the SIP Cluster will now manufacture an haproxy
-configuration file that directs traffic to all IP endpoints found above over
-port 6443.  For example:
+	rendered := w.Bytes()
+	return rendered, nil
+}
 
-
-``` gotpl
-global
-  log /dev/stdout local0
-  log /dev/stdout local1 notice
+var defaultTemplate = `global
+  log stdout format raw local0
   daemon
 defaults
   log global
@@ -90,23 +247,11 @@ defaults
   timeout client 50000
   timeout server 50000
 frontend control-plane
-  bind *:6443
+  bind *:{{ .FrontPort }}
   default_backend kube-apiservers
 backend kube-apiservers
   option httpchk GET /healthz
-{% for i in range(1, number_masters) %}
-  server {{ cluster_name }}-{{ i }} {{ vm_master_ip }}:6443 check check-ssl verify none
-{% end %}
-```
-
-This will be saved as a configmap and mounted into the cluster specific haproxy
-daemonset across all undercloud control nodes.
-
-We will then create a Kubernetes NodePort `Service` that will direct traffic on
-the infrastructure `nodePort` defined in the SIP Cluster definition to these
-haproxy workloads.
-
-At this point, the SIP Cluster controller can now label the VMs appropriately
-so they'll be scheduled by the Cluster-API process.
-
-*/
+{{- range .Backends }}
+{{- $backEnd := . }}
+  server {{ $backEnd.Name }} {{ $backEnd.IP }}:{{ $backEnd.Port }} check check-ssl verify none
+{{ end -}}`

@@ -50,6 +50,25 @@ rules:
   - ""
   resources:
   - namespaces
+  - pods
+  - secrets
+  verbs:
+  - create
+  - delete
+  - update
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sipcluster-infra-service
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
   verbs:
   - create
   - delete

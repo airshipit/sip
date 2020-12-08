@@ -75,7 +75,7 @@ func (r *SIPClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	err = r.deployInfra(sip, machines)
+	err = r.deployInfra(sip, machines, log)
 	if err != nil {
 		log.Error(err, "unable to deploy infrastructure services")
 		return ctrl.Result{}, err
@@ -187,23 +187,14 @@ func (r *SIPClusterReconciler) gatherVBMH(ctx context.Context, sip airshipv1.SIP
 	return machines, nil
 }
 
-func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *airshipvms.MachineList) error {
-	for sName, sConfig := range sip.Spec.InfraServices {
-		// Instantiate
-		service, err := airshipsvc.NewService(sName, sConfig)
-		if err != nil {
-			return err
-		}
-
-		// Lets deploy the Service
-		err = service.Deploy(sip, machines, r.Client)
-		if err != nil {
-			return err
-		}
-
-		// Did it deploy correctly, letcs check
-
-		err = service.Validate()
+func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *airshipvms.MachineList, logger logr.Logger) error {
+	if err := airshipsvc.CreateNS(sip.Spec.ClusterName, r.Client); err != nil {
+		return err
+	}
+	newServiceSet := airshipsvc.NewServiceSet(logger, sip, machines, r.Client)
+	serviceList := newServiceSet.ServiceList()
+	for _, svc := range serviceList {
+		err := svc.Deploy()
 		if err != nil {
 			return err
 		}
@@ -225,19 +216,16 @@ Such as i'e what are we doing with the lables on the vBMH's
 **/
 func (r *SIPClusterReconciler) finalize(ctx context.Context, sip airshipv1.SIPCluster) error {
 	logger := logr.FromContext(ctx)
-	for sName, sConfig := range sip.Spec.InfraServices {
-		service, err := airshipsvc.NewService(sName, sConfig)
-		if err != nil {
-			return err
-		}
-
-		err = service.Finalize(sip, r.Client)
+	machines := &airshipvms.MachineList{}
+	serviceSet := airshipsvc.NewServiceSet(logger, sip, machines, r.Client)
+	serviceList := serviceSet.ServiceList()
+	for _, svc := range serviceList {
+		err := svc.Finalize()
 		if err != nil {
 			return err
 		}
 	}
-
-	err := airshipsvc.FinalizeCommon(sip, r.Client)
+	err := serviceSet.Finalize()
 	if err != nil {
 		return err
 	}
@@ -246,7 +234,6 @@ func (r *SIPClusterReconciler) finalize(ctx context.Context, sip airshipv1.SIPCl
 	// 2- Let me now select the one's that meet the scheduling criteria
 	// If I schedule successfully then
 	// If Not complete schedule , then throw an error.
-	machines := &airshipvms.MachineList{}
 	logger.Info("finalize sip machines", "machines", machines.String())
 	// Update the list of  Machines.
 	err = machines.GetCluster(sip, r.Client)
