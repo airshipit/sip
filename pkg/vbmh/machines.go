@@ -99,7 +99,11 @@ func (m *Machine) String() string {
 		m.BMH.ObjectMeta.Name, m.ScheduleStatus, m.VMRole)
 }
 
-func NewMachine(bmh metal3.BareMetalHost, nodeRole airshipv1.VMRoles, schedState ScheduledState) (m *Machine) {
+func NewMachine(bmh metal3.BareMetalHost, nodeRole airshipv1.VMRoles, schedState ScheduledState) (m *Machine, e error) {
+	// Add logic to check if required fields exist.
+	if bmh.Spec.NetworkData == nil {
+		return nil, &ErrorNetworkDataNotFound{BMH: bmh}
+	}
 	return &Machine{
 		BMH:            bmh,
 		ScheduleStatus: schedState,
@@ -107,7 +111,7 @@ func NewMachine(bmh metal3.BareMetalHost, nodeRole airshipv1.VMRoles, schedState
 		Data: &MachineData{
 			IPOnInterface: make(map[string]string),
 		},
-	}
+	}, nil
 }
 
 type MachineData struct {
@@ -289,7 +293,12 @@ func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.VMRoles
 		if readyScheduled {
 			logger.Info("BMH host is not yet marked as ready to be scheduled, marking it as ready to be scheduled")
 			// Add it to the list.
-			ml.Machines[bmh.ObjectMeta.Name] = NewMachine(bmh, nodeRole, Scheduled)
+			m, err := NewMachine(bmh, nodeRole, Scheduled)
+			if err != nil {
+				logger.Info("BMH did not meet scheduling requirements", "error", err.Error())
+				continue
+			}
+			ml.Machines[bmh.ObjectMeta.Name] = m
 			ml.ReadyForScheduleCount[nodeRole]++
 		}
 	}
@@ -348,7 +357,12 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VMRoles, nodeCfg airshipv1.
 			// Only if its not in the list already
 			if validBmh {
 				// Lets add it to the list as a schedulable thing
-				ml.Machines[bmh.ObjectMeta.Name] = NewMachine(bmh, nodeRole, ToBeScheduled)
+				m, err := NewMachine(bmh, nodeRole, ToBeScheduled)
+				if err != nil {
+					logger.Info("Skipping BMH host as it did not meet creation requirements", "error", err.Error())
+					continue
+				}
+				ml.Machines[bmh.ObjectMeta.Name] = m
 				ml.ReadyForScheduleCount[nodeRole]++
 				// TODO Probable should remove the bmh from the
 				// list so if there are other node targets they

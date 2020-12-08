@@ -2,6 +2,9 @@ package vbmh
 
 import (
 	"fmt"
+
+	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+
 	airshipv1 "sipcluster/pkg/api/v1"
 )
 
@@ -42,4 +45,13 @@ type ErrorUknownSpreadTopology struct {
 
 func (e ErrorUknownSpreadTopology) Error() string {
 	return fmt.Sprintf("Uknown spread topology '%s'", e.Topology)
+}
+
+// ErrorNetworkDataNotFound is returned when NetworkData metadata is missing from BMH
+type ErrorNetworkDataNotFound struct {
+	BMH metal3.BareMetalHost
+}
+
+func (e ErrorNetworkDataNotFound) Error() string {
+	return fmt.Sprintf("vBMH Host %v does not define NetworkData, but is required for scheduling.", e.BMH)
 }
