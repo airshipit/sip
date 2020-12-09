@@ -21,11 +21,13 @@ const (
 
 var _ = Describe("MachineList", func() {
 	var machineList *MachineList
+	var err error
 	BeforeEach(func() {
 		nodes := map[string]*Machine{}
 		for n := 0; n < numNodes; n++ {
 			bmh, _ := testutil.CreateBMH(n, "default", "master", 6)
-			nodes[bmh.Name] = NewMachine(*bmh, airshipv1.VMMaster, NotScheduled)
+			nodes[bmh.Name], err = NewMachine(*bmh, airshipv1.VMMaster, NotScheduled)
+			Expect(err).To(BeNil())
 		}
 
 		machineList = &MachineList{
@@ -94,7 +96,8 @@ var _ = Describe("MachineList", func() {
 	It("Should retrieve the BMH IP from the BMH's NetworkData secret when infra services are defined", func() {
 		// Create a BMH with a NetworkData secret
 		bmh, secret := testutil.CreateBMH(1, "default", "master", 6)
-
+		m, err := NewMachine(*bmh, airshipv1.VMMaster, NotScheduled)
+		Expect(err).To(BeNil())
 		var objs []runtime.Object
 		objs = append(objs, bmh)
 		objs = append(objs, secret)
@@ -105,7 +108,7 @@ var _ = Describe("MachineList", func() {
 				Namespace: "default",
 			},
 			Machines: map[string]*Machine{
-				bmh.Name: NewMachine(*bmh, airshipv1.VMMaster, NotScheduled),
+				bmh.Name: m,
 			},
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
@@ -131,7 +134,8 @@ var _ = Describe("MachineList", func() {
 	It("Should not retrieve the BMH IP from the BMH's NetworkData secret if no infraServices are defined", func() {
 		// Create a BMH with a NetworkData secret
 		bmh, secret := testutil.CreateBMH(1, "default", "master", 6)
-
+		m, err := NewMachine(*bmh, airshipv1.VMMaster, NotScheduled)
+		Expect(err).To(BeNil())
 		var objs []runtime.Object
 		objs = append(objs, bmh)
 		objs = append(objs, secret)
@@ -142,7 +146,7 @@ var _ = Describe("MachineList", func() {
 				Namespace: "default",
 			},
 			Machines: map[string]*Machine{
-				bmh.Name: NewMachine(*bmh, airshipv1.VMMaster, NotScheduled),
+				bmh.Name: m,
 			},
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
@@ -166,5 +170,13 @@ var _ = Describe("MachineList", func() {
 		k8sClient := mockClient.NewFakeClient(objs...)
 		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		Expect(machineList.Extrapolate(*sipCluster, k8sClient)).To(BeTrue())
+	})
+
+	It("Should not schedule BMH if it is missing networkdata", func() {
+		// Create a BMH without NetworkData
+		bmh, _ := testutil.CreateBMH(1, "default", "master", 6)
+		bmh.Spec.NetworkData = nil
+		_, err := NewMachine(*bmh, airshipv1.VMMaster, NotScheduled)
+		Expect(err).ToNot(BeNil())
 	})
 })
