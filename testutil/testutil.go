@@ -16,6 +16,8 @@ const (
 	sipScheduleLabel = "sip.airshipit.org/sip-scheduled"
 	sipServerLabel   = "sip.airshipit.org/server"
 
+	VinoFlavorLabel = "airshipit.org/vino-flavor"
+
 	networkDataContent = `
 {
     "links": [
