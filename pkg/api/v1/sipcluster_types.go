@@ -23,12 +23,33 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// SIPClusterSpec defines the desired state of SIPCluster
+// +kubebuilder:object:root=true
+
+// SIPClusterList contains a list of SIPCluster
+type SIPClusterList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []SIPCluster `json:"items"`
+}
+
+// +kubebuilder:object:root=true
+
+// SIPCluster is the Schema for the sipclusters API
+type SIPCluster struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   SIPClusterSpec   `json:"spec,omitempty"`
+	Status SIPClusterStatus `json:"status,omitempty"`
+}
+
+// SIPClusterSpec defines the desired state of a SIPCluster
 type SIPClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Important: Run "make manifests to regenerate code after modifying this file
 
-	Config *SipConfig `json:"config,omitempty"`
+	// ClusterName is the name of the cluster to associate machines with
+	ClusterName string `json:"cluster-name,omitempty"`
 	// Nodes are the list of Nodes objects workers, or master that definee eexpectations
 	// of the Tenant cluster
 	// VMRole is either Control or Workers
@@ -43,10 +64,10 @@ type SIPClusterSpec struct {
 	InfraServices map[InfraService]InfraConfig `json:"infra"`
 }
 
-// SipConfig defines the desired state of SIPCluster
-type SipConfig struct {
-	// Cluster NAme to be used for labeling vBMH
-	ClusterName string `json:"cluster-name,omitempty"`
+// SIPClusterStatus defines the observed state of SIPCluster
+type SIPClusterStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // VMRoles defines the states the provisioner will report
@@ -129,32 +150,6 @@ type VMCount struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	Active  int `json:"active,omitempty"`
 	Standby int `json:"standby,omitempty"`
-}
-
-// SIPClusterStatus defines the observed state of SIPCluster
-type SIPClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
-
-// +kubebuilder:object:root=true
-
-// SIPCluster is the Schema for the sipclusters API
-type SIPCluster struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   SIPClusterSpec   `json:"spec,omitempty"`
-	Status SIPClusterStatus `json:"status,omitempty"`
-}
-
-// +kubebuilder:object:root=true
-
-// SIPClusterList contains a list of SIPCluster
-type SIPClusterList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []SIPCluster `json:"items"`
 }
 
 func init() {

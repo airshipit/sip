@@ -32,15 +32,12 @@ spec:
         metadata:
           type: object
         spec:
-          description: SIPClusterSpec defines the desired state of SIPCluster
+          description: SIPClusterSpec defines the desired state of a SIPCluster
           properties:
-            config:
-              description: SipConfig defines the desired state of SIPCluster
-              properties:
-                cluster-name:
-                  description: Cluster NAme to be used for labeling vBMH
-                  type: string
-              type: object
+            cluster-name:
+              description: ClusterName is the name of the cluster to associate machines
+                with
+              type: string
             infra:
               additionalProperties:
                 properties:

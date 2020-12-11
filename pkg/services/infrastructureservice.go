@@ -46,12 +46,7 @@ type Service struct {
 }
 
 func (s *Service) Deploy(sip airshipv1.SIPCluster, machines *airshipvms.MachineList, c client.Client) error {
-	// do something, might decouple this a bit
-	// If the  serviucces are defined as Helm Chart , then deploy might be simply
-
-	// Lets make sure that the namespace is in place.
-	// will be called the name of the cluster.
-	if err := s.createNS(sip.Spec.Config.ClusterName, c); err != nil {
+	if err := s.createNS(sip.Spec.ClusterName, c); err != nil {
 		return err
 	}
 	// Take the data from the appropriate Machines
@@ -61,35 +56,27 @@ func (s *Service) Deploy(sip airshipv1.SIPCluster, machines *airshipvms.MachineL
 }
 
 func (s *Service) createNS(serviceNamespaceName string, c client.Client) error {
-	// Get Namespace
-	// If not foundn then ccreate it
 	ns := &corev1.Namespace{}
-	// c is a created client.
-	err := c.Get(context.Background(), client.ObjectKey{
-		Name: serviceNamespaceName,
-	}, ns)
-
-	if err != nil {
-		serviceNamespace := &corev1.Namespace{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: corev1.SchemeGroupVersion.String(),
-				Kind:       "Namespace",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: serviceNamespaceName,
-			},
-		}
-		if err := c.Create(context.TODO(), serviceNamespace); err != nil {
-			return err
-		}
+	key := client.ObjectKey{Name: serviceNamespaceName}
+	if err := c.Get(context.Background(), key, ns); err == nil {
+		// Namespace already exists
+		return nil
 	}
 
-	return nil
+	serviceNamespace := &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: serviceNamespaceName,
+		},
+	}
+	return c.Create(context.TODO(), serviceNamespace)
 }
-func (s *Service) Validate() error {
-	// do something, might decouple this a bit
-	fmt.Printf("Validate Service:%v \n", s.serviceName)
 
+func (s *Service) Validate() error {
+	fmt.Printf("Validate Service:%v \n", s.serviceName)
 	return nil
 }
 
@@ -104,14 +91,10 @@ func FinalizeCommon(sip airshipv1.SIPCluster, c client.Client) error {
 			Kind:       "Namespace",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: sip.Spec.Config.ClusterName,
+			Name: sip.Spec.ClusterName,
 		},
 	}
-	if err := c.Delete(context.TODO(), serviceNamespace); err != nil {
-		return err
-	}
-
-	return nil
+	return c.Delete(context.TODO(), serviceNamespace)
 }
 
 // Service Factory

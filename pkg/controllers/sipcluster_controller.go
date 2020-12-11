@@ -38,6 +38,10 @@ type SIPClusterReconciler struct {
 	NamespacedName types.NamespacedName
 }
 
+const (
+	sipFinalizerName = "sip.airship.airshipit.org/finalizer"
+)
+
 // +kubebuilder:rbac:groups=airship.airshipit.org,resources=sipclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=airship.airshipit.org,resources=sipclusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=airship.airshipit.org,resources=sipclusters/status,verbs=get;update;patch
@@ -49,55 +53,41 @@ func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	r.NamespacedName = req.NamespacedName
 	log := r.Log.WithValues("SIPCluster", r.NamespacedName)
 
-	// Lets retrieve the SIPCluster
 	sip := airshipv1.SIPCluster{}
 	if err := r.Get(ctx, req.NamespacedName, &sip); err != nil {
-		//log.Error(err, "unable to fetch SIP Cluster")
+		log.Error(err, "unable to fetch SIPCluster")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
 		return ctrl.Result{}, nil
 	}
 
-	// Check for Deletion
-	// name of our custom finalizer
-	sipFinalizerName := "sip.airship.airshipit.org/finalizer"
-	// Tghis only works if I add a finalizer to CRD TODO
-	if sip.ObjectMeta.DeletionTimestamp.IsZero() {
-		// machines
-		machines, err := r.gatherVBMH(sip)
-		if err != nil {
-			log.Error(err, "unable to gather vBMHs")
-			return ctrl.Result{}, err
+	if !sip.ObjectMeta.DeletionTimestamp.IsZero() {
+		// SIPCluster is being deleted; handle the finalizers, then stop reconciling
+		// TODO(howell): add finalizers to the CRD
+		if containsString(sip.ObjectMeta.Finalizers, sipFinalizerName) {
+			return r.handleFinalizers(sip)
 		}
-
-		err = r.deployInfra(sip, machines)
-		if err != nil {
-			log.Error(err, "unable to deploy infrastructure services")
-			return ctrl.Result{}, err
-		}
-
-		err = r.finish(sip, machines)
-		if err != nil {
-			log.Error(err, "unable to finish creation/update ..")
-			return ctrl.Result{}, err
-		}
-	} else if containsString(sip.ObjectMeta.Finalizers, sipFinalizerName) {
-		// Deleting the SIP , what do we do now
-		// our finalizer is present, so lets handle any external dependency
-		err := r.finalize(sip)
-		if err != nil {
-			log.Error(err, "unable to finalize")
-			return ctrl.Result{}, err
-		}
-
-		// remove our finalizer from the list and update it.
-		sip.ObjectMeta.Finalizers = removeString(sip.ObjectMeta.Finalizers, sipFinalizerName)
-		if err := r.Update(context.Background(), &sip); err != nil {
-			return ctrl.Result{}, err
-		}
+		return ctrl.Result{}, nil
 	}
 
+	machines, err := r.gatherVBMH(sip)
+	if err != nil {
+		log.Error(err, "unable to gather vBMHs")
+		return ctrl.Result{}, err
+	}
+
+	err = r.deployInfra(sip, machines)
+	if err != nil {
+		log.Error(err, "unable to deploy infrastructure services")
+		return ctrl.Result{}, err
+	}
+
+	err = r.finish(sip, machines)
+	if err != nil {
+		log.Error(err, "unable to finish reconciliation")
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
 
@@ -107,8 +97,20 @@ func (r *SIPClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-// Helper functions to check and remove string from a slice of strings.
-// There might be a golang funuction to do this . Will check later
+func (r *SIPClusterReconciler) handleFinalizers(sip airshipv1.SIPCluster) (ctrl.Result, error) {
+	log := r.Log
+	err := r.finalize(sip)
+	if err != nil {
+		log.Error(err, "unable to finalize")
+		return ctrl.Result{}, err
+	}
+
+	// remove the finalizer from the list and update it.
+	sip.ObjectMeta.Finalizers = removeString(sip.ObjectMeta.Finalizers, sipFinalizerName)
+	return ctrl.Result{}, r.Update(context.Background(), &sip)
+}
+
+// containsString is a helper function to check whether the string s is in the slice
 func containsString(slice []string, s string) bool {
 	for _, item := range slice {
 		if item == s {
@@ -118,14 +120,15 @@ func containsString(slice []string, s string) bool {
 	return false
 }
 
-func removeString(slice []string, s string) (result []string) {
-	for _, item := range slice {
+// removeString is a helper function to remove the string s from the slice.
+// if s is not in the slice, the original slice is returned
+func removeString(slice []string, s string) []string {
+	for i, item := range slice {
 		if item == s {
-			continue
+			return append(slice[:i], slice[i+1:]...)
 		}
-		result = append(result, item)
 	}
-	return
+	return slice
 }
 
 /*
@@ -219,26 +222,23 @@ func (r *SIPClusterReconciler) finish(sip airshipv1.SIPCluster, machines *airshi
 }
 
 /**
-
 Deal with Deletion and Finalizers if any is needed
 Such as i'e what are we doing with the lables on the vBMH's
 **/
 func (r *SIPClusterReconciler) finalize(sip airshipv1.SIPCluster) error {
 	logger := r.Log.WithValues("SIPCluster", sip.GetNamespace()+"/"+sip.GetName())
 	for sName, sConfig := range sip.Spec.InfraServices {
-		// Instantiate
 		service, err := airshipsvc.NewService(sName, sConfig)
 		if err != nil {
 			return err
 		}
 
-		// Lets clean  Service specific stuff
 		err = service.Finalize(sip, r.Client)
 		if err != nil {
 			return err
 		}
 	}
-	// Clean Up common servicce stuff
+
 	err := airshipsvc.FinalizeCommon(sip, r.Client)
 	if err != nil {
 		return err
@@ -255,8 +255,9 @@ func (r *SIPClusterReconciler) finalize(sip airshipv1.SIPCluster) error {
 	if err != nil {
 		return err
 	}
-	// Placeholder unsuree whether this is what we want
-	err = machines.RemoveLabels(sip, r.Client)
+
+	// Placeholder - unsure whether this is what we want
+	err = machines.RemoveLabels(r.Client)
 	if err != nil {
 		return err
 	}

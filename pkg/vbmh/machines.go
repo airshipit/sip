@@ -235,7 +235,7 @@ func (ml *MachineList) identifyNodes(sip airshipv1.SIPCluster,
 			return err
 		}
 		logger.Info("Matching hosts against constraints")
-		err = ml.scheduleIt(nodeRole, nodeCfg, bmhList, scheduleSetMap, c, sip.Spec.Config)
+		err = ml.scheduleIt(nodeRole, nodeCfg, bmhList, scheduleSetMap, c, sip.Spec.ClusterName)
 		if err != nil {
 			return err
 		}
@@ -266,12 +266,12 @@ func (ml *MachineList) initScheduleMaps(role airshipv1.VMRoles,
 }
 
 func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.VMRoles,
-	c client.Client, sipCfg *airshipv1.SipConfig) int {
+	c client.Client, clusterName string) int {
 	bmhList := &metal3.BareMetalHostList{}
 
 	scheduleLabels := map[string]string{
 		SipScheduleLabel: "true",
-		SipClusterLabel:  sipCfg.ClusterName,
+		SipClusterLabel:  clusterName,
 		SipNodeTypeLabel: string(nodeRole),
 	}
 
@@ -311,13 +311,14 @@ func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.VMRoles
 
 func (ml *MachineList) scheduleIt(nodeRole airshipv1.VMRoles, nodeCfg airshipv1.NodeSet,
 	bmList *metal3.BareMetalHostList, scheduleSet *ScheduleSet,
-	c client.Client, sipCfg *airshipv1.SipConfig) error {
+	c client.Client, clusterName string) error {
 	logger := ml.Log.WithValues("SIPCluster", ml.NamespacedName, "role", nodeRole)
 	validBmh := true
 	// Count the expectations stated in the CR
 	// 	Reduce from the list of BMH's already scheduled and  labeled with the Cluster Name
 	// 	Reduce from the number of Machines I have identified  already to be Labeled
-	nodeTarget := (nodeCfg.Count.Active + nodeCfg.Count.Standby) - ml.countScheduledAndTobeScheduled(nodeRole, c, sipCfg)
+	totalNodes := nodeCfg.Count.Active + nodeCfg.Count.Standby
+	nodeTarget := totalNodes - ml.countScheduledAndTobeScheduled(nodeRole, c, clusterName)
 
 	logger.Info("BMH count that need to be scheduled for SIP cluster discouting nodes ready to be scheduled",
 		"BMH count to be scheduled", nodeTarget)
@@ -678,7 +679,7 @@ func (ml *MachineList) ApplyLabels(sip airshipv1.SIPCluster, c client.Client) er
 		if machine.ScheduleStatus == ToBeScheduled {
 			bmh := &machine.BMH
 			fmt.Printf("ApplyLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
-			bmh.Labels[SipClusterLabel] = sip.Spec.Config.ClusterName
+			bmh.Labels[SipClusterLabel] = sip.Spec.ClusterName
 			bmh.Labels[SipScheduleLabel] = "true"
 			bmh.Labels[SipNodeTypeLabel] = string(machine.VMRole)
 
@@ -696,7 +697,7 @@ func (ml *MachineList) ApplyLabels(sip airshipv1.SIPCluster, c client.Client) er
 }
 
 // RemoveLabels removes sip related labels
-func (ml *MachineList) RemoveLabels(sip airshipv1.SIPCluster, c client.Client) error {
+func (ml *MachineList) RemoveLabels(c client.Client) error {
 	fmt.Printf("ApplyLabels  %s size:%d\n", ml.String(), len(ml.Machines))
 	for _, machine := range ml.Machines {
 		bmh := &machine.BMH
@@ -724,7 +725,7 @@ func (ml *MachineList) GetCluster(sip airshipv1.SIPCluster, c client.Client) err
 	bmhList := &metal3.BareMetalHostList{}
 	scheduleLabels := map[string]string{
 		SipScheduleLabel: "true",
-		SipClusterLabel:  sip.Spec.Config.ClusterName,
+		SipClusterLabel:  sip.Spec.ClusterName,
 	}
 
 	err := c.List(context.Background(), bmhList, client.MatchingLabels(scheduleLabels))

@@ -210,9 +210,7 @@ func CreateSIPCluster(name string, namespace string, masters int, workers int) *
 			Namespace: namespace,
 		},
 		Spec: airshipv1.SIPClusterSpec{
-			Config: &airshipv1.SipConfig{
-				ClusterName: name,
-			},
+			ClusterName: name,
 			Nodes: map[airshipv1.VMRoles]airshipv1.NodeSet{
 				airshipv1.VMMaster: {
 					VMFlavor:   "airshipit.org/vino-flavor=master",

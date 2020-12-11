@@ -27,9 +27,6 @@ type LoadBalancer struct {
 }
 
 func (l *LoadBalancer) Deploy(sip airshipv1.SIPCluster, machines *airshipvms.MachineList, c client.Client) error {
-	// do something, might decouple this a bit
-	// If the  serviucces are defined as Helm Chart , then deploy might be simply
-
 	// Take the data from the appropriate Machines
 	// Prepare the Config
 	err := l.Service.Deploy(sip, machines, c)
