@@ -6,8 +6,7 @@ metadata:
   finalizers:
     - sip.airship.airshipit.org/finalizer
 spec:
-    config:
-        cluster-name: subcluster-test1
+    cluster-name: subcluster-test1
     nodes:
       worker:
           vm-flavor: 'airshipit.org/vino-flavor=worker'
