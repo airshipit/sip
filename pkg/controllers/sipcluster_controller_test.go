@@ -25,6 +25,7 @@ import (
 
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -114,6 +115,16 @@ var _ = Describe("SIPCluster controller", func() {
 
 				return compareLabels(expectedLabels, bmh.GetLabels())
 			}, 30, 5).Should(Succeed())
+
+			// Validate SIP CR ready condition has been updated
+			var sipCR airshipv1.SIPCluster
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
+				Name:      clusterName,
+				Namespace: testNamespace,
+			}, &sipCR)).To(Succeed())
+
+			Expect(apimeta.IsStatusConditionFalse(sipCR.Status.Conditions,
+				airshipv1.ConditionTypeReady)).To(BeTrue())
 		})
 
 		It("Should not schedule nodes when there is an insufficient number of available worker nodes", func() {
@@ -149,6 +160,16 @@ var _ = Describe("SIPCluster controller", func() {
 
 				return compareLabels(expectedLabels, bmh.GetLabels())
 			}, 30, 5).Should(Succeed())
+
+			// Validate SIP CR ready condition has been updated
+			var sipCR airshipv1.SIPCluster
+			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
+				Name:      clusterName,
+				Namespace: testNamespace,
+			}, &sipCR)).To(Succeed())
+
+			Expect(apimeta.IsStatusConditionFalse(sipCR.Status.Conditions,
+				airshipv1.ConditionTypeReady)).To(BeTrue())
 		})
 
 		Context("With per-node scheduling", func() {
@@ -201,6 +222,16 @@ var _ = Describe("SIPCluster controller", func() {
 
 					return compareLabels(expectedLabels, bmh.GetLabels())
 				}, 30, 5).Should(Succeed())
+
+				// Validate SIP CR ready condition has been updated
+				var sipCR airshipv1.SIPCluster
+				Expect(k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      clusterName,
+					Namespace: testNamespace,
+				}, &sipCR)).To(Succeed())
+
+				Expect(apimeta.IsStatusConditionFalse(sipCR.Status.Conditions,
+					airshipv1.ConditionTypeReady)).To(BeTrue())
 			})
 
 			It("Should not schedule two master nodes to the same server", func() {
@@ -252,6 +283,16 @@ var _ = Describe("SIPCluster controller", func() {
 
 					return compareLabels(expectedLabels, bmh.GetLabels())
 				}, 30, 5).Should(Succeed())
+
+				// Validate SIP CR ready condition has been updated
+				var sipCR airshipv1.SIPCluster
+				Expect(k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      clusterName,
+					Namespace: testNamespace,
+				}, &sipCR)).To(Succeed())
+
+				Expect(apimeta.IsStatusConditionFalse(sipCR.Status.Conditions,
+					airshipv1.ConditionTypeReady)).To(BeTrue())
 			})
 		})
 
@@ -311,6 +352,16 @@ var _ = Describe("SIPCluster controller", func() {
 
 					return compareLabels(expectedLabels, bmh.GetLabels())
 				}, 30, 5).Should(Succeed())
+
+				// Validate SIP CR ready condition has been updated
+				var sipCR airshipv1.SIPCluster
+				Expect(k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      clusterName,
+					Namespace: testNamespace,
+				}, &sipCR)).To(Succeed())
+
+				Expect(apimeta.IsStatusConditionFalse(sipCR.Status.Conditions,
+					airshipv1.ConditionTypeReady)).To(BeTrue())
 			})
 
 			It("Should not schedule two master nodes to the same rack", func() {
@@ -367,6 +418,17 @@ var _ = Describe("SIPCluster controller", func() {
 
 					return compareLabels(expectedLabels, bmh.GetLabels())
 				}, 30, 5).Should(Succeed())
+
+				// Validate SIP CR ready condition has been updated
+				var sipCR airshipv1.SIPCluster
+				Expect(k8sClient.Get(context.Background(), types.NamespacedName{
+					Name:      clusterName,
+					Namespace: testNamespace,
+				}, &sipCR)).To(Succeed())
+
+				Expect(apimeta.IsStatusConditionFalse(sipCR.Status.Conditions,
+					airshipv1.ConditionTypeReady)).To(BeTrue())
+
 			})
 		})
 	})

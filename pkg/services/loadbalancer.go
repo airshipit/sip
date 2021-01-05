@@ -39,9 +39,9 @@ func (lb loadBalancer) Deploy() error {
 		lb.config.Image = DefaultBalancerImage
 	}
 	if lb.config.NodePort < 30000 || lb.config.NodePort > 32767 {
-        lb.logger.Info("Either NodePort is not defined in the CR or NodePort is not in the required range of 30000-32767")
-        return nil
-    }
+		lb.logger.Info("Either NodePort is not defined in the CR or NodePort is not in the required range of 30000-32767")
+		return nil
+	}
 
 	pod, secret, err := lb.generatePodAndSecret()
 	if err != nil {
@@ -186,11 +186,11 @@ type backend struct {
 }
 
 type loadBalancer struct {
-        client   client.Client
-        sipName  types.NamespacedName
-        logger   logr.Logger
-        config   airshipv1.InfraConfig
-        machines *airshipvms.MachineList
+	client   client.Client
+	sipName  types.NamespacedName
+	logger   logr.Logger
+	config   airshipv1.InfraConfig
+	machines *airshipvms.MachineList
 }
 
 func newLB(name, namespace string,
@@ -211,13 +211,13 @@ func newLB(name, namespace string,
 }
 
 func (lb loadBalancer) Finalize() error {
-       // implete to delete loadbalancer
-       return nil
+	// implete to delete loadbalancer
+	return nil
 }
 
 // Type type of the service
 func (lb loadBalancer) Type() airshipv1.InfraService {
-       return airshipv1.LoadBalancerService
+	return airshipv1.LoadBalancerService
 }
 
 func generateTemplate(p proxy) ([]byte, error) {
