@@ -38,6 +38,14 @@ const (
 )
 
 var _ = Describe("SIPCluster controller", func() {
+
+	AfterEach(func() {
+		opts := []client.DeleteAllOfOption{client.InNamespace("default")}
+		Expect(k8sClient.DeleteAllOf(context.Background(), &metal3.BareMetalHost{}, opts...)).Should(Succeed())
+		Expect(k8sClient.DeleteAllOf(context.Background(), &airshipv1.SIPCluster{}, opts...)).Should(Succeed())
+		Expect(k8sClient.DeleteAllOf(context.Background(), &corev1.Secret{}, opts...)).Should(Succeed())
+	})
+
 	Context("When it detects a new SIPCluster", func() {
 		It("Should schedule available nodes", func() {
 			By("Labeling nodes")
@@ -72,8 +80,6 @@ var _ = Describe("SIPCluster controller", func() {
 
 				return compareLabels(expectedLabels, bmh.GetLabels())
 			}, 30, 5).Should(Succeed())
-
-			cleanTestResources()
 		})
 
 		It("Should not schedule nodes when there is an insufficient number of available master nodes", func() {
@@ -108,8 +114,6 @@ var _ = Describe("SIPCluster controller", func() {
 
 				return compareLabels(expectedLabels, bmh.GetLabels())
 			}, 30, 5).Should(Succeed())
-
-			cleanTestResources()
 		})
 
 		It("Should not schedule nodes when there is an insufficient number of available worker nodes", func() {
@@ -145,8 +149,6 @@ var _ = Describe("SIPCluster controller", func() {
 
 				return compareLabels(expectedLabels, bmh.GetLabels())
 			}, 30, 5).Should(Succeed())
-
-			cleanTestResources()
 		})
 
 		Context("With per-node scheduling", func() {
@@ -199,8 +201,6 @@ var _ = Describe("SIPCluster controller", func() {
 
 					return compareLabels(expectedLabels, bmh.GetLabels())
 				}, 30, 5).Should(Succeed())
-
-				cleanTestResources()
 			})
 
 			It("Should not schedule two master nodes to the same server", func() {
@@ -252,8 +252,6 @@ var _ = Describe("SIPCluster controller", func() {
 
 					return compareLabels(expectedLabels, bmh.GetLabels())
 				}, 30, 5).Should(Succeed())
-
-				cleanTestResources()
 			})
 		})
 
@@ -313,8 +311,6 @@ var _ = Describe("SIPCluster controller", func() {
 
 					return compareLabels(expectedLabels, bmh.GetLabels())
 				}, 30, 5).Should(Succeed())
-
-				cleanTestResources()
 			})
 
 			It("Should not schedule two master nodes to the same rack", func() {
@@ -371,8 +367,6 @@ var _ = Describe("SIPCluster controller", func() {
 
 					return compareLabels(expectedLabels, bmh.GetLabels())
 				}, 30, 5).Should(Succeed())
-
-				cleanTestResources()
 			})
 		})
 	})
@@ -392,11 +386,4 @@ func compareLabels(expected map[string]string, actual map[string]string) error {
 	}
 
 	return nil
-}
-
-func cleanTestResources() {
-	opts := []client.DeleteAllOfOption{client.InNamespace("default")}
-	Expect(k8sClient.DeleteAllOf(context.Background(), &metal3.BareMetalHost{}, opts...)).Should(Succeed())
-	Expect(k8sClient.DeleteAllOf(context.Background(), &airshipv1.SIPCluster{}, opts...)).Should(Succeed())
-	Expect(k8sClient.DeleteAllOf(context.Background(), &corev1.Secret{}, opts...)).Should(Succeed())
 }
