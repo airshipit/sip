@@ -147,8 +147,7 @@ func (ml *MachineList) String() string {
 }
 
 func (ml *MachineList) Schedule(sip airshipv1.SIPCluster, c client.Client) error {
-	logger := ml.Log.WithValues("SIPCluster", ml.NamespacedName)
-	logger.Info("starting scheduling of BaremetalHosts")
+	ml.Log.Info("starting scheduling of BaremetalHosts")
 
 	// Initialize the Target list
 	ml.init(sip.Spec.Nodes)
@@ -168,7 +167,7 @@ func (ml *MachineList) Schedule(sip airshipv1.SIPCluster, c client.Client) error
 	// If I get here the MachineList should have a selected set of  Machine's
 	// They are in the ScheduleStatus of ToBeScheduled as well as the Role
 	//
-	logger.Info("Found machines for scheduling", "count", len(ml.Machines))
+	ml.Log.Info("Found machines for scheduling", "count", len(ml.Machines))
 	return nil
 }
 
@@ -188,7 +187,6 @@ func (ml *MachineList) init(nodes map[airshipv1.VMRoles]airshipv1.NodeSet) {
 }
 
 func (ml *MachineList) getBMHs(c client.Client) (*metal3.BareMetalHostList, error) {
-	logger := ml.Log.WithValues("SIPCluster", ml.NamespacedName)
 	bmhList := &metal3.BareMetalHostList{}
 
 	// I am thinking we can add a Label for unsccheduled.
@@ -200,13 +198,13 @@ func (ml *MachineList) getBMHs(c client.Client) (*metal3.BareMetalHostList, erro
 	*/
 	scheduleLabels := map[string]string{SipScheduleLabel: "false"}
 
-	logger.Info("Getting all available BaremetalHosts that are not scheduled")
+	ml.Log.Info("Getting all available BaremetalHosts that are not scheduled")
 	err := c.List(context.Background(), bmhList, client.MatchingLabels(scheduleLabels))
 	if err != nil {
-		logger.Info("Received an error while getting BaremetalHost list", "error", err.Error())
+		ml.Log.Info("Received an error while getting BaremetalHost list", "error", err.Error())
 		return bmhList, err
 	}
-	logger.Info("Got a list of hosts", "BaremetalHostCount", len(bmhList.Items))
+	ml.Log.Info("Got a list of hosts", "BaremetalHostCount", len(bmhList.Items))
 	if len(bmhList.Items) > 0 {
 		return bmhList, nil
 	}
@@ -215,7 +213,6 @@ func (ml *MachineList) getBMHs(c client.Client) (*metal3.BareMetalHostList, erro
 
 func (ml *MachineList) identifyNodes(sip airshipv1.SIPCluster,
 	bmhList *metal3.BareMetalHostList, c client.Client) error {
-	logger := ml.Log.WithValues("SIPCluster", ml.NamespacedName)
 	// If using the SIP Sheduled label, we now have a list of vBMH;'s
 	// that are not scheduled
 	// Next I need to apply the constraints
@@ -224,10 +221,10 @@ func (ml *MachineList) identifyNodes(sip airshipv1.SIPCluster,
 	// Only deals with AntiAffinity at :
 	// - Racks  : Dont select two machines in the same rack
 	// - Server : Dont select two machines in the same server
-	logger.Info("Trying to identify BaremetalHosts that match scheduling parameters",
+	ml.Log.Info("Trying to identify BaremetalHosts that match scheduling parameters",
 		"initial BMH count", len(bmhList.Items))
 	for nodeRole, nodeCfg := range sip.Spec.Nodes {
-		logger := logger.WithValues("role", nodeRole) //nolint:govet
+		logger := ml.Log.WithValues("role", nodeRole) //nolint:govet
 		ml.ReadyForScheduleCount[nodeRole] = 0
 		logger.Info("Getting host constraints")
 		scheduleSetMap, err := ml.initScheduleMaps(nodeRole, nodeCfg.Scheduling)
@@ -245,7 +242,7 @@ func (ml *MachineList) identifyNodes(sip airshipv1.SIPCluster,
 
 func (ml *MachineList) initScheduleMaps(role airshipv1.VMRoles,
 	constraint airshipv1.SpreadTopology) (*ScheduleSet, error) {
-	logger := ml.Log.WithValues("SIPCluster", ml.NamespacedName, "role", role, "spread topology", constraint)
+	logger := ml.Log.WithValues("role", role, "spread topology", constraint)
 	var labelName string
 	switch constraint {
 	case airshipv1.RackAntiAffinity:
@@ -275,7 +272,7 @@ func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.VMRoles
 		SipNodeTypeLabel: string(nodeRole),
 	}
 
-	logger := ml.Log.WithValues("SIPCluster", ml.NamespacedName, "role", nodeRole)
+	logger := ml.Log.WithValues("role", nodeRole)
 	logger.Info("Getting list of BaremetalHost already scheduled for SIP cluster from kubernetes")
 	err := c.List(context.Background(), bmhList, client.MatchingLabels(scheduleLabels))
 	if err != nil {
@@ -312,7 +309,7 @@ func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.VMRoles
 func (ml *MachineList) scheduleIt(nodeRole airshipv1.VMRoles, nodeCfg airshipv1.NodeSet,
 	bmList *metal3.BareMetalHostList, scheduleSet *ScheduleSet,
 	c client.Client, clusterName string) error {
-	logger := ml.Log.WithValues("SIPCluster", ml.NamespacedName, "role", nodeRole)
+	logger := ml.Log.WithValues("role", nodeRole)
 	validBmh := true
 	// Count the expectations stated in the CR
 	// 	Reduce from the list of BMH's already scheduled and  labeled with the Cluster Name

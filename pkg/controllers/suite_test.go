@@ -52,7 +52,9 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
+	logf.SetLogger(
+		zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)),
+	)
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -79,7 +81,6 @@ var _ = BeforeSuite(func(done Done) {
 
 	err = (&SIPClusterReconciler{
 		Client: k8sManager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		Scheme: scheme.Scheme,
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
