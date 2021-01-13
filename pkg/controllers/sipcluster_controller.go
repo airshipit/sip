@@ -33,7 +33,6 @@ import (
 // SIPClusterReconciler reconciles a SIPCluster object
 type SIPClusterReconciler struct {
 	client.Client
-	Log            logr.Logger
 	Scheme         *runtime.Scheme
 	NamespacedName types.NamespacedName
 }
@@ -48,10 +47,9 @@ const (
 
 // +kubebuilder:rbac:groups="metal3.io",resources=baremetalhosts,verbs=get;update;patch;list
 
-func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *SIPClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.NamespacedName = req.NamespacedName
-	log := r.Log.WithValues("SIPCluster", r.NamespacedName)
+	log := logr.FromContext(ctx)
 
 	sip := airshipv1.SIPCluster{}
 	if err := r.Get(ctx, req.NamespacedName, &sip); err != nil {
@@ -66,12 +64,12 @@ func (r *SIPClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		// SIPCluster is being deleted; handle the finalizers, then stop reconciling
 		// TODO(howell): add finalizers to the CRD
 		if containsString(sip.ObjectMeta.Finalizers, sipFinalizerName) {
-			return r.handleFinalizers(sip)
+			return r.handleFinalizers(ctx, sip)
 		}
 		return ctrl.Result{}, nil
 	}
 
-	machines, err := r.gatherVBMH(sip)
+	machines, err := r.gatherVBMH(ctx, sip)
 	if err != nil {
 		log.Error(err, "unable to gather vBMHs")
 		return ctrl.Result{}, err
@@ -97,9 +95,9 @@ func (r *SIPClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *SIPClusterReconciler) handleFinalizers(sip airshipv1.SIPCluster) (ctrl.Result, error) {
-	log := r.Log
-	err := r.finalize(sip)
+func (r *SIPClusterReconciler) handleFinalizers(ctx context.Context, sip airshipv1.SIPCluster) (ctrl.Result, error) {
+	log := logr.FromContext(ctx)
+	err := r.finalize(ctx, sip)
 	if err != nil {
 		log.Error(err, "unable to finalize")
 		return ctrl.Result{}, err
@@ -156,15 +154,15 @@ func removeString(slice []string, s string) []string {
 */
 
 // machines
-func (r *SIPClusterReconciler) gatherVBMH(sip airshipv1.SIPCluster) (*airshipvms.MachineList, error) {
+func (r *SIPClusterReconciler) gatherVBMH(ctx context.Context, sip airshipv1.SIPCluster) (*airshipvms.MachineList, error) {
 	// 1- Let me retrieve all BMH  that are unlabeled or already labeled with the target Tenant/CNF
 	// 2- Let me now select the one's that meet the scheduling criteria
 	// If I schedule successfully then
 	// If Not complete schedule , then throw an error.
-	logger := r.Log.WithValues("SIPCluster", r.NamespacedName)
+	logger := logr.FromContext(ctx)
 	logger.Info("starting to gather BaremetalHost machines for SIPcluster")
 	machines := &airshipvms.MachineList{
-		Log:            r.Log.WithName("machines"),
+		Log:            logger.WithName("machines"),
 		NamespacedName: r.NamespacedName,
 	}
 	// TODO : this is a loop until we succeed or cannot find a schedule
@@ -225,8 +223,8 @@ func (r *SIPClusterReconciler) finish(sip airshipv1.SIPCluster, machines *airshi
 Deal with Deletion and Finalizers if any is needed
 Such as i'e what are we doing with the lables on the vBMH's
 **/
-func (r *SIPClusterReconciler) finalize(sip airshipv1.SIPCluster) error {
-	logger := r.Log.WithValues("SIPCluster", sip.GetNamespace()+"/"+sip.GetName())
+func (r *SIPClusterReconciler) finalize(ctx context.Context, sip airshipv1.SIPCluster) error {
+	logger := logr.FromContext(ctx)
 	for sName, sConfig := range sip.Spec.InfraServices {
 		service, err := airshipsvc.NewService(sName, sConfig)
 		if err != nil {
