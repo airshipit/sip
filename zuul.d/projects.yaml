@@ -1,10 +1,10 @@
 - project:
     check:
       jobs:
-        - noop
+        - airship-deploy-sip
     gate:
       jobs:
-        - noop
+        - airship-deploy-sip
     post:
       jobs:
         - airship-sip-upload-git-mirror

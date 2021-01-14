@@ -72,36 +72,68 @@ SIPCluster CR will exists within the Control phase for a Tenant cluster.
 
 ## Development environment
 
-### Kind kubernetes cluster
-Fastest way to set up a k8s cluster for development env is to use kind to set it up
+### Pre-requisites
 
-#### Install kind on linux (amd64 arch)
+#### Install Golang 1.15+
+
+SIP is a project written in Go, and the make targets used to deploy SIP leverage both Go and
+Kustomize commands which require Golang be installed.
+
+For detailed installation instructions, please see the [Golang installation guide](https://golang.org/doc/install).
+
+#### Install Kustomize v3.2.3+
+
+In order to apply manifests to your cluster via Make targets we suggest the use of Kustomize.
+
+For detailed installation instructions, please see the [Kustomize installation guide](https://kubectl.docs.kubernetes.io/installation/kustomize/).
+
+#### Proxy Setup
+
+If your organization requires development behind a proxy server, you will need to define the
+following environment variables with your organization's information:
 
 ```
-# curl -Lo kind https://kind.sigs.k8s.io/dl/v0.9.0/kind-linux-amd64
-# sudo install  -m 755 --owner=root --group=root kind /usr/local/bin
-# rm kind
+HTTP_PROXY=http://username:password@host:port
+HTTPS_PROXY=http://username:password@host:port
+NO_PROXY="localhost,127.0.0.1,10.96.0.0/12"
+PROXY=http://username:password@host:port
+USE_PROXY=true
 ```
 
-More information on how to install kind binary can be found be found [here](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
+10.96.0.0/12 is the Kubernetes service CIDR.
 
-#### Create k8s cluster with kind
+#### Deploy kubernetes using minikube and create k8s cluster
 
 ```
-# make kind-create
+# ./tools/deployment/install-k8s.sh
+```
+
+### Deploy SIP
+
+```
+# make docker-build
 # kubectl get nodes
-```
-
-### Deploy SIP operator on top of kind cluster
-kind-load-image target will build docker image from the current state of your local
-git repository and upload it to kind cluster to be available for kubelet.
-
-```
-# make kind-load-image
 # make deploy
 ```
 
-Now you have a working k8s cluster with sip installed on it with your changes to SIP operator
+By now, you should have a working cluster with ViNO deployed on top of it.
+
+```
+kubectl get pods -A
+NAMESPACE           NAME                                            READY   STATUS    RESTARTS   AGE
+kube-system         calico-kube-controllers-744cfdf676-428vp        1/1     Running   0          4h30m
+kube-system         calico-node-pgr4k                               1/1     Running   0          4h30m
+kube-system         coredns-f9fd979d6-qk2dc                         1/1     Running   0          4h30m
+kube-system         etcd-govino                                     1/1     Running   0          4h30m
+kube-system         kube-apiserver-govino                           1/1     Running   0          4h30m
+kube-system         kube-controller-manager-govino                  1/1     Running   0          4h30m
+kube-system         kube-proxy-6wx46                                1/1     Running   0          4h30m
+kube-system         kube-scheduler-govino                           1/1     Running   0          4h30m
+kube-system         storage-provisioner                             1/1     Running   0          4h30m
+sipcluster-system   sipcluster-controller-manager-59c7dddcb-65lcb   2/2     Running   0          3h47m
+```
+
+
 
 ### Deliver SIP CRs to kubernetes
 

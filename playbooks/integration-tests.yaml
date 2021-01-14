@@ -1,0 +1,23 @@
+- hosts: ubuntu-bionic
+  tasks:
+    - name: Run ensure-docker
+      include_role:
+        name: ensure-docker
+    - name: Install Dependent Packages
+      apt:
+        pkg:
+          - debconf
+          - make
+          - wget
+          - snapd
+      become: yes
+    - name:  Set up requirements for kubernetes
+      include_role:
+        name: clear-firewall
+    - name: Install kubernetes and Deploy Sip
+      shell: |
+        set -xe;
+        ./tools/deployment/install-k8s.sh
+        ./tools/deployment/deploy-sip.sh
+      args:
+        chdir: "{{ zuul.project.src_dir }}"
