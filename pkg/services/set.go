@@ -119,6 +119,14 @@ func (ss ServiceSet) ServiceList() []InfraService {
 					serviceConfig,
 					ss.machines,
 					ss.client))
+		case airshipv1.JumpHostService:
+			serviceList = append(serviceList,
+				newJumpHost(ss.sip.GetName(),
+					ss.sip.Spec.ClusterName,
+					ss.logger,
+					serviceConfig,
+					ss.machines,
+					ss.client))
 		default:
 			ss.logger.Info("serviceType unsupported", "serviceType", serviceConfig.ServiceType)
 		}

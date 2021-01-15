@@ -50,45 +50,55 @@ var _ = Describe("Service Set", func() {
 			set := services.NewServiceSet(logger, *sip, machineList, k8sClient)
 
 			serviceList := set.ServiceList()
-			Expect(serviceList).To(HaveLen(1))
+			Expect(serviceList).To(HaveLen(2))
+			for _, svc := range serviceList {
+				err := svc.Deploy()
+				Expect(err).ToNot(HaveOccurred())
+			}
+
 			Eventually(func() error {
-				return testDeployment(serviceList[0], sip)
+				return testDeployment(sip)
 			}, 5, 1).Should(Succeed())
 		})
 	})
 })
 
-func testDeployment(sl services.InfraService, sip *airshipv1.SIPCluster) error {
-	err := sl.Deploy()
+func testDeployment(sip *airshipv1.SIPCluster) error {
+	jumpHostPod := &corev1.Pod{}
+	err := k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: "default",
+		Name:      sip.GetName() + "-jump-pod",
+	}, jumpHostPod)
 	if err != nil {
 		return err
 	}
 
-	pod := &corev1.Pod{}
+	loadBalancerPod := &corev1.Pod{}
 	err = k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: "default",
 		Name:      sip.GetName() + "-load-balancer",
-	}, pod)
+	}, loadBalancerPod)
 	if err != nil {
 		return err
 	}
 
-	secret := &corev1.Secret{}
+	loadBalancerSecret := &corev1.Secret{}
 	err = k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: "default",
 		Name:      sip.GetName() + "-load-balancer",
-	}, secret)
+	}, loadBalancerSecret)
 	if err != nil {
 		return err
 	}
 
-	service := &corev1.Service{}
+	loadBalancerService := &corev1.Service{}
 	err = k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: "default",
 		Name:      sip.GetName() + "-load-balancer-service",
-	}, service)
+	}, loadBalancerService)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

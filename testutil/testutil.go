@@ -235,6 +235,12 @@ func CreateSIPCluster(name string, namespace string, masters int, workers int) *
 					NodePort:      30000,
 					ServiceType:   airshipv1.LoadBalancerService,
 				},
+				{
+					Image:         "ubuntu:20.04",
+					NodePort:      7022,
+					NodeInterface: "eno3",
+					ServiceType:   airshipv1.JumpHostService,
+				},
 			},
 		},
 		Status: airshipv1.SIPClusterStatus{},
