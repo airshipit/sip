@@ -1,12 +1,18 @@
+# Docker Image Options
+DOCKER_REGISTRY     ?= quay.io
+DOCKER_FORCE_CLEAN  ?= true
+DOCKER_IMAGE_NAME   ?= sip
+DOCKER_IMAGE_PREFIX ?= airshipit
+DOCKER_IMAGE_TAG    ?= latest
+DOCKER_TARGET_STAGE ?= release
+PUBLISH             ?= false
+
 # Image URL to use all building/pushing image targets
 #IMG ?= controller:latest
-IMG ?= quay.io/airshipit/sip
+IMG ?= $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
-
-# Name of the kind cluster that will be created by kind-create target
-KIND_CLUSTER_NAME ?= sip-cluster
 
 TOOLBINDIR          := tools/bin
 
@@ -25,6 +31,9 @@ endif
 DOCKER_PROXY_FLAGS  := --build-arg http_proxy=$(HTTP_PROXY)
 DOCKER_PROXY_FLAGS  += --build-arg https_proxy=$(HTTPS_PROXY)
 DOCKER_PROXY_FLAGS  += --build-arg NO_PROXY=$(NO_PROXY)
+
+kubernetes:
+	./tools/deployment/install-k8s.sh
 
 all: manager
 
@@ -77,14 +86,6 @@ docker-build:
 # Push the docker image
 docker-push:
 	docker push ${IMG}
-
-# Create kind cluster
-kind-create:
-	kind create cluster --name ${KIND_CLUSTER_NAME}
-
-# Build docker container and load it into running kind cluster
-kind-load-image: docker-build
-	kind load docker-image ${IMG} --name ${KIND_CLUSTER_NAME}
 
 # find or download controller-gen
 # download controller-gen if necessary

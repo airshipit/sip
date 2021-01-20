@@ -8,3 +8,8 @@
       - name: git_mirror_credentials
         secret: airship_sip_airshipit_github_secret
         pass-to-parent: true
+- job:
+    name: airship-deploy-sip
+    run: playbooks/integration-tests.yaml
+    description: Deploys kubernetes and sip
+    timeout: 9600
