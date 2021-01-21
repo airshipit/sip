@@ -38,7 +38,7 @@ kubernetes:
 all: manager
 
 # Run tests
-test: generate fmt vet manifests lint
+test: generate fmt vet manifests lint api-docs
 	go test ./... -coverprofile cover.out
 
 # Build manager binary
@@ -86,6 +86,26 @@ docker-build:
 # Push the docker image
 docker-push:
 	docker push ${IMG}
+
+# Generate API reference documentation
+api-docs: gen-crd-api-reference-docs
+	$(API_REF_GEN) -api-dir=./pkg/api/v1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/sipcluster.md
+
+# Find or download gen-crd-api-reference-docs
+gen-crd-api-reference-docs:
+ifeq (, $(shell which gen-crd-api-reference-docs))
+	@{ \
+	set -e ;\
+	API_REF_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$API_REF_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get github.com/ahmetb/gen-crd-api-reference-docs@v0.2.0 ;\
+	rm -rf $$API_REF_GEN_TMP_DIR ;\
+	}
+API_REF_GEN=$(GOBIN)/gen-crd-api-reference-docs
+else
+API_REF_GEN=$(shell which gen-crd-api-reference-docs)
+endif
 
 # find or download controller-gen
 # download controller-gen if necessary
