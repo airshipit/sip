@@ -45,7 +45,7 @@ spec:
                     type: string
                   nodeInterfaceId:
                     type: string
-                  nodePorts:
+                  nodePort:
                     type: integer
                   nodelabels:
                     additionalProperties:

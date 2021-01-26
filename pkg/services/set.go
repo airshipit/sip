@@ -86,24 +86,24 @@ func (ss ServiceSet) Finalize() error {
 	return ss.client.Delete(context.TODO(), serviceNamespace)
 }
 
-func CreateNS (serviceNamespaceName string, c client.Client) error {
-    ns := &corev1.Namespace{}
-    key := client.ObjectKey{Name: serviceNamespaceName}
-    if err := c.Get(context.Background(), key, ns); err == nil {
-        // Namespace already exists
-        return nil
-    }
+func CreateNS(serviceNamespaceName string, c client.Client) error {
+	ns := &corev1.Namespace{}
+	key := client.ObjectKey{Name: serviceNamespaceName}
+	if err := c.Get(context.Background(), key, ns); err == nil {
+		// Namespace already exists
+		return nil
+	}
 
-    serviceNamespace := &corev1.Namespace{
-        TypeMeta: metav1.TypeMeta{
-        APIVersion: corev1.SchemeGroupVersion.String(),
-        Kind:   "Namespace",
-        },
-        ObjectMeta: metav1.ObjectMeta{
-        Name: serviceNamespaceName,
-        },
-    }
-    return c.Create(context.TODO(), serviceNamespace)
+	serviceNamespace := &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: serviceNamespaceName,
+		},
+	}
+	return c.Create(context.TODO(), serviceNamespace)
 }
 
 // ServiceList returns all services defined in Set
