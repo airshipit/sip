@@ -263,8 +263,8 @@ func removeString(slice []string, s string) []string {
 */
 
 // machines
-func (r *SIPClusterReconciler) gatherVBMH(ctx context.Context, sip airshipv1.SIPCluster) (*airshipvms.MachineList,
-	error) {
+func (r *SIPClusterReconciler) gatherVBMH(ctx context.Context, sip airshipv1.SIPCluster) (
+	*airshipvms.MachineList, error) {
 	// 1- Let me retrieve all BMH  that are unlabeled or already labeled with the target Tenant/CNF
 	// 2- Let me now select the one's that meet the scheduling criteria
 	// If I schedule successfully then
@@ -297,7 +297,8 @@ func (r *SIPClusterReconciler) gatherVBMH(ctx context.Context, sip airshipv1.SIP
 	return machines, nil
 }
 
-func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *airshipvms.MachineList, logger logr.Logger) error {
+func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *airshipvms.MachineList,
+	logger logr.Logger) error {
 	if err := airshipsvc.CreateNS(sip.Spec.ClusterName, r.Client); err != nil {
 		return err
 	}
