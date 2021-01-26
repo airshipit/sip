@@ -2,9 +2,11 @@
     check:
       jobs:
         - airship-deploy-sip
+        - airship-sip-test-suite
     gate:
       jobs:
         - airship-deploy-sip
+        - airship-sip-test-suite
     post:
       jobs:
         - airship-sip-upload-git-mirror

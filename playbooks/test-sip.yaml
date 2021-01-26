@@ -1,0 +1,65 @@
+- hosts: ubuntu-bionic
+  environment:
+    GOROOT: '/usr/local/go'
+    GOBIN: /tmp/bin/
+    PATH: /usr/local/go/bin:/tmp/bin/:/usr/local/kubebuilder/bin:{{ ansible_env.PATH }}
+  tasks:
+    - name: set default vars
+      set_fact:
+        var_files_default:
+          - airship-sip.yaml
+    - name: read test variables
+      include_vars:
+        file: "vars/{{ var_file }}"
+      with_items: "{{ var_files | default(var_files_default) }}"
+      loop_control:
+        loop_var: var_file
+    - name: Install Dependent Packages
+      package:
+        name:
+          - docker
+          - debconf
+          - runc
+          - make
+          - wget
+          - build-essential
+        update_cache: yes
+        state: present
+      become: yes
+    - name: Run ensure-docker
+      include_role:
+        name: ensure-docker
+    - name: Ensure docker group exists
+      group:
+        name: docker
+        state: present
+    - name: Add user "{{ ansible_user }}" to docker group
+      become: yes
+      user:
+        name: "{{ ansible_user }}"
+        groups:
+          - docker
+        append: yes
+    - name: Reset ssh connection to add docker group to user
+      meta: reset_connection
+      ignore_errors: true
+    - name: Download Extract and install Golang
+      become: yes
+      unarchive:
+        src: https://golang.org/dl/go{{airship_sip.go_lang.go_version}}.linux-amd64.tar.gz
+        dest: /usr/local/
+        remote_src: yes
+    - name: Download Extract and install Kubebuilder
+      become: yes
+      shell: |
+        wget  -c https://github.com/kubernetes-sigs/kubebuilder/releases/download/v{{airship_sip.kube_builder.kube_version}}/kubebuilder_{{airship_sip.kube_builder.kube_version}}_linux_amd64.tar.gz -O - | tar -xz -C /usr/local --one-top-level=kubebuilder --strip-components 1
+      args:
+        executable: /bin/bash
+    - name: Run test suite
+      make:
+        chdir: "{{ zuul.project.src_dir }}"
+        target: test
+    - name: Build Docker image
+      make:
+        chdir: "{{ zuul.project.src_dir }}"
+        target: docker-build

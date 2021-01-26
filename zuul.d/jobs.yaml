@@ -13,3 +13,8 @@
     run: playbooks/integration-tests.yaml
     description: Deploys kubernetes and sip
     timeout: 9600
+- job:
+    name: airship-sip-test-suite
+    description: Install kube-builder and tests make functionality.
+    run: playbooks/test-sip.yaml
+    timeout: 9600
