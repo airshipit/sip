@@ -23,7 +23,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	airshipv1 "sipcluster/pkg/api/v1"
 	airshipsvc "sipcluster/pkg/services"
@@ -91,7 +93,9 @@ func (r *SIPClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 func (r *SIPClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&airshipv1.SIPCluster{}).
+		For(&airshipv1.SIPCluster{}, builder.WithPredicates(
+			predicate.GenerationChangedPredicate{},
+		)).
 		Complete(r)
 }
 
