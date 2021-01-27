@@ -59,6 +59,10 @@
       make:
         chdir: "{{ zuul.project.src_dir }}"
         target: test
+    - name: Check git diff
+      make:
+        chdir: "{{ zuul.project.src_dir }}"
+        target: check-git-diff
     - name: Build Docker image
       make:
         chdir: "{{ zuul.project.src_dir }}"

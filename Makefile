@@ -116,3 +116,7 @@ $(LINTER): $(TOOLBINDIR)
 
 $(TOOLBINDIR):
 	mkdir -p $(TOOLBINDIR)
+
+.PHONY: check-git-diff
+check-git-diff:
+	@./tools/git_diff_check
