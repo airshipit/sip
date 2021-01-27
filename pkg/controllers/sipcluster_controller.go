@@ -20,8 +20,11 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kerror "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -62,33 +65,135 @@ func (r *SIPClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, nil
 	}
 
+	readyCondition := metav1.Condition{
+		Status:             metav1.ConditionFalse,
+		Reason:             airshipv1.ReasonTypeProgressing,
+		Type:               airshipv1.ConditionTypeReady,
+		ObservedGeneration: sip.GetGeneration(),
+	}
+
+	apimeta.SetStatusCondition(&sip.Status.Conditions, readyCondition)
+	if err := r.patchStatus(ctx, &sip); err != nil {
+		log.Error(err, "unable to set condition", "condition", readyCondition)
+		return ctrl.Result{Requeue: true}, err
+	}
+
 	if !sip.ObjectMeta.DeletionTimestamp.IsZero() {
 		// SIPCluster is being deleted; handle the finalizers, then stop reconciling
 		// TODO(howell): add finalizers to the CRD
 		if containsString(sip.ObjectMeta.Finalizers, sipFinalizerName) {
-			return r.handleFinalizers(ctx, sip)
+			result, err := r.handleFinalizers(ctx, sip)
+			if err != nil {
+				readyCondition = metav1.Condition{
+					Status:             metav1.ConditionFalse,
+					Reason:             airshipv1.ReasonTypeUnableToDecommission,
+					Type:               airshipv1.ConditionTypeReady,
+					Message:            err.Error(),
+					ObservedGeneration: sip.GetGeneration(),
+				}
+
+				apimeta.SetStatusCondition(&sip.Status.Conditions, readyCondition)
+				if patchStatusErr := r.patchStatus(ctx, &sip); err != nil {
+					err = kerror.NewAggregate([]error{err, patchStatusErr})
+					log.Error(err, "unable to set condition", "condition", readyCondition)
+				}
+
+				log.Error(err, "unable to finalize")
+				return ctrl.Result{Requeue: true}, err
+			}
+
+			return result, err
 		}
 		return ctrl.Result{}, nil
 	}
 
 	machines, err := r.gatherVBMH(ctx, sip)
 	if err != nil {
+		readyCondition = metav1.Condition{
+			Status:             metav1.ConditionFalse,
+			Reason:             airshipv1.ReasonTypeUnschedulable,
+			Type:               airshipv1.ConditionTypeReady,
+			Message:            err.Error(),
+			ObservedGeneration: sip.GetGeneration(),
+		}
+
+		apimeta.SetStatusCondition(&sip.Status.Conditions, readyCondition)
+		if patchStatusErr := r.patchStatus(ctx, &sip); err != nil {
+			err = kerror.NewAggregate([]error{err, patchStatusErr})
+			log.Error(err, "unable to set condition", "condition", readyCondition)
+		}
+
 		log.Error(err, "unable to gather vBMHs")
-		return ctrl.Result{}, err
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	err = r.deployInfra(sip, machines, log)
 	if err != nil {
+		readyCondition = metav1.Condition{
+			Status:             metav1.ConditionFalse,
+			Reason:             airshipv1.ReasonTypeInfraServiceFailure,
+			Type:               airshipv1.ConditionTypeReady,
+			Message:            err.Error(),
+			ObservedGeneration: sip.GetGeneration(),
+		}
+
+		apimeta.SetStatusCondition(&sip.Status.Conditions, readyCondition)
+		if patchStatusErr := r.patchStatus(ctx, &sip); err != nil {
+			err = kerror.NewAggregate([]error{err, patchStatusErr})
+			log.Error(err, "unable to set condition", "condition", readyCondition)
+		}
+
 		log.Error(err, "unable to deploy infrastructure services")
-		return ctrl.Result{}, err
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	err = r.finish(sip, machines)
 	if err != nil {
+		readyCondition = metav1.Condition{
+			Status:             metav1.ConditionFalse,
+			Reason:             airshipv1.ReasonTypeUnableToApplyLabels,
+			Type:               airshipv1.ConditionTypeReady,
+			Message:            err.Error(),
+			ObservedGeneration: sip.GetGeneration(),
+		}
+
+		apimeta.SetStatusCondition(&sip.Status.Conditions, readyCondition)
+		if patchStatusErr := r.patchStatus(ctx, &sip); err != nil {
+			err = kerror.NewAggregate([]error{err, patchStatusErr})
+			log.Error(err, "unable to set condition", "condition", readyCondition)
+		}
+
 		log.Error(err, "unable to finish reconciliation")
-		return ctrl.Result{}, err
+		return ctrl.Result{Requeue: true}, err
 	}
+
+	readyCondition = metav1.Condition{
+		Status:             metav1.ConditionTrue,
+		Reason:             airshipv1.ReasonTypeReconciliationSucceeded,
+		Type:               airshipv1.ConditionTypeReady,
+		ObservedGeneration: sip.GetGeneration(),
+	}
+
+	apimeta.SetStatusCondition(&sip.Status.Conditions, readyCondition)
+	if patchStatusErr := r.patchStatus(ctx, &sip); err != nil {
+		err = kerror.NewAggregate([]error{err, patchStatusErr})
+		log.Error(err, "unable to set condition", "condition", readyCondition)
+
+		return ctrl.Result{Requeue: true}, err
+	}
+
 	return ctrl.Result{}, nil
+}
+
+func (r *SIPClusterReconciler) patchStatus(ctx context.Context, sip *airshipv1.SIPCluster) error {
+	key := client.ObjectKeyFromObject(sip)
+	latest := &airshipv1.SIPCluster{}
+
+	if err := r.Client.Get(ctx, key, latest); err != nil {
+		return err
+	}
+
+	return r.Client.Status().Patch(ctx, sip, client.MergeFrom(latest))
 }
 
 func (r *SIPClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -158,7 +263,8 @@ func removeString(slice []string, s string) []string {
 */
 
 // machines
-func (r *SIPClusterReconciler) gatherVBMH(ctx context.Context, sip airshipv1.SIPCluster) (*airshipvms.MachineList, error) {
+func (r *SIPClusterReconciler) gatherVBMH(ctx context.Context, sip airshipv1.SIPCluster) (*airshipvms.MachineList,
+	error) {
 	// 1- Let me retrieve all BMH  that are unlabeled or already labeled with the target Tenant/CNF
 	// 2- Let me now select the one's that meet the scheduling criteria
 	// If I schedule successfully then

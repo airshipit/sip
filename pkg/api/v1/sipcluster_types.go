@@ -35,6 +35,7 @@ type SIPClusterList struct {
 // +kubebuilder:object:root=true
 
 // SIPCluster is the Schema for the sipclusters API
+// +kubebuilder:subresource:status
 type SIPCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -66,9 +67,36 @@ type SIPClusterSpec struct {
 
 // SIPClusterStatus defines the observed state of SIPCluster
 type SIPClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
+
+const (
+	// ConditionTypeReady indicates whether a resource is available for utilization
+	ConditionTypeReady string = "Ready"
+
+	// ReasonTypeInfraServiceFailure indicates that a resource has a specified condition because SIP was unable
+	// to configure infrastructure services for the SIPCluster.
+	ReasonTypeInfraServiceFailure string = "InfraServiceFailure"
+
+	// ReasonTypeProgressing indicates that a resource has a specified condition because SIP is processing it.
+	ReasonTypeProgressing string = "Progressing"
+
+	// ReasonTypeUnableToApplyLabels indicates that a resource has a specified condition because SIP was unable to
+	// apply labels to vBMHs for the SIPCluster.
+	ReasonTypeUnableToApplyLabels string = "UnableToApplyLabels"
+
+	// ReasonTypeUnableToDecommission indicates that a resource has a specified condition because SIP was unable to
+	// decommission the existing SIPCluster.
+	ReasonTypeUnableToDecommission string = "UnableToDecommission"
+
+	// ReasonTypeUnschedulable indicates that a resource has a specified condition because SIP was unable to
+	// schedule vBMHs for the SIPCluster.
+	ReasonTypeUnschedulable string = "Unschedulable"
+
+	// ReasonTypeReconciliationSucceeded indicates that a resource has a specified condition because SIP completed
+	// reconciliation of the SIPCluster.
+	ReasonTypeReconciliationSucceeded string = "ReconciliationSucceeded"
+)
 
 // VMRoles defines the states the provisioner will report
 // the tenant has having.
