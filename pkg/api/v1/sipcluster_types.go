@@ -44,6 +44,24 @@ type SIPCluster struct {
 	Status SIPClusterStatus `json:"status,omitempty"`
 }
 
+// Supported infrastructure service types
+// NOTE(drewwalters96): Change the kubebuilder validation comment above the InfraService type when modifying the string
+// values below.
+const (
+	// AuthHostService is an infrastructure service type that represents the sub-cluster authentication service.
+	AuthHostService InfraService = "auth"
+
+	// JumpHostService is an infrastructure service type that represents the sub-cluster jump-host service.
+	JumpHostService InfraService = "jumphost"
+
+	// LoadBalancerService is an infrastructure service type that represents the sub-cluster load balancer service.
+	LoadBalancerService InfraService = "loadbalancer"
+)
+
+// InfraService describes the type of infrastructure service that should be deployed when a sub-cluster is provisioned.
+// +kubebuilder:validation:Enum=auth;jumphost;loadbalancer
+type InfraService string
+
 // SIPClusterSpec defines the desired state of a SIPCluster
 type SIPClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -57,12 +75,8 @@ type SIPClusterSpec struct {
 	// VMRole VMRoles `json:"vm-role,omitempty"`
 	Nodes map[VMRoles]NodeSet `json:"nodes,omitempty"`
 
-	// Infra is the collection of expeected configuration details
-	// for the multiple infrastructure services or pods that SIP manages
-	//Infra *InfraSet `json:"infra,omitempty"`
-
-	// List of Infrastructure Services
-	InfraServices map[InfraService]InfraConfig `json:"infra"`
+	// InfraServices is a list of services that are deployed when a SIPCluster is provisioned.
+	InfraServices []InfraConfig `json:"infra"`
 }
 
 // SIPClusterStatus defines the observed state of SIPCluster
@@ -96,22 +110,6 @@ const (
 	// ReasonTypeReconciliationSucceeded indicates that a resource has a specified condition because SIP completed
 	// reconciliation of the SIPCluster.
 	ReasonTypeReconciliationSucceeded string = "ReconciliationSucceeded"
-)
-
-// VMRoles defines the states the provisioner will report
-// the tenant has having.
-type InfraService string
-
-// Possible Infra Structure Services
-const (
-	// LoadBalancer Service
-	LoadBalancerService InfraService = "loadbalancer"
-
-	// JumpHostService Service
-	JumpHostService InfraService = "jumppod"
-
-	// AuthHostService Service
-	AuthHostService InfraService = "authpod"
 )
 
 // NodeSet are the the list of Nodes objects workers,
@@ -150,6 +148,7 @@ const (
 )
 
 type InfraConfig struct {
+	ServiceType   InfraService      `json:"serviceType"`
 	OptionalData  *OptsConfig       `json:"optional,omitempty"`
 	Image         string            `json:"image,omitempty"`
 	NodeLabels    map[string]string `json:"nodelabels,omitempty"`

@@ -12,7 +12,7 @@ spec:
           vm-flavor: 'airshipit.org/vino-flavor=worker'
           spreadTopology: 'per-node' # Support dont'care option.
           count:
-              active: 2 #driven by capi node number
+              active: 1 #driven by capi node number
               standby: 1 #slew for upgrades etc
       master:
           vm-flavor: 'airshipit.org/vino-flavor=master'
@@ -21,25 +21,25 @@ spec:
               active: 1
               standby: 1
     infra:
-        loadbalancer:
-          optional:
-            clusterIP: 1.2.3.4 #<-- this aligns to the VIP IP for undercloud k8s
-          image: haproxy:2.3.2
-          nodeLabels:
-              - airship-masters
-          nodePort: 30000
-          nodeInterfaceId: oam-ipv4
-        jumppod:
-          optional:
-            sshKey: rsa.... #<-- this needs to align to the ssh keys provided to cluster api objects
-          image: sshpod:foo
-          nodeLabels:
-            - airship-masters
-          nodePort: 7022
-          nodeInterfaceId: oam-ipv4
-        authpod:
-          image: sshpod:foo
-          nodeLabels:
-            - airship-masters
-          nodePort: 7023
-          nodeInterfaceId: oam-ipv4
+      - serviceType: auth
+        image: sshpod:foo
+        nodeLabels:
+          - airship-masters
+        nodePort: 7023
+        nodeInterfaceId: oam-ipv4
+      - serviceType: jumphost
+        optional:
+          sshKey: rsa.... #<-- this needs to align to the ssh keys provided to cluster api objects
+        image: sshpod:foo
+        nodeLabels:
+          - airship-masters
+        nodePort: 7022
+        nodeInterfaceId: oam-ipv4
+      - serviceType: loadbalancer
+        optional:
+          clusterIP: 1.2.3.4 #<-- this aligns to the VIP IP for undercloud k8s
+        image: haproxy:2.3.2
+        nodeLabels:
+          - airship-masters
+        nodePort: 30000
+        nodeInterfaceId: oam-ipv4

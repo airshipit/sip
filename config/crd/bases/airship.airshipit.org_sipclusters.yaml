@@ -41,7 +41,9 @@ spec:
                 with
               type: string
             infra:
-              additionalProperties:
+              description: InfraServices is a list of services that are deployed when
+                a SIPCluster is provisioned.
+              items:
                 properties:
                   image:
                     type: string
@@ -60,9 +62,18 @@ spec:
                       sshkey:
                         type: string
                     type: object
+                  serviceType:
+                    description: InfraService describes the type of infrastructure
+                      service that should be deployed when a sub-cluster is provisioned.
+                    enum:
+                    - auth
+                    - jumphost
+                    - loadbalancer
+                    type: string
+                required:
+                - serviceType
                 type: object
-              description: List of Infrastructure Services
-              type: object
+              type: array
             nodes:
               additionalProperties:
                 description: 'NodeSet are the the list of Nodes objects workers, or

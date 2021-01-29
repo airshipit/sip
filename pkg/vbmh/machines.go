@@ -582,12 +582,12 @@ func (ml *MachineList) Extrapolate(sip airshipv1.SIPCluster, c client.Client) bo
 ***/
 
 func (ml *MachineList) getIP(machine *Machine, networkDataSecret *corev1.Secret,
-	infraServices map[airshipv1.InfraService]airshipv1.InfraConfig) error {
+	infraServices []airshipv1.InfraConfig) error {
 	var secretData interface{}
 	// Now I have the Secret
 	// Lets find the IP's for all Interfaces defined in Cfg
 	foundIP := false
-	for svcName, svcCfg := range infraServices {
+	for _, svcCfg := range infraServices {
 		// Did I already find the IP for these interface
 		if machine.Data.IPOnInterface[svcCfg.NodeInterface] == "" {
 			err := json.Unmarshal(networkDataSecret.Data["networkData"], &secretData)
@@ -616,7 +616,7 @@ func (ml *MachineList) getIP(machine *Machine, networkDataSecret *corev1.Secret,
 		if !foundIP {
 			return &ErrorHostIPNotFound{
 				HostName:    machine.BMH.ObjectMeta.Name,
-				ServiceName: svcName,
+				ServiceType: svcCfg.ServiceType,
 				IPInterface: svcCfg.NodeInterface,
 			}
 		}

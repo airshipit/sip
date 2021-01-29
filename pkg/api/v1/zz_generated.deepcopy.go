@@ -158,9 +158,9 @@ func (in *SIPClusterSpec) DeepCopyInto(out *SIPClusterSpec) {
 	}
 	if in.InfraServices != nil {
 		in, out := &in.InfraServices, &out.InfraServices
-		*out = make(map[InfraService]InfraConfig, len(*in))
-		for key, val := range *in {
-			(*out)[key] = *val.DeepCopy()
+		*out = make([]InfraConfig, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 }

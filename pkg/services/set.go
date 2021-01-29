@@ -109,10 +109,9 @@ func CreateNS(serviceNamespaceName string, c client.Client) error {
 // ServiceList returns all services defined in Set
 func (ss ServiceSet) ServiceList() []InfraService {
 	var serviceList []InfraService
-	for serviceType, serviceConfig := range ss.sip.Spec.InfraServices {
-		switch serviceType {
+	for _, serviceConfig := range ss.sip.Spec.InfraServices {
+		switch serviceConfig.ServiceType {
 		case airshipv1.LoadBalancerService:
-			ss.logger.Info("Service of type '%s' is defined", "service type", serviceType)
 			serviceList = append(serviceList,
 				newLB(ss.sip.GetName(),
 					ss.sip.Spec.ClusterName,
@@ -121,7 +120,7 @@ func (ss ServiceSet) ServiceList() []InfraService {
 					ss.machines,
 					ss.client))
 		default:
-			ss.logger.Info("Service of type '%s' is unknown to SIPCluster controller", "service type", serviceType)
+			ss.logger.Info("serviceType unsupported", "serviceType", serviceConfig.ServiceType)
 		}
 	}
 	return serviceList
