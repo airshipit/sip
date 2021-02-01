@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	airshipv1 "sipcluster/pkg/api/v1"
+	"sipcluster/pkg/controllers"
 
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	. "github.com/onsi/ginkgo"
@@ -52,11 +53,16 @@ var _ = BeforeSuite(func(done Done) {
 		Scheme:             scheme.Scheme,
 		MetricsBindAddress: "0",
 	})
-
 	Expect(err).ToNot(HaveOccurred())
 
-	k8sClient = k8sManager.GetClient()
-	Expect(k8sClient).ToNot(BeNil())
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	Expect(err).NotTo(HaveOccurred())
+
+	err = (&controllers.SIPClusterReconciler{
+		Client: k8sClient,
+		Scheme: scheme.Scheme,
+	}).SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
 		err = k8sManager.Start(ctrl.SetupSignalHandler())
