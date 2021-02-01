@@ -16,11 +16,13 @@ package services
 
 import (
 	"bytes"
-	"github.com/go-logr/logr"
+
 	"html/template"
-	"k8s.io/apimachinery/pkg/types"
 	airshipv1 "sipcluster/pkg/api/v1"
 	airshipvms "sipcluster/pkg/vbmh"
+
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/types"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +31,7 @@ import (
 
 const (
 	// ConfigSecretName name of the haproxy config secret name/volume/mount
+	/* #nosec */
 	ConfigSecretName = "haproxy-config"
 	// DefaultBalancerImage is the image that will be used as load balancer
 	DefaultBalancerImage = "haproxy:2.3.2"
@@ -60,12 +63,10 @@ func (lb loadBalancer) Deploy() error {
 		return err
 	}
 
-	lbService, err := lb.generateService()
-	if err != nil {
-		return err
-	}
+	lbService := lb.generateService()
 	lb.logger.Info("Applying loadbalancer service", "service", lbService.GetNamespace()+"/"+lbService.GetName())
-	err = applyRuntimeObject(client.ObjectKey{Name: lbService.GetName(), Namespace: lbService.GetNamespace()}, lbService, lb.client)
+	err = applyRuntimeObject(client.ObjectKey{Name: lbService.GetName(), Namespace: lbService.GetNamespace()},
+		lbService, lb.client)
 	if err != nil {
 		return err
 	}
@@ -154,7 +155,7 @@ func (lb loadBalancer) generateSecret() (*corev1.Secret, error) {
 	}, nil
 }
 
-func (lb loadBalancer) generateService() (*corev1.Service, error) {
+func (lb loadBalancer) generateService() *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      lb.sipName.Name + "-load-balancer-service",
@@ -171,7 +172,7 @@ func (lb loadBalancer) generateService() (*corev1.Service, error) {
 			Selector: map[string]string{"lb-name": lb.sipName.Namespace + "-haproxy"},
 			Type:     corev1.ServiceTypeNodePort,
 		},
-	}, nil
+	}
 }
 
 type proxy struct {
