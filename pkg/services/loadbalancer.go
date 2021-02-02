@@ -237,22 +237,52 @@ func generateTemplate(p proxy) ([]byte, error) {
 }
 
 var defaultTemplate = `global
-  log stdout format raw local0
+  log stdout format raw local0 notice
   daemon
+
 defaults
-  log global
-  mode tcp
-  option dontlognull
-  # TODO: tune these
-  timeout connect 5000
-  timeout client 50000
-  timeout server 50000
-frontend control-plane
+  mode                    http
+  log                     global
+  option                  httplog
+  option                  dontlognull
+  retries                 1
+  # Configures the timeout for a connection request to be left pending in a queue
+  # (connection requests are queued once the maximum number of connections is reached).
+  timeout queue           30s
+  # Configures the timeout for a connection to a backend server to be established.
+  timeout connect         30s
+  # Configures the timeout for inactivity during periods when we would expect
+  # the client to be speaking. For usability of 'kubectl exec', the timeout should
+  # be long enough to cover inactivity due to idleness of interactive sessions.
+  timeout client          600s
+  # Configures the timeout for inactivity during periods when we would expect
+  # the server to be speaking. For usability of 'kubectl log -f', the timeout should
+  # be long enough to cover inactivity due to the lack of new logs.
+  timeout server          600s
+
+#---------------------------------------------------------------------
+# apiserver frontend which proxys to the masters
+#---------------------------------------------------------------------
+frontend apiserver
   bind *:{{ .FrontPort }}
+  mode tcp
+  option tcplog
   default_backend kube-apiservers
+
+#---------------------------------------------------------------------
+# round robin balancing for apiserver
+#---------------------------------------------------------------------
 backend kube-apiservers
-  option httpchk GET /healthz
-{{- range .Backends }}
-{{- $backEnd := . }}
-  server {{ $backEnd.Name }} {{ $backEnd.IP }}:{{ $backEnd.Port }} check check-ssl verify none
-{{ end -}}`
+  mode tcp
+  balance     roundrobin
+  option httpchk GET /readyz
+  http-check expect status 200
+  option log-health-checks
+  # Observed apiserver returns 500 for around 10s when 2nd cp node joins.
+  # downinter 2s makes it check more frequently to recover from that state sooner.
+  # Also changing fall to 4 so that it takes longer (4 failures) for it to take down a backend.
+  default-server check check-ssl verify none inter 5s downinter 2s fall 4 on-marked-down shutdown-sessions
+    {{- range .Backends }}
+    {{- $backEnd := . }}
+    server {{ $backEnd.Name }} {{ $backEnd.IP }}:{{ $backEnd.Port }}
+    {{ end -}}`
