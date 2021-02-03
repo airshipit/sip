@@ -59,7 +59,7 @@ string
 <a href="#airship.airshipit.org/v1.SIPClusterSpec">SIPClusterSpec</a>)
 </p>
 <p>NodeSet are the the list of Nodes objects workers,
-or master that definee eexpectations
+or ControlPlane that define expectations
 for  the Tenant Clusters
 Includes artifacts to associate with each defined namespace
 Such as :
@@ -79,13 +79,13 @@ Such as :
 <tbody>
 <tr>
 <td>
-<code>vm-flavor</code><br>
+<code>vmFlavor</code><br>
 <em>
 string
 </em>
 </td>
 <td>
-<p>VMFlavor is  essentially a Flavor label identifying the
+<p>VMFlavor is essentially a Flavor label identifying the
 type of Node that meets the construction reqirements</p>
 </td>
 </tr>
@@ -101,8 +101,8 @@ SpreadTopology
 <td>
 <p>PlaceHolder until we define the real expected
 Implementation
-Scheduling define constraints the allows the SIP Scheduler
-to identify the required  BMH&rsquo;s to allow CAPI to build a cluster</p>
+Scheduling define constraints that allow the SIP Scheduler
+to identify the required BMH&rsquo;s to allow CAPI to build a cluster</p>
 </td>
 </tr>
 <tr>
@@ -164,7 +164,7 @@ SIPClusterSpec
 <table>
 <tr>
 <td>
-<code>cluster-name</code><br>
+<code>clusterName</code><br>
 <em>
 string
 </em>
@@ -178,15 +178,12 @@ string
 <code>nodes</code><br>
 <em>
 <a href="#airship.airshipit.org/v1.NodeSet">
-map[./pkg/api/v1.VMRoles]./pkg/api/v1.NodeSet
+map[./pkg/api/v1.VMRole]./pkg/api/v1.NodeSet
 </a>
 </em>
 </td>
 <td>
-<p>Nodes are the list of Nodes objects workers, or master that definee expectations
-of the Tenant cluster
-VMRole is either Control or Workers
-VMRole VMRoles <code>json:&quot;vm-role,omitempty&quot;</code></p>
+<p>Nodes defines the set of nodes to schedule for each vm role.</p>
 </td>
 </tr>
 <tr>
@@ -250,7 +247,7 @@ string
 </tr>
 <tr>
 <td>
-<code>nodelabels</code><br>
+<code>nodeLabels</code><br>
 <em>
 map[string]string
 </em>
@@ -371,7 +368,7 @@ string
 <tbody>
 <tr>
 <td>
-<code>cluster-name</code><br>
+<code>clusterName</code><br>
 <em>
 string
 </em>
@@ -385,15 +382,12 @@ string
 <code>nodes</code><br>
 <em>
 <a href="#airship.airshipit.org/v1.NodeSet">
-map[./pkg/api/v1.VMRoles]./pkg/api/v1.NodeSet
+map[./pkg/api/v1.VMRole]./pkg/api/v1.NodeSet
 </a>
 </em>
 </td>
 <td>
-<p>Nodes are the list of Nodes objects workers, or master that definee expectations
-of the Tenant cluster
-VMRole is either Control or Workers
-VMRole VMRoles <code>json:&quot;vm-role,omitempty&quot;</code></p>
+<p>Nodes defines the set of nodes to schedule for each vm role.</p>
 </td>
 </tr>
 <tr>
@@ -495,9 +489,9 @@ int
 </table>
 </div>
 </div>
-<h3 id="airship.airshipit.org/v1.VMRoles">VMRoles
+<h3 id="airship.airshipit.org/v1.VMRole">VMRole
 (<code>string</code> alias)</h3>
-<p>VMRoles defines the states the provisioner will report
+<p>VMRole defines the states the provisioner will report
 the tenant has having.</p>
 <div class="admonition note">
 <p class="last">This page was automatically generated with <code>gen-crd-api-reference-docs</code></p>

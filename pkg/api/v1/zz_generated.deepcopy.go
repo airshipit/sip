@@ -188,7 +188,7 @@ func (in *SIPClusterSpec) DeepCopyInto(out *SIPClusterSpec) {
 	*out = *in
 	if in.Nodes != nil {
 		in, out := &in.Nodes, &out.Nodes
-		*out = make(map[VMRoles]NodeSet, len(*in))
+		*out = make(map[VMRole]NodeSet, len(*in))
 		for key, val := range *in {
 			(*out)[key] = *val.DeepCopy()
 		}

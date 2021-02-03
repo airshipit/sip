@@ -58,7 +58,7 @@ const (
 
 const (
 	BaseAirshipSelector  = "sip.airshipit.org"
-	SipScheduleLabelName = "sip-scheduled"
+	SipScheduleLabelName = "scheduled"
 	SipScheduleLabel     = BaseAirshipSelector + "/" + SipScheduleLabelName
 
 	SipScheduled    = SipScheduleLabel + "=true"
@@ -87,7 +87,7 @@ type Machine struct {
 	// scheduleLabels
 	// I expect to build this over time / if not might not be needed
 	ScheduleLabels map[string]string
-	VMRole         airshipv1.VMRoles
+	VMRole         airshipv1.VMRole
 	// Data will contain whatever information is needed from the server
 	// IF it ends up een just the IP then maybe we can collapse into a field
 	Data *MachineData
@@ -99,7 +99,7 @@ func (m *Machine) String() string {
 		m.BMH.ObjectMeta.Name, m.ScheduleStatus, m.VMRole)
 }
 
-func NewMachine(bmh metal3.BareMetalHost, nodeRole airshipv1.VMRoles, schedState ScheduledState) (m *Machine, e error) {
+func NewMachine(bmh metal3.BareMetalHost, nodeRole airshipv1.VMRole, schedState ScheduledState) (m *Machine, e error) {
 	// Add logic to check if required fields exist.
 	if bmh.Spec.NetworkData == nil {
 		return nil, &ErrorNetworkDataNotFound{BMH: bmh}
@@ -126,7 +126,7 @@ type MachineList struct {
 	// ViNO Machines
 	Machines map[string]*Machine
 	// Keep track  of how many we have mark for scheduled.
-	ReadyForScheduleCount map[airshipv1.VMRoles]int
+	ReadyForScheduleCount map[airshipv1.VMRole]int
 	Log                   logr.Logger
 }
 
@@ -171,7 +171,7 @@ func (ml *MachineList) Schedule(sip airshipv1.SIPCluster, c client.Client) error
 	return nil
 }
 
-func (ml *MachineList) init(nodes map[airshipv1.VMRoles]airshipv1.NodeSet) {
+func (ml *MachineList) init(nodes map[airshipv1.VMRole]airshipv1.NodeSet) {
 	// Only Initialize 1st time
 	if len(ml.Machines) == 0 {
 		mlSize := 0
@@ -181,7 +181,7 @@ func (ml *MachineList) init(nodes map[airshipv1.VMRoles]airshipv1.NodeSet) {
 			mlNodeTypes++
 		}
 		fmt.Printf("Schedule.init mlSize:%d\n", mlSize)
-		ml.ReadyForScheduleCount = make(map[airshipv1.VMRoles]int, mlNodeTypes)
+		ml.ReadyForScheduleCount = make(map[airshipv1.VMRole]int, mlNodeTypes)
 		ml.Machines = make(map[string]*Machine, 0)
 	}
 }
@@ -240,14 +240,14 @@ func (ml *MachineList) identifyNodes(sip airshipv1.SIPCluster,
 	return nil
 }
 
-func (ml *MachineList) initScheduleMaps(role airshipv1.VMRoles,
+func (ml *MachineList) initScheduleMaps(role airshipv1.VMRole,
 	constraint airshipv1.SpreadTopology) (*ScheduleSet, error) {
 	logger := ml.Log.WithValues("role", role, "spread topology", constraint)
 	var labelName string
 	switch constraint {
 	case airshipv1.RackAntiAffinity:
 		labelName = RackLabel
-	case airshipv1.ServerAntiAffinity:
+	case airshipv1.HostAntiAffinity:
 		labelName = ServerLabel
 	default:
 		logger.Info("constraint not supported")
@@ -262,7 +262,7 @@ func (ml *MachineList) initScheduleMaps(role airshipv1.VMRoles,
 	}, nil
 }
 
-func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.VMRoles,
+func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.VMRole,
 	c client.Client, clusterName string) int {
 	bmhList := &metal3.BareMetalHostList{}
 
@@ -306,7 +306,7 @@ func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.VMRoles
 	return ml.ReadyForScheduleCount[nodeRole]
 }
 
-func (ml *MachineList) scheduleIt(nodeRole airshipv1.VMRoles, nodeCfg airshipv1.NodeSet,
+func (ml *MachineList) scheduleIt(nodeRole airshipv1.VMRole, nodeCfg airshipv1.NodeSet,
 	bmList *metal3.BareMetalHostList, scheduleSet *ScheduleSet,
 	c client.Client, clusterName string) error {
 	logger := ml.Log.WithValues("role", nodeRole)
@@ -733,7 +733,7 @@ func (ml *MachineList) GetCluster(sip airshipv1.SIPCluster, c client.Client) err
 		ml.Machines[bmh.ObjectMeta.Name] = &Machine{
 			BMH:            bmh,
 			ScheduleStatus: Scheduled,
-			VMRole:         airshipv1.VMRoles(bmh.Labels[SipNodeTypeLabel]),
+			VMRole:         airshipv1.VMRole(bmh.Labels[SipNodeTypeLabel]),
 			Data: &MachineData{
 				IPOnInterface: make(map[string]string),
 			},

@@ -125,7 +125,7 @@ func (lb loadBalancer) generateSecret() (*corev1.Secret, error) {
 		Backends:  make([]backend, 0),
 	}
 	for _, machine := range lb.machines.Machines {
-		if machine.VMRole == airshipv1.VMMaster {
+		if machine.VMRole == airshipv1.VMControlPlane {
 			name := machine.BMH.Name
 			namespace := machine.BMH.Namespace
 			ip, exists := machine.Data.IPOnInterface[lb.config.NodeInterface]

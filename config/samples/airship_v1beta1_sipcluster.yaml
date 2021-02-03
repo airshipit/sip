@@ -6,17 +6,17 @@ metadata:
   finalizers:
     - sip.airship.airshipit.org/finalizer
 spec:
-    cluster-name: subcluster-test1
+    clusterName: subcluster-test1
     nodes:
-      worker:
-          vm-flavor: 'airshipit.org/vino-flavor=worker'
-          spreadTopology: 'per-node' # Support dont'care option.
+      Worker:
+          vmFlavor: 'vino.airshipit.org/flavor=worker'
+          spreadTopology: 'PerHost' # Support dont'care option.
           count:
               active: 1 #driven by capi node number
               standby: 1 #slew for upgrades etc
-      master:
-          vm-flavor: 'airshipit.org/vino-flavor=master'
-          spreadTopology: 'per-rack'
+      ControlPlane:
+          vmFlavor: 'vino.airshipit.org/flavor=control-plane'
+          spreadTopology: 'PerRack'
           count:
               active: 1
               standby: 1
@@ -24,7 +24,7 @@ spec:
       - serviceType: auth
         image: sshpod:foo
         nodeLabels:
-          - airship-masters
+          - airship-control-plane
         nodePort: 7023
         nodeInterfaceId: oam-ipv4
       - serviceType: jumphost
@@ -32,7 +32,7 @@ spec:
           sshKey: rsa.... #<-- this needs to align to the ssh keys provided to cluster api objects
         image: ubuntu:20.04
         nodeLabels:
-          - airship-masters
+          - airship-control-plane
         nodePort: 7022
         nodeInterfaceId: oam-ipv4
       - serviceType: loadbalancer
@@ -40,6 +40,6 @@ spec:
           clusterIP: 1.2.3.4 #<-- this aligns to the VIP IP for undercloud k8s
         image: haproxy:2.3.2
         nodeLabels:
-          - airship-masters
+          - airship-control-plane
         nodePort: 30000
         nodeInterfaceId: oam-ipv4

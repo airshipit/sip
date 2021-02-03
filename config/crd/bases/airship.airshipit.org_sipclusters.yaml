@@ -36,14 +36,14 @@ spec:
         spec:
           description: SIPClusterSpec defines the desired state of a SIPCluster
           properties:
-            cluster-name:
+            clusterName:
               description: ClusterName is the name of the cluster to associate machines
                 with
               type: string
             nodes:
               additionalProperties:
                 description: 'NodeSet are the the list of Nodes objects workers, or
-                  master that definee eexpectations for  the Tenant Clusters Includes
+                  ControlPlane that define expectations for  the Tenant Clusters Includes
                   artifacts to associate with each defined namespace Such as : - Roles
                   for the Nodes - Flavor for theh Nodes image - Scheduling expectations
                   - Scale of the group of Nodes'
@@ -61,17 +61,19 @@ spec:
                     type: object
                   spreadTopology:
                     description: PlaceHolder until we define the real expected Implementation
-                      Scheduling define constraints the allows the SIP Scheduler to
-                      identify the required  BMH's to allow CAPI to build a cluster
+                      Scheduling define constraints that allow the SIP Scheduler to
+                      identify the required BMH's to allow CAPI to build a cluster
+                    enum:
+                    - PerRack
+                    - PerHost
                     type: string
-                  vm-flavor:
-                    description: VMFlavor is  essentially a Flavor label identifying
+                  vmFlavor:
+                    description: VMFlavor is essentially a Flavor label identifying
                       the type of Node that meets the construction reqirements
                     type: string
                 type: object
-              description: Nodes are the list of Nodes objects workers, or master
-                that definee expectations of the Tenant cluster VMRole is either Control
-                or Workers VMRole VMRoles `json:"vm-role,omitempty"`
+              description: Nodes defines the set of nodes to schedule for each vm
+                role.
               type: object
             services:
               description: Services defines the services that are deployed when a
@@ -87,12 +89,12 @@ spec:
                         type: string
                       nodeInterfaceId:
                         type: string
-                      nodePort:
-                        type: integer
-                      nodelabels:
+                      nodeLabels:
                         additionalProperties:
                           type: string
                         type: object
+                      nodePort:
+                        type: integer
                     type: object
                   type: array
                 jumpHost:
@@ -109,12 +111,12 @@ spec:
                             type: string
                           nodeInterfaceId:
                             type: string
-                          nodePort:
-                            type: integer
-                          nodelabels:
+                          nodeLabels:
                             additionalProperties:
                               type: string
                             type: object
+                          nodePort:
+                            type: integer
                         type: object
                       sshkey:
                         type: string
@@ -133,12 +135,12 @@ spec:
                         type: string
                       nodeInterfaceId:
                         type: string
-                      nodePort:
-                        type: integer
-                      nodelabels:
+                      nodeLabels:
                         additionalProperties:
                           type: string
                         type: object
+                      nodePort:
+                        type: integer
                     type: object
                   type: array
               type: object

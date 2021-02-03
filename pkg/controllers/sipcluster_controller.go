@@ -245,7 +245,7 @@ func removeString(slice []string, s string) []string {
 - Gather BMH's that meet the criteria expected for the groups
 - Check for existing labeled BMH's
 - Complete the expected scheduling contraints :
-    - If master
+    - If ControlPlane
         -  collect into list of bmh's to label
     - If worker
         - collect into list of bmh's to label

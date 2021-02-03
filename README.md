@@ -51,9 +51,9 @@ Pseudo Algorithm at a high level after reading the `SIPCluster` CR:
 - Gather BMH's that meet the criteria expected for the groups
 - Check for existing labeled BMH's
 - Complete the expected scheduling contraints :
-    - If master
+    - If ControlPlane
         -  collect into list of bmh's to label
-    - If worker
+    - If Worker
         - collect into list of bmh's to label
 #### Extract Info from Identified BMH
 -  identify and extract  the IP address ands other info as needed (***)

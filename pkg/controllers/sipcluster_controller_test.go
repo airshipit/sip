@@ -52,7 +52,8 @@ var _ = Describe("SIPCluster controller", func() {
 			By("Labeling nodes")
 
 			// Create vBMH test objects
-			nodes := []string{"master", "master", "master", "worker", "worker", "worker", "worker"}
+			nodes := []airshipv1.VMRole{airshipv1.VMControlPlane, airshipv1.VMControlPlane, airshipv1.VMControlPlane,
+				airshipv1.VMWorker, airshipv1.VMWorker, airshipv1.VMWorker, airshipv1.VMWorker}
 			for node, role := range nodes {
 				vBMH, networkData := testutil.CreateBMH(node, testNamespace, role, 6)
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
@@ -83,11 +84,12 @@ var _ = Describe("SIPCluster controller", func() {
 			}, 30, 5).Should(Succeed())
 		})
 
-		It("Should not schedule nodes when there is an insufficient number of available master nodes", func() {
+		It("Should not schedule nodes when there is an insufficient number of available ControlPlane nodes", func() {
 			By("Not labeling any nodes")
 
 			// Create vBMH test objects
-			nodes := []string{"master", "master", "worker", "worker", "worker", "worker"}
+			nodes := []airshipv1.VMRole{airshipv1.VMControlPlane, airshipv1.VMControlPlane, airshipv1.VMWorker,
+				airshipv1.VMWorker, airshipv1.VMWorker, airshipv1.VMWorker}
 			for node, role := range nodes {
 				vBMH, networkData := testutil.CreateBMH(node, testNamespace, role, 6)
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
@@ -127,11 +129,12 @@ var _ = Describe("SIPCluster controller", func() {
 				airshipv1.ConditionTypeReady)).To(BeTrue())
 		})
 
-		It("Should not schedule nodes when there is an insufficient number of available worker nodes", func() {
+		It("Should not schedule nodes when there is an insufficient number of available Worker nodes", func() {
 			By("Not labeling any nodes")
 
 			// Create vBMH test objects
-			nodes := []string{"master", "master", "master", "worker", "worker"}
+			nodes := []airshipv1.VMRole{airshipv1.VMControlPlane, airshipv1.VMControlPlane, airshipv1.VMControlPlane,
+				airshipv1.VMWorker, airshipv1.VMWorker}
 			testNamespace := "default"
 			for node, role := range nodes {
 				vBMH, networkData := testutil.CreateBMH(node, testNamespace, role, 6)
@@ -173,28 +176,28 @@ var _ = Describe("SIPCluster controller", func() {
 		})
 
 		Context("With per-node scheduling", func() {
-			It("Should not schedule two worker nodes to the same server", func() {
+			It("Should not schedule two Worker nodes to the same server", func() {
 				By("Not labeling any nodes")
 
 				// Create vBMH test objects
 				var nodes []*metal3.BareMetalHost
 				baremetalServer := "r06o001"
 
-				vBMH, networkData := testutil.CreateBMH(0, testNamespace, "master", 6)
+				vBMH, networkData := testutil.CreateBMH(0, testNamespace, airshipv1.VMControlPlane, 6)
 				vBMH.Labels[vbmh.ServerLabel] = baremetalServer
 
 				nodes = append(nodes, vBMH)
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
-				vBMH, networkData = testutil.CreateBMH(1, testNamespace, "worker", 6)
+				vBMH, networkData = testutil.CreateBMH(1, testNamespace, airshipv1.VMWorker, 6)
 				vBMH.Labels[vbmh.ServerLabel] = baremetalServer
 
 				nodes = append(nodes, vBMH)
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
-				vBMH, networkData = testutil.CreateBMH(2, testNamespace, "worker", 6)
+				vBMH, networkData = testutil.CreateBMH(2, testNamespace, airshipv1.VMWorker, 6)
 				vBMH.Labels[vbmh.ServerLabel] = baremetalServer
 
 				nodes = append(nodes, vBMH)
@@ -234,28 +237,28 @@ var _ = Describe("SIPCluster controller", func() {
 					airshipv1.ConditionTypeReady)).To(BeTrue())
 			})
 
-			It("Should not schedule two master nodes to the same server", func() {
+			It("Should not schedule two ControlPlane nodes to the same server", func() {
 				By("Not labeling any nodes")
 
 				// Create vBMH test objects
 				var nodes []*metal3.BareMetalHost
 				baremetalServer := "r06o001"
 
-				vBMH, networkData := testutil.CreateBMH(0, testNamespace, "master", 6)
+				vBMH, networkData := testutil.CreateBMH(0, testNamespace, airshipv1.VMControlPlane, 6)
 				vBMH.Labels[vbmh.ServerLabel] = baremetalServer
 
 				nodes = append(nodes, vBMH)
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
-				vBMH, networkData = testutil.CreateBMH(1, testNamespace, "master", 6)
+				vBMH, networkData = testutil.CreateBMH(1, testNamespace, airshipv1.VMControlPlane, 6)
 				vBMH.Labels[vbmh.ServerLabel] = baremetalServer
 
 				nodes = append(nodes, vBMH)
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
-				vBMH, networkData = testutil.CreateBMH(2, testNamespace, "worker", 6)
+				vBMH, networkData = testutil.CreateBMH(2, testNamespace, airshipv1.VMWorker, 6)
 				vBMH.Labels[vbmh.ServerLabel] = baremetalServer
 
 				nodes = append(nodes, vBMH)
@@ -297,26 +300,26 @@ var _ = Describe("SIPCluster controller", func() {
 		})
 
 		Context("With per-rack scheduling", func() {
-			It("Should not schedule two worker nodes to the same rack", func() {
+			It("Should not schedule two Worker nodes to the same rack", func() {
 				By("Not labeling any nodes")
 
 				// Create vBMH test objects
 				var nodes []*metal3.BareMetalHost
 				testNamespace := "default"
 
-				vBMH, networkData := testutil.CreateBMH(0, testNamespace, "master", 6)
+				vBMH, networkData := testutil.CreateBMH(0, testNamespace, airshipv1.VMControlPlane, 6)
 
 				nodes = append(nodes, vBMH)
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
-				vBMH, networkData = testutil.CreateBMH(1, testNamespace, "worker", 6)
+				vBMH, networkData = testutil.CreateBMH(1, testNamespace, airshipv1.VMWorker, 6)
 
 				nodes = append(nodes, vBMH)
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
-				vBMH, networkData = testutil.CreateBMH(2, testNamespace, "worker", 6)
+				vBMH, networkData = testutil.CreateBMH(2, testNamespace, airshipv1.VMWorker, 6)
 
 				nodes = append(nodes, vBMH)
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
@@ -326,9 +329,9 @@ var _ = Describe("SIPCluster controller", func() {
 				clusterName := "subcluster-test3"
 				sipCluster := testutil.CreateSIPCluster(clusterName, testNamespace, 1, 2)
 
-				masterSpec := sipCluster.Spec.Nodes[airshipv1.VMMaster]
-				masterSpec.Scheduling = airshipv1.RackAntiAffinity
-				sipCluster.Spec.Nodes[airshipv1.VMMaster] = masterSpec
+				controlPlaneSpec := sipCluster.Spec.Nodes[airshipv1.VMControlPlane]
+				controlPlaneSpec.Scheduling = airshipv1.RackAntiAffinity
+				sipCluster.Spec.Nodes[airshipv1.VMControlPlane] = controlPlaneSpec
 
 				workerSpec := sipCluster.Spec.Nodes[airshipv1.VMWorker]
 				workerSpec.Scheduling = airshipv1.RackAntiAffinity
@@ -364,25 +367,25 @@ var _ = Describe("SIPCluster controller", func() {
 					airshipv1.ConditionTypeReady)).To(BeTrue())
 			})
 
-			It("Should not schedule two master nodes to the same rack", func() {
+			It("Should not schedule two ControlPlane nodes to the same rack", func() {
 				By("Not labeling any nodes")
 
 				// Create vBMH test objects
 				var nodes []*metal3.BareMetalHost
 
-				vBMH, networkData := testutil.CreateBMH(0, testNamespace, "master", 6)
+				vBMH, networkData := testutil.CreateBMH(0, testNamespace, airshipv1.VMControlPlane, 6)
 
 				nodes = append(nodes, vBMH)
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
-				vBMH, networkData = testutil.CreateBMH(1, testNamespace, "master", 6)
+				vBMH, networkData = testutil.CreateBMH(1, testNamespace, airshipv1.VMControlPlane, 6)
 
 				nodes = append(nodes, vBMH)
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
-				vBMH, networkData = testutil.CreateBMH(2, testNamespace, "worker", 6)
+				vBMH, networkData = testutil.CreateBMH(2, testNamespace, airshipv1.VMWorker, 6)
 
 				nodes = append(nodes, vBMH)
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
@@ -392,9 +395,9 @@ var _ = Describe("SIPCluster controller", func() {
 				clusterName := "subcluster-test3"
 				sipCluster := testutil.CreateSIPCluster(clusterName, testNamespace, 2, 1)
 
-				masterSpec := sipCluster.Spec.Nodes[airshipv1.VMMaster]
-				masterSpec.Scheduling = airshipv1.RackAntiAffinity
-				sipCluster.Spec.Nodes[airshipv1.VMMaster] = masterSpec
+				controlPlaneSpec := sipCluster.Spec.Nodes[airshipv1.VMControlPlane]
+				controlPlaneSpec.Scheduling = airshipv1.RackAntiAffinity
+				sipCluster.Spec.Nodes[airshipv1.VMControlPlane] = controlPlaneSpec
 
 				workerSpec := sipCluster.Spec.Nodes[airshipv1.VMWorker]
 				workerSpec.Scheduling = airshipv1.RackAntiAffinity

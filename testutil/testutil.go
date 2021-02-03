@@ -10,13 +10,18 @@ import (
 	airshipv1 "sipcluster/pkg/api/v1"
 )
 
+var vinoFlavorMap = map[airshipv1.VMRole]string{
+	airshipv1.VMControlPlane: "control-plane",
+	airshipv1.VMWorker:       "worker",
+}
+
 // NOTE(aw442m): These constants have been redefined from the vbmh package in order to avoid an import cycle.
 const (
 	sipRackLabel     = "sip.airshipit.org/rack"
-	sipScheduleLabel = "sip.airshipit.org/sip-scheduled"
+	sipScheduleLabel = "sip.airshipit.org/scheduled"
 	sipServerLabel   = "sip.airshipit.org/server"
 
-	VinoFlavorLabel = "airshipit.org/vino-flavor"
+	VinoFlavorLabel = "vino.airshipit.org/flavor"
 
 	networkDataContent = `
 {
@@ -166,7 +171,7 @@ const (
 )
 
 // CreateBMH initializes a BaremetalHost with specific parameters for use in test cases.
-func CreateBMH(node int, namespace string, role string, rack int) (*metal3.BareMetalHost, *corev1.Secret) {
+func CreateBMH(node int, namespace string, role airshipv1.VMRole, rack int) (*metal3.BareMetalHost, *corev1.Secret) {
 	rackLabel := fmt.Sprintf("r%d", rack)
 	networkDataName := fmt.Sprintf("node%d-network-data", node)
 	return &metal3.BareMetalHost{
@@ -174,7 +179,7 @@ func CreateBMH(node int, namespace string, role string, rack int) (*metal3.BareM
 				Name:      fmt.Sprintf("node0%d", node),
 				Namespace: namespace,
 				Labels: map[string]string{
-					"airshipit.org/vino-flavor": role,
+					"vino.airshipit.org/flavor": vinoFlavorMap[role],
 					sipScheduleLabel:            "false",
 					sipRackLabel:                rackLabel,
 					sipServerLabel:              fmt.Sprintf("stl2%so%d", rackLabel, node),
@@ -199,7 +204,7 @@ func CreateBMH(node int, namespace string, role string, rack int) (*metal3.BareM
 }
 
 // CreateSIPCluster initializes a SIPCluster with specific parameters for use in test cases.
-func CreateSIPCluster(name string, namespace string, masters int, workers int) *airshipv1.SIPCluster {
+func CreateSIPCluster(name string, namespace string, controlPlanes int, workers int) *airshipv1.SIPCluster {
 	return &airshipv1.SIPCluster{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "SIPCluster",
@@ -211,18 +216,18 @@ func CreateSIPCluster(name string, namespace string, masters int, workers int) *
 		},
 		Spec: airshipv1.SIPClusterSpec{
 			ClusterName: name,
-			Nodes: map[airshipv1.VMRoles]airshipv1.NodeSet{
-				airshipv1.VMMaster: {
-					VMFlavor:   "airshipit.org/vino-flavor=master",
-					Scheduling: airshipv1.ServerAntiAffinity,
+			Nodes: map[airshipv1.VMRole]airshipv1.NodeSet{
+				airshipv1.VMControlPlane: {
+					VMFlavor:   "vino.airshipit.org/flavor=" + vinoFlavorMap[airshipv1.VMControlPlane],
+					Scheduling: airshipv1.HostAntiAffinity,
 					Count: &airshipv1.VMCount{
-						Active:  masters,
+						Active:  controlPlanes,
 						Standby: 0,
 					},
 				},
 				airshipv1.VMWorker: {
-					VMFlavor:   "airshipit.org/vino-flavor=worker",
-					Scheduling: airshipv1.ServerAntiAffinity,
+					VMFlavor:   "vino.airshipit.org/flavor=" + vinoFlavorMap[airshipv1.VMWorker],
+					Scheduling: airshipv1.HostAntiAffinity,
 					Count: &airshipv1.VMCount{
 						Active:  workers,
 						Standby: 0,

@@ -17,7 +17,7 @@ func (e ErrorConstraintNotFound) Error() string {
 }
 
 type ErrorUnableToFullySchedule struct {
-	TargetNode   airshipv1.VMRoles
+	TargetNode   airshipv1.VMRole
 	TargetFlavor string
 }
 

@@ -50,12 +50,10 @@ type SIPClusterSpec struct {
 	// Important: Run "make manifests to regenerate code after modifying this file
 
 	// ClusterName is the name of the cluster to associate machines with
-	ClusterName string `json:"cluster-name,omitempty"`
-	// Nodes are the list of Nodes objects workers, or master that definee expectations
-	// of the Tenant cluster
-	// VMRole is either Control or Workers
-	// VMRole VMRoles `json:"vm-role,omitempty"`
-	Nodes map[VMRoles]NodeSet `json:"nodes,omitempty"`
+	ClusterName string `json:"clusterName,omitempty"`
+
+	// Nodes defines the set of nodes to schedule for each vm role.
+	Nodes map[VMRole]NodeSet `json:"nodes,omitempty"`
 
 	// Services defines the services that are deployed when a SIPCluster is provisioned.
 	Services SIPClusterServices `json:"services"`
@@ -125,7 +123,7 @@ const (
 )
 
 // NodeSet are the the list of Nodes objects workers,
-// or master that definee eexpectations
+// or ControlPlane that define expectations
 // for  the Tenant Clusters
 // Includes artifacts to associate with each defined namespace
 // Such as :
@@ -136,45 +134,45 @@ const (
 //
 type NodeSet struct {
 
-	// VMFlavor is  essentially a Flavor label identifying the
+	// VMFlavor is essentially a Flavor label identifying the
 	// type of Node that meets the construction reqirements
-	VMFlavor string `json:"vm-flavor,omitempty"`
+	VMFlavor string `json:"vmFlavor,omitempty"`
 	// PlaceHolder until we define the real expected
 	// Implementation
-	// Scheduling define constraints the allows the SIP Scheduler
-	// to identify the required  BMH's to allow CAPI to build a cluster
+	// Scheduling define constraints that allow the SIP Scheduler
+	// to identify the required BMH's to allow CAPI to build a cluster
 	Scheduling SpreadTopology `json:"spreadTopology,omitempty"`
 	// Count defines the scale expectations for the Nodes
 	Count *VMCount `json:"count,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=PerRack;PerHost
 type SpreadTopology string
 
-// Possible Node or VM Roles  for a Tenant
 const (
-	// RackAntiAffinity means the state is unknown
-	RackAntiAffinity SpreadTopology = "per-rack"
+	// RackAntiAffinity means the scheduling should target separate racks.
+	RackAntiAffinity SpreadTopology = "PerRack"
 
-	// ServerAntiAffinity means the state is unknown
-	ServerAntiAffinity SpreadTopology = "per-node"
+	// HostAntiAffinity means the scheduling should target separate hosts.
+	HostAntiAffinity SpreadTopology = "PerHost"
 )
 
 type SIPClusterService struct {
 	Image         string            `json:"image,omitempty"`
-	NodeLabels    map[string]string `json:"nodelabels,omitempty"`
+	NodeLabels    map[string]string `json:"nodeLabels,omitempty"`
 	NodePort      int               `json:"nodePort,omitempty"`
 	NodeInterface string            `json:"nodeInterfaceId,omitempty"`
 	ClusterIP     *string           `json:"clusterIP,omitempty"`
 }
 
-// VMRoles defines the states the provisioner will report
+// VMRole defines the states the provisioner will report
 // the tenant has having.
-type VMRoles string
+type VMRole string
 
-// Possible Node or VM Roles  for a Tenant
+// Possible Node or VM Roles for a Tenant
 const (
-	VMMaster VMRoles = "master"
-	VMWorker         = "worker"
+	VMControlPlane VMRole = "ControlPlane"
+	VMWorker              = "Worker"
 )
 
 // VMCount
