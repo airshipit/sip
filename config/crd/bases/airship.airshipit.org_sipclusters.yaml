@@ -40,40 +40,6 @@ spec:
               description: ClusterName is the name of the cluster to associate machines
                 with
               type: string
-            infra:
-              description: InfraServices is a list of services that are deployed when
-                a SIPCluster is provisioned.
-              items:
-                properties:
-                  image:
-                    type: string
-                  nodeInterfaceId:
-                    type: string
-                  nodePort:
-                    type: integer
-                  nodelabels:
-                    additionalProperties:
-                      type: string
-                    type: object
-                  optional:
-                    properties:
-                      clusterIP:
-                        type: string
-                      sshkey:
-                        type: string
-                    type: object
-                  serviceType:
-                    description: InfraService describes the type of infrastructure
-                      service that should be deployed when a sub-cluster is provisioned.
-                    enum:
-                    - auth
-                    - jumphost
-                    - loadbalancer
-                    type: string
-                required:
-                - serviceType
-                type: object
-              type: array
             nodes:
               additionalProperties:
                 description: 'NodeSet are the the list of Nodes objects workers, or
@@ -104,11 +70,80 @@ spec:
                     type: string
                 type: object
               description: Nodes are the list of Nodes objects workers, or master
-                that definee eexpectations of the Tenant cluster VMRole is either
-                Control or Workers VMRole VMRoles `json:"vm-role,omitempty"`
+                that definee expectations of the Tenant cluster VMRole is either Control
+                or Workers VMRole VMRoles `json:"vm-role,omitempty"`
+              type: object
+            services:
+              description: Services defines the services that are deployed when a
+                SIPCluster is provisioned.
+              properties:
+                auth:
+                  description: Auth defines the sub-cluster authentication services.
+                  items:
+                    properties:
+                      clusterIP:
+                        type: string
+                      image:
+                        type: string
+                      nodeInterfaceId:
+                        type: string
+                      nodePort:
+                        type: integer
+                      nodelabels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                  type: array
+                jumpHost:
+                  description: JumpHost defines the sub-cluster jump host services.
+                  items:
+                    description: JumpHostService is an infrastructure service type
+                      that represents the sub-cluster jump-host service.
+                    properties:
+                      inline:
+                        properties:
+                          clusterIP:
+                            type: string
+                          image:
+                            type: string
+                          nodeInterfaceId:
+                            type: string
+                          nodePort:
+                            type: integer
+                          nodelabels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                        type: object
+                      sshkey:
+                        type: string
+                    required:
+                    - inline
+                    type: object
+                  type: array
+                loadBalancer:
+                  description: LoadBalancer defines the sub-cluster load balancer
+                    services.
+                  items:
+                    properties:
+                      clusterIP:
+                        type: string
+                      image:
+                        type: string
+                      nodeInterfaceId:
+                        type: string
+                      nodePort:
+                        type: integer
+                      nodelabels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                    type: object
+                  type: array
               type: object
           required:
-          - infra
+          - services
           type: object
         status:
           description: SIPClusterStatus defines the observed state of SIPCluster

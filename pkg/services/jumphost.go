@@ -38,11 +38,11 @@ type jumpHost struct {
 	client   client.Client
 	sipName  types.NamespacedName
 	logger   logr.Logger
-	config   airshipv1.InfraConfig
+	config   airshipv1.JumpHostService
 	machines *airshipvms.MachineList
 }
 
-func newJumpHost(name, namespace string, logger logr.Logger, config airshipv1.InfraConfig,
+func newJumpHost(name, namespace string, logger logr.Logger, config airshipv1.JumpHostService,
 	machines *airshipvms.MachineList, client client.Client) InfraService {
 	return jumpHost{
 		sipName: types.NamespacedName{
@@ -94,11 +94,6 @@ func (jh jumpHost) Deploy() error {
 func (jh jumpHost) Finalize() error {
 	// TODO(drewwalters96): Add logic to cleanup SIPCluster JumpHost pod.
 	return nil
-}
-
-// Type returns the type of infrastructure service: jumphost.
-func (jh jumpHost) Type() airshipv1.InfraService {
-	return airshipv1.JumpHostService
 }
 
 /*

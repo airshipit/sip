@@ -14,10 +14,17 @@
 
 package services
 
+import (
+	"fmt"
+
+	airshipv1 "sipcluster/pkg/api/v1"
+)
+
 // ErrAuthTypeNotSupported is returned when wrong AuthType is provided
 type ErrInfraServiceNotSupported struct {
+	Service airshipv1.SIPClusterService
 }
 
 func (e ErrInfraServiceNotSupported) Error() string {
-	return "Invalid Infrastructure Service"
+	return fmt.Sprintf("Invalid Infrastructure Service: %v", e.Service)
 }

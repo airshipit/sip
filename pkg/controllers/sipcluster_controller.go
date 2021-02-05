@@ -303,7 +303,10 @@ func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *a
 		return err
 	}
 	newServiceSet := airshipsvc.NewServiceSet(logger, sip, machines, r.Client)
-	serviceList := newServiceSet.ServiceList()
+	serviceList, err := newServiceSet.ServiceList()
+	if err != nil {
+		return err
+	}
 	for _, svc := range serviceList {
 		err := svc.Deploy()
 		if err != nil {
@@ -329,14 +332,17 @@ func (r *SIPClusterReconciler) finalize(ctx context.Context, sip airshipv1.SIPCl
 	logger := logr.FromContext(ctx)
 	machines := &airshipvms.MachineList{}
 	serviceSet := airshipsvc.NewServiceSet(logger, sip, machines, r.Client)
-	serviceList := serviceSet.ServiceList()
+	serviceList, err := serviceSet.ServiceList()
+	if err != nil {
+		return err
+	}
 	for _, svc := range serviceList {
-		err := svc.Finalize()
+		err = svc.Finalize()
 		if err != nil {
 			return err
 		}
 	}
-	err := serviceSet.Finalize()
+	err = serviceSet.Finalize()
 	if err != nil {
 		return err
 	}

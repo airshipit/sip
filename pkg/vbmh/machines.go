@@ -420,7 +420,7 @@ func (ml *MachineList) Extrapolate(sip airshipv1.SIPCluster, c client.Client) bo
 		//fmt.Printf("Schedule.Extrapolate  networkDataSecret:%v\n", networkDataSecret)
 		// Assuming there might be other data
 		// Retrieve IP's for Service defined Network Interfaces
-		err = ml.getIP(machine, networkDataSecret, sip.Spec.InfraServices)
+		err = ml.getIP(machine, networkDataSecret, sip.Spec.Services)
 		if err != nil {
 			// Lets mark the machine as NotScheduleable.
 			// Update the count of what I have found so far,
@@ -582,12 +582,12 @@ func (ml *MachineList) Extrapolate(sip airshipv1.SIPCluster, c client.Client) bo
 ***/
 
 func (ml *MachineList) getIP(machine *Machine, networkDataSecret *corev1.Secret,
-	infraServices []airshipv1.InfraConfig) error {
+	services airshipv1.SIPClusterServices) error {
 	var secretData interface{}
 	// Now I have the Secret
 	// Lets find the IP's for all Interfaces defined in Cfg
 	foundIP := false
-	for _, svcCfg := range infraServices {
+	for _, svcCfg := range services.GetAll() {
 		// Did I already find the IP for these interface
 		if machine.Data.IPOnInterface[svcCfg.NodeInterface] == "" {
 			err := json.Unmarshal(networkDataSecret.Data["networkData"], &secretData)
@@ -616,7 +616,6 @@ func (ml *MachineList) getIP(machine *Machine, networkDataSecret *corev1.Secret,
 		if !foundIP {
 			return &ErrorHostIPNotFound{
 				HostName:    machine.BMH.ObjectMeta.Name,
-				ServiceType: svcCfg.ServiceType,
 				IPInterface: svcCfg.NodeInterface,
 			}
 		}

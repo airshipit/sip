@@ -44,24 +44,6 @@ type SIPCluster struct {
 	Status SIPClusterStatus `json:"status,omitempty"`
 }
 
-// Supported infrastructure service types
-// NOTE(drewwalters96): Change the kubebuilder validation comment above the InfraService type when modifying the string
-// values below.
-const (
-	// AuthHostService is an infrastructure service type that represents the sub-cluster authentication service.
-	AuthHostService InfraService = "auth"
-
-	// JumpHostService is an infrastructure service type that represents the sub-cluster jump-host service.
-	JumpHostService InfraService = "jumphost"
-
-	// LoadBalancerService is an infrastructure service type that represents the sub-cluster load balancer service.
-	LoadBalancerService InfraService = "loadbalancer"
-)
-
-// InfraService describes the type of infrastructure service that should be deployed when a sub-cluster is provisioned.
-// +kubebuilder:validation:Enum=auth;jumphost;loadbalancer
-type InfraService string
-
 // SIPClusterSpec defines the desired state of a SIPCluster
 type SIPClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -69,14 +51,44 @@ type SIPClusterSpec struct {
 
 	// ClusterName is the name of the cluster to associate machines with
 	ClusterName string `json:"cluster-name,omitempty"`
-	// Nodes are the list of Nodes objects workers, or master that definee eexpectations
+	// Nodes are the list of Nodes objects workers, or master that definee expectations
 	// of the Tenant cluster
 	// VMRole is either Control or Workers
 	// VMRole VMRoles `json:"vm-role,omitempty"`
 	Nodes map[VMRoles]NodeSet `json:"nodes,omitempty"`
 
-	// InfraServices is a list of services that are deployed when a SIPCluster is provisioned.
-	InfraServices []InfraConfig `json:"infra"`
+	// Services defines the services that are deployed when a SIPCluster is provisioned.
+	Services SIPClusterServices `json:"services"`
+}
+
+// SIPClusterServices defines the services that are deployed when a SIPCluster is provisioned.
+type SIPClusterServices struct {
+	// LoadBalancer defines the sub-cluster load balancer services.
+	LoadBalancer []SIPClusterService `json:"loadBalancer,omitempty"`
+	// Auth defines the sub-cluster authentication services.
+	Auth []SIPClusterService `json:"auth,omitempty"`
+	// JumpHost defines the sub-cluster jump host services.
+	JumpHost []JumpHostService `json:"jumpHost,omitempty"`
+}
+
+func (s SIPClusterServices) GetAll() []SIPClusterService {
+	all := []SIPClusterService{}
+	for _, s := range s.LoadBalancer {
+		all = append(all, s)
+	}
+	for _, s := range s.Auth {
+		all = append(all, s)
+	}
+	for _, s := range s.JumpHost {
+		all = append(all, s.SIPClusterService)
+	}
+	return all
+}
+
+// JumpHostService is an infrastructure service type that represents the sub-cluster jump-host service.
+type JumpHostService struct {
+	SIPClusterService `json:"inline"`
+	SSHKey            string `json:"sshkey,omitempty"`
 }
 
 // SIPClusterStatus defines the observed state of SIPCluster
@@ -147,18 +159,12 @@ const (
 	ServerAntiAffinity SpreadTopology = "per-node"
 )
 
-type InfraConfig struct {
-	ServiceType   InfraService      `json:"serviceType"`
-	OptionalData  *OptsConfig       `json:"optional,omitempty"`
+type SIPClusterService struct {
 	Image         string            `json:"image,omitempty"`
 	NodeLabels    map[string]string `json:"nodelabels,omitempty"`
 	NodePort      int               `json:"nodePort,omitempty"`
 	NodeInterface string            `json:"nodeInterfaceId,omitempty"`
-}
-
-type OptsConfig struct {
-	SSHKey    string `json:"sshkey,omitempty"`
-	ClusterIP string `json:"clusterIP,omitempty"`
+	ClusterIP     *string           `json:"clusterIP,omitempty"`
 }
 
 // VMRoles defines the states the provisioner will report

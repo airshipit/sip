@@ -9,12 +9,13 @@
 <p>Package v1 contains API Schema definitions for the airship v1 API group</p>
 Resource Types:
 <ul class="simple"></ul>
-<h3 id="airship.airshipit.org/v1.InfraConfig">InfraConfig
+<h3 id="airship.airshipit.org/v1.JumpHostService">JumpHostService
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#airship.airshipit.org/v1.SIPClusterSpec">SIPClusterSpec</a>)
+<a href="#airship.airshipit.org/v1.SIPClusterServices">SIPClusterServices</a>)
 </p>
+<p>JumpHostService is an infrastructure service type that represents the sub-cluster jump-host service.</p>
 <div class="md-typeset__scrollwrap">
 <div class="md-typeset__table">
 <table>
@@ -27,10 +28,10 @@ Resource Types:
 <tbody>
 <tr>
 <td>
-<code>serviceType</code><br>
+<code>inline</code><br>
 <em>
-<a href="#airship.airshipit.org/v1.InfraService">
-InfraService
+<a href="#airship.airshipit.org/v1.SIPClusterService">
+SIPClusterService
 </a>
 </em>
 </td>
@@ -39,49 +40,7 @@ InfraService
 </tr>
 <tr>
 <td>
-<code>optional</code><br>
-<em>
-<a href="#airship.airshipit.org/v1.OptsConfig">
-OptsConfig
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>image</code><br>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>nodelabels</code><br>
-<em>
-map[string]string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>nodePort</code><br>
-<em>
-int
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>nodeInterfaceId</code><br>
+<code>sshkey</code><br>
 <em>
 string
 </em>
@@ -93,13 +52,6 @@ string
 </table>
 </div>
 </div>
-<h3 id="airship.airshipit.org/v1.InfraService">InfraService
-(<code>string</code> alias)</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#airship.airshipit.org/v1.InfraConfig">InfraConfig</a>)
-</p>
-<p>InfraService describes the type of infrastructure service that should be deployed when a sub-cluster is provisioned.</p>
 <h3 id="airship.airshipit.org/v1.NodeSet">NodeSet
 </h3>
 <p>
@@ -170,46 +122,6 @@ VMCount
 </table>
 </div>
 </div>
-<h3 id="airship.airshipit.org/v1.OptsConfig">OptsConfig
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#airship.airshipit.org/v1.InfraConfig">InfraConfig</a>)
-</p>
-<div class="md-typeset__scrollwrap">
-<div class="md-typeset__table">
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>sshkey</code><br>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>clusterIP</code><br>
-<em>
-string
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
 <h3 id="airship.airshipit.org/v1.SIPCluster">SIPCluster
 </h3>
 <p>SIPCluster is the Schema for the sipclusters API</p>
@@ -271,7 +183,7 @@ map[./pkg/api/v1.VMRoles]./pkg/api/v1.NodeSet
 </em>
 </td>
 <td>
-<p>Nodes are the list of Nodes objects workers, or master that definee eexpectations
+<p>Nodes are the list of Nodes objects workers, or master that definee expectations
 of the Tenant cluster
 VMRole is either Control or Workers
 VMRole VMRoles <code>json:&quot;vm-role,omitempty&quot;</code></p>
@@ -279,15 +191,15 @@ VMRole VMRoles <code>json:&quot;vm-role,omitempty&quot;</code></p>
 </tr>
 <tr>
 <td>
-<code>infra</code><br>
+<code>services</code><br>
 <em>
-<a href="#airship.airshipit.org/v1.InfraConfig">
-[]InfraConfig
+<a href="#airship.airshipit.org/v1.SIPClusterServices">
+SIPClusterServices
 </a>
 </em>
 </td>
 <td>
-<p>InfraServices is a list of services that are deployed when a SIPCluster is provisioned.</p>
+<p>Services defines the services that are deployed when a SIPCluster is provisioned.</p>
 </td>
 </tr>
 </table>
@@ -303,6 +215,137 @@ SIPClusterStatus
 </em>
 </td>
 <td>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="airship.airshipit.org/v1.SIPClusterService">SIPClusterService
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#airship.airshipit.org/v1.JumpHostService">JumpHostService</a>, 
+<a href="#airship.airshipit.org/v1.SIPClusterServices">SIPClusterServices</a>)
+</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>image</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodelabels</code><br>
+<em>
+map[string]string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodePort</code><br>
+<em>
+int
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeInterfaceId</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>clusterIP</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="airship.airshipit.org/v1.SIPClusterServices">SIPClusterServices
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#airship.airshipit.org/v1.SIPClusterSpec">SIPClusterSpec</a>)
+</p>
+<p>SIPClusterServices defines the services that are deployed when a SIPCluster is provisioned.</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>loadBalancer</code><br>
+<em>
+<a href="#airship.airshipit.org/v1.SIPClusterService">
+[]SIPClusterService
+</a>
+</em>
+</td>
+<td>
+<p>LoadBalancer defines the sub-cluster load balancer services.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>auth</code><br>
+<em>
+<a href="#airship.airshipit.org/v1.SIPClusterService">
+[]SIPClusterService
+</a>
+</em>
+</td>
+<td>
+<p>Auth defines the sub-cluster authentication services.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>jumpHost</code><br>
+<em>
+<a href="#airship.airshipit.org/v1.JumpHostService">
+[]JumpHostService
+</a>
+</em>
+</td>
+<td>
+<p>JumpHost defines the sub-cluster jump host services.</p>
 </td>
 </tr>
 </tbody>
@@ -347,7 +390,7 @@ map[./pkg/api/v1.VMRoles]./pkg/api/v1.NodeSet
 </em>
 </td>
 <td>
-<p>Nodes are the list of Nodes objects workers, or master that definee eexpectations
+<p>Nodes are the list of Nodes objects workers, or master that definee expectations
 of the Tenant cluster
 VMRole is either Control or Workers
 VMRole VMRoles <code>json:&quot;vm-role,omitempty&quot;</code></p>
@@ -355,15 +398,15 @@ VMRole VMRoles <code>json:&quot;vm-role,omitempty&quot;</code></p>
 </tr>
 <tr>
 <td>
-<code>infra</code><br>
+<code>services</code><br>
 <em>
-<a href="#airship.airshipit.org/v1.InfraConfig">
-[]InfraConfig
+<a href="#airship.airshipit.org/v1.SIPClusterServices">
+SIPClusterServices
 </a>
 </em>
 </td>
 <td>
-<p>InfraServices is a list of services that are deployed when a SIPCluster is provisioned.</p>
+<p>Services defines the services that are deployed when a SIPCluster is provisioned.</p>
 </td>
 </tr>
 </tbody>

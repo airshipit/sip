@@ -229,17 +229,22 @@ func CreateSIPCluster(name string, namespace string, masters int, workers int) *
 					},
 				},
 			},
-			InfraServices: []airshipv1.InfraConfig{
-				{
-					NodeInterface: "eno3",
-					NodePort:      30000,
-					ServiceType:   airshipv1.LoadBalancerService,
+			Services: airshipv1.SIPClusterServices{
+				LoadBalancer: []airshipv1.SIPClusterService{
+					{
+						NodeInterface: "eno3",
+						NodePort:      30000,
+					},
 				},
-				{
-					Image:         "ubuntu:20.04",
-					NodePort:      7022,
-					NodeInterface: "eno3",
-					ServiceType:   airshipv1.JumpHostService,
+				JumpHost: []airshipv1.JumpHostService{
+					{
+						SIPClusterService: airshipv1.SIPClusterService{
+							Image:         "ubuntu:20.04",
+							NodePort:      7022,
+							NodeInterface: "eno3",
+						},
+						SSHKey: "",
+					},
 				},
 			},
 		},

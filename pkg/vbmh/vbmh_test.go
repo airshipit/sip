@@ -114,15 +114,16 @@ var _ = Describe("MachineList", func() {
 		}
 
 		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
-		sipCluster.Spec.InfraServices = []airshipv1.InfraConfig{
-			{
-				Image: "haproxy:latest",
-				NodeLabels: map[string]string{
-					"test": "true",
+		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
+			LoadBalancer: []airshipv1.SIPClusterService{
+				{
+					Image: "haproxy:latest",
+					NodeLabels: map[string]string{
+						"test": "true",
+					},
+					NodePort:      30000,
+					NodeInterface: "oam-ipv4",
 				},
-				NodePort:      30000,
-				NodeInterface: "oam-ipv4",
-				ServiceType:   airshipv1.LoadBalancerService,
 			},
 		}
 		k8sClient := mockClient.NewFakeClient(objs...)

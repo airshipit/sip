@@ -16,7 +16,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -33,7 +32,6 @@ import (
 type InfraService interface {
 	Deploy() error
 	Finalize() error
-	Type() airshipv1.InfraService
 }
 
 // ServiceSet provides access to infrastructure services
@@ -42,8 +40,6 @@ type ServiceSet struct {
 	sip      airshipv1.SIPCluster
 	machines *airshipvms.MachineList
 	client   client.Client
-
-	services map[airshipv1.InfraService]InfraService
 }
 
 // NewServiceSet returns new instance of ServiceSet
@@ -60,17 +56,6 @@ func NewServiceSet(
 		client:   client,
 		machines: machines,
 	}
-}
-
-// LoadBalancer returns loadbalancer service
-func (ss ServiceSet) LoadBalancer() (InfraService, error) {
-	lb, ok := ss.services[airshipv1.LoadBalancerService]
-	if !ok {
-		ss.logger.Info("sip cluster doesn't have loadbalancer infrastructure service defined")
-	}
-	return lb, fmt.Errorf("loadbalancer service is not defined for sip cluster '%s'/'%s'",
-		ss.sip.GetNamespace(),
-		ss.sip.GetName())
 }
 
 func (ss ServiceSet) Finalize() error {
@@ -107,31 +92,31 @@ func CreateNS(serviceNamespaceName string, c client.Client) error {
 }
 
 // ServiceList returns all services defined in Set
-func (ss ServiceSet) ServiceList() []InfraService {
-	var serviceList []InfraService
-	for _, serviceConfig := range ss.sip.Spec.InfraServices {
-		switch serviceConfig.ServiceType {
-		case airshipv1.LoadBalancerService:
-			serviceList = append(serviceList,
-				newLB(ss.sip.GetName(),
-					ss.sip.Spec.ClusterName,
-					ss.logger,
-					serviceConfig,
-					ss.machines,
-					ss.client))
-		case airshipv1.JumpHostService:
-			serviceList = append(serviceList,
-				newJumpHost(ss.sip.GetName(),
-					ss.sip.Spec.ClusterName,
-					ss.logger,
-					serviceConfig,
-					ss.machines,
-					ss.client))
-		default:
-			ss.logger.Info("serviceType unsupported", "serviceType", serviceConfig.ServiceType)
-		}
+func (ss ServiceSet) ServiceList() ([]InfraService, error) {
+	serviceList := []InfraService{}
+	services := ss.sip.Spec.Services
+	for _, svc := range services.LoadBalancer {
+		serviceList = append(serviceList,
+			newLB(ss.sip.GetName(),
+				ss.sip.Spec.ClusterName,
+				ss.logger,
+				svc,
+				ss.machines,
+				ss.client))
 	}
-	return serviceList
+	for _, svc := range services.Auth {
+		return nil, ErrInfraServiceNotSupported{svc}
+	}
+	for _, svc := range services.JumpHost {
+		serviceList = append(serviceList,
+			newJumpHost(ss.sip.GetName(),
+				ss.sip.Spec.ClusterName,
+				ss.logger,
+				svc,
+				ss.machines,
+				ss.client))
+	}
+	return serviceList, nil
 }
 
 func applyRuntimeObject(key client.ObjectKey, obj client.Object, c client.Client) error {

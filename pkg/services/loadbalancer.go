@@ -190,13 +190,13 @@ type loadBalancer struct {
 	client   client.Client
 	sipName  types.NamespacedName
 	logger   logr.Logger
-	config   airshipv1.InfraConfig
+	config   airshipv1.SIPClusterService
 	machines *airshipvms.MachineList
 }
 
 func newLB(name, namespace string,
 	logger logr.Logger,
-	config airshipv1.InfraConfig,
+	config airshipv1.SIPClusterService,
 	machines *airshipvms.MachineList,
 	client client.Client) loadBalancer {
 	return loadBalancer{
@@ -214,11 +214,6 @@ func newLB(name, namespace string,
 func (lb loadBalancer) Finalize() error {
 	// implete to delete loadbalancer
 	return nil
-}
-
-// Type type of the service
-func (lb loadBalancer) Type() airshipv1.InfraService {
-	return airshipv1.LoadBalancerService
 }
 
 func generateTemplate(p proxy) ([]byte, error) {

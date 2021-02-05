@@ -28,14 +28,13 @@ func (e ErrorUnableToFullySchedule) Error() string {
 
 type ErrorHostIPNotFound struct {
 	HostName    string
-	ServiceType airshipv1.InfraService
 	IPInterface string
 	Message     string
 }
 
 func (e ErrorHostIPNotFound) Error() string {
 	return fmt.Sprintf("Unable to identify the vBMH Host %v IP address on interface %v required by "+
-		"Infrastructure Service %v %s", e.HostName, e.IPInterface, e.ServiceType, e.Message)
+		"Infrastructure Service %s", e.HostName, e.IPInterface, e.Message)
 }
 
 // ErrorUknownSpreadTopology is returned when wrong AuthType is provided

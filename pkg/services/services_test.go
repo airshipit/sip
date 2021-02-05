@@ -49,8 +49,9 @@ var _ = Describe("Service Set", func() {
 
 			set := services.NewServiceSet(logger, *sip, machineList, k8sClient)
 
-			serviceList := set.ServiceList()
+			serviceList, err := set.ServiceList()
 			Expect(serviceList).To(HaveLen(2))
+			Expect(err).To(Succeed())
 			for _, svc := range serviceList {
 				err := svc.Deploy()
 				Expect(err).ToNot(HaveOccurred())
