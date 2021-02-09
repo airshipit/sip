@@ -16,11 +16,11 @@
 git update-index -q --ignore-submodules --refresh
 
 # Evaluate git files for difference, if found print message and fail.
-git diff-files --quiet --ignore-submodules
+git diff --exit-code --ignore-submodules
 if [ $? -ne 0 ]
 then
-    echo "git diff found modified test cases, please run make test"
+    echo "error: git diff found, please run make test"
     exit 1
 fi
 
-echo "no git diff detected, make target completed successfully"
+echo "success: git diff not found"
