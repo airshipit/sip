@@ -26,5 +26,14 @@ type ErrInfraServiceNotSupported struct {
 }
 
 func (e ErrInfraServiceNotSupported) Error() string {
-	return fmt.Sprintf("Invalid Infrastructure Service: %v", e.Service)
+	return fmt.Sprintf("invalid Infrastructure Service: %v", e.Service)
+}
+
+// ErrMalformedRedfishAddress occurs when a Redfish address does not meet the expected format.
+type ErrMalformedRedfishAddress struct {
+	Address string
+}
+
+func (e ErrMalformedRedfishAddress) Error() string {
+	return fmt.Sprintf("invalid Redfish BMC address %s", e.Address)
 }

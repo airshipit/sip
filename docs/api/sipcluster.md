@@ -9,6 +9,37 @@
 <p>Package v1 contains API Schema definitions for the airship v1 API group</p>
 Resource Types:
 <ul class="simple"></ul>
+<h3 id="airship.airshipit.org/v1.BMCOpts">BMCOpts
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#airship.airshipit.org/v1.JumpHostService">JumpHostService</a>)
+</p>
+<p>BMCOpts contains options for BMC communication.</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>proxy</code><br>
+<em>
+bool
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <h3 id="airship.airshipit.org/v1.JumpHostService">JumpHostService
 </h3>
 <p>
@@ -32,6 +63,18 @@ Resource Types:
 <em>
 <a href="#airship.airshipit.org/v1.SIPClusterService">
 SIPClusterService
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>bmc</code><br>
+<em>
+<a href="#airship.airshipit.org/v1.BMCOpts">
+BMCOpts
 </a>
 </em>
 </td>

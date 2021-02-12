@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"context"
+	"encoding/json"
 
 	airshipv1 "sipcluster/pkg/api/v1"
 
@@ -25,6 +26,18 @@ const (
 var bmh1 *metal3.BareMetalHost
 var bmh2 *metal3.BareMetalHost
 
+// Re-declared from services package for testing purposes
+type host struct {
+	Name string `json:"name"`
+	BMC  bmc    `json:"bmc"`
+}
+
+type bmc struct {
+	IP       string `json:"ip"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 var _ = Describe("Service Set", func() {
 	Context("When new SIP cluster is created", func() {
 		It("Deploys services", func() {
@@ -32,6 +45,16 @@ var _ = Describe("Service Set", func() {
 
 			bmh1, _ = testutil.CreateBMH(1, "default", "control-plane", 1)
 			bmh2, _ = testutil.CreateBMH(2, "default", "control-plane", 2)
+
+			bmcUsername := "root"
+			bmcPassword := "password"
+			bmcSecret := testutil.CreateBMCAuthSecret(bmh1.GetName(), bmh1.GetNamespace(), bmcUsername,
+				bmcPassword)
+			Expect(k8sClient.Create(context.Background(), bmcSecret)).Should(Succeed())
+
+			bmh1.Spec.BMC.CredentialsName = bmcSecret.Name
+			bmh2.Spec.BMC.CredentialsName = bmcSecret.Name
+
 			m1 := &vbmh.Machine{
 				BMH: *bmh1,
 				Data: &vbmh.MachineData{
@@ -40,6 +63,7 @@ var _ = Describe("Service Set", func() {
 					},
 				},
 			}
+
 			m2 := &vbmh.Machine{
 				BMH: *bmh2,
 				Data: &vbmh.MachineData{
@@ -68,13 +92,13 @@ var _ = Describe("Service Set", func() {
 			}
 
 			Eventually(func() error {
-				return testDeployment(sip)
+				return testDeployment(sip, *machineList)
 			}, 5, 1).Should(Succeed())
 		})
 	})
 })
 
-func testDeployment(sip *airshipv1.SIPCluster) error {
+func testDeployment(sip *airshipv1.SIPCluster, machineList vbmh.MachineList) error {
 	loadBalancerDeployment := &appsv1.Deployment{}
 	err := k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: "default",
@@ -110,6 +134,7 @@ func testDeployment(sip *airshipv1.SIPCluster) error {
 	if err != nil {
 		return err
 	}
+
 	jumpHostHostAliases := jumpHostDeployment.Spec.Template.Spec.HostAliases
 	Expect(jumpHostHostAliases).To(ConsistOf(
 		corev1.HostAlias{
@@ -129,6 +154,27 @@ func testDeployment(sip *airshipv1.SIPCluster) error {
 	}, jumpHostService)
 	if err != nil {
 		return err
+	}
+
+	jumpHostSecret := &corev1.Secret{}
+	err = k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: "default",
+		Name:      services.JumpHostServiceName + "-" + sip.GetName(),
+	}, jumpHostSecret)
+	if err != nil {
+		return err
+	}
+
+	var hosts []host
+	err = json.Unmarshal(jumpHostSecret.Data["hosts"], &hosts)
+	Expect(err).To(BeNil())
+	for _, host := range hosts {
+		for _, machine := range machineList.Machines {
+			if host.Name == machine.BMH.Name {
+				Expect(host.BMC.Username).To(Equal(machine.Data.BMCUsername))
+				Expect(host.BMC.Password).To(Equal(machine.Data.BMCPassword))
+			}
+		}
 	}
 
 	return nil

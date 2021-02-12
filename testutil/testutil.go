@@ -190,6 +190,9 @@ func CreateBMH(node int, namespace string, role airshipv1.VMRole, rack int) (*me
 					Namespace: namespace,
 					Name:      networkDataName,
 				},
+				BMC: metal3.BMCDetails{
+					Address: "redfish+https://32.68.51.12/redfish/v1/Systems/System.Embedded.1",
+				},
 			},
 		}, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{

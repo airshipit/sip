@@ -28,16 +28,14 @@ spec:
         nodePort: 7023
         nodeInterfaceId: oam-ipv4
       - serviceType: jumphost
-        optional:
-          sshKey: rsa.... #<-- this needs to align to the ssh keys provided to cluster api objects
-        image: ubuntu:20.04
+        redfish:
+          proxy: false
+        image: quay.io/airshipit/jump-host:dev
         nodeLabels:
           - airship-control-plane
         nodePort: 7022
         nodeInterfaceId: oam-ipv4
       - serviceType: loadbalancer
-        optional:
-          clusterIP: 1.2.3.4 #<-- this aligns to the VIP IP for undercloud k8s
         image: haproxy:2.3.2
         nodeLabels:
           - airship-control-plane

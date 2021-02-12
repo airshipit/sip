@@ -103,6 +103,12 @@ spec:
                     description: JumpHostService is an infrastructure service type
                       that represents the sub-cluster jump-host service.
                     properties:
+                      bmc:
+                        description: BMCOpts contains options for BMC communication.
+                        properties:
+                          proxy:
+                            type: boolean
+                        type: object
                       inline:
                         properties:
                           clusterIP:

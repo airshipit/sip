@@ -86,7 +86,8 @@ func (s SIPClusterServices) GetAll() []SIPClusterService {
 // JumpHostService is an infrastructure service type that represents the sub-cluster jump-host service.
 type JumpHostService struct {
 	SIPClusterService `json:"inline"`
-	SSHKey            string `json:"sshkey,omitempty"`
+	BMC               *BMCOpts `json:"bmc,omitempty"`
+	SSHKey            string   `json:"sshkey,omitempty"`
 }
 
 // SIPClusterStatus defines the observed state of SIPCluster
@@ -163,6 +164,11 @@ type SIPClusterService struct {
 	NodePort      int               `json:"nodePort,omitempty"`
 	NodeInterface string            `json:"nodeInterfaceId,omitempty"`
 	ClusterIP     *string           `json:"clusterIP,omitempty"`
+}
+
+// BMCOpts contains options for BMC communication.
+type BMCOpts struct {
+	Proxy bool `json:"proxy,omitempty"`
 }
 
 // VMRole defines the states the provisioner will report
