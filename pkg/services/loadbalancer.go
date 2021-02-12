@@ -24,6 +24,7 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,19 +35,25 @@ const (
 	/* #nosec */
 	ConfigSecretName = "haproxy-config"
 	// DefaultBalancerImage is the image that will be used as load balancer
-	DefaultBalancerImage = "haproxy:2.3.2"
+	DefaultBalancerImage    = "haproxy:2.3.2"
+	LoadBalancerServiceName = "loadbalancer"
 )
 
 func (lb loadBalancer) Deploy() error {
 	if lb.config.Image == "" {
 		lb.config.Image = DefaultBalancerImage
 	}
-	if lb.config.NodePort < 30000 || lb.config.NodePort > 32767 {
-		lb.logger.Info("Either NodePort is not defined in the CR or NodePort is not in the required range of 30000-32767")
-		return nil
+
+	instance := LoadBalancerServiceName + "-" + lb.sipName.Name
+	labels := map[string]string{
+		// See https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels
+		"app.kubernetes.io/part-of":   "sip",
+		"app.kubernetes.io/component": LoadBalancerServiceName,
+		"app.kubernetes.io/name":      "haproxy",
+		"app.kubernetes.io/instance":  instance,
 	}
 
-	pod, secret, err := lb.generatePodAndSecret()
+	deployment, secret, err := lb.generateDeploymentAndSecret(instance, labels)
 	if err != nil {
 		return err
 	}
@@ -57,13 +64,16 @@ func (lb loadBalancer) Deploy() error {
 		return err
 	}
 
-	lb.logger.Info("Applying loadbalancer pod", "pod", pod.GetNamespace()+"/"+pod.GetName())
-	err = applyRuntimeObject(client.ObjectKey{Name: pod.GetName(), Namespace: pod.GetNamespace()}, pod, lb.client)
+	// TODO: Validate Deployment becomes ready.
+	lb.logger.Info("Applying loadbalancer deployment", "deployment", deployment.GetNamespace()+"/"+deployment.GetName())
+	err = applyRuntimeObject(client.ObjectKey{Name: deployment.GetName(), Namespace: deployment.GetNamespace()},
+		deployment, lb.client)
 	if err != nil {
 		return err
 	}
 
-	lbService := lb.generateService()
+	// TODO: Validate Service becomes ready.
+	lbService := lb.generateService(instance, labels)
 	lb.logger.Info("Applying loadbalancer service", "service", lbService.GetNamespace()+"/"+lbService.GetName())
 	err = applyRuntimeObject(client.ObjectKey{Name: lbService.GetName(), Namespace: lbService.GetNamespace()},
 		lbService, lb.client)
@@ -73,53 +83,66 @@ func (lb loadBalancer) Deploy() error {
 	return nil
 }
 
-func (lb loadBalancer) generatePodAndSecret() (*corev1.Pod, *corev1.Secret, error) {
-	secret, err := lb.generateSecret()
+func (lb loadBalancer) generateDeploymentAndSecret(instance string, labels map[string]string) (*appsv1.Deployment,
+	*corev1.Secret, error) {
+	secret, err := lb.generateSecret(instance)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	pod := &corev1.Pod{
+	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      lb.sipName.Name + "-load-balancer",
+			Name:      instance,
 			Namespace: lb.sipName.Namespace,
-			Labels:    map[string]string{"lb-name": lb.sipName.Namespace + "-haproxy"},
+			Labels:    labels,
 		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  "balancer",
-					Image: lb.config.Image,
-					Ports: []corev1.ContainerPort{
-						{
-							Name:          "http",
-							ContainerPort: 6443,
-						},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      ConfigSecretName,
-							MountPath: "/usr/local/etc/haproxy",
-						},
-					},
-				},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: int32Ptr(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
 			},
-			Volumes: []corev1.Volume{
-				{
-					Name: ConfigSecretName,
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: secret.GetName(),
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  LoadBalancerServiceName,
+							Image: lb.config.Image,
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "http",
+									ContainerPort: 6443,
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      ConfigSecretName,
+									MountPath: "/usr/local/etc/haproxy",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: ConfigSecretName,
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: secret.GetName(),
+								},
+							},
 						},
 					},
 				},
 			},
 		},
 	}
-	return pod, secret, nil
+
+	return deployment, secret, nil
 }
 
-func (lb loadBalancer) generateSecret() (*corev1.Secret, error) {
+func (lb loadBalancer) generateSecret(instance string) (*corev1.Secret, error) {
 	p := proxy{
 		FrontPort: 6443,
 		Backends:  make([]backend, 0),
@@ -145,7 +168,7 @@ func (lb loadBalancer) generateSecret() (*corev1.Secret, error) {
 	}
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      lb.sipName.Name + "-load-balancer",
+			Name:      instance,
 			Namespace: lb.sipName.Namespace,
 		},
 		Type: corev1.SecretTypeOpaque,
@@ -155,10 +178,10 @@ func (lb loadBalancer) generateSecret() (*corev1.Secret, error) {
 	}, nil
 }
 
-func (lb loadBalancer) generateService() *corev1.Service {
+func (lb loadBalancer) generateService(instance string, labels map[string]string) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      lb.sipName.Name + "-load-balancer-service",
+			Name:      instance,
 			Namespace: lb.sipName.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
@@ -169,7 +192,7 @@ func (lb loadBalancer) generateService() *corev1.Service {
 					NodePort: int32(lb.config.NodePort),
 				},
 			},
-			Selector: map[string]string{"lb-name": lb.sipName.Namespace + "-haproxy"},
+			Selector: labels,
 			Type:     corev1.ServiceTypeNodePort,
 		},
 	}

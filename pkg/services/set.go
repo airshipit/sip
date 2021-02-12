@@ -130,3 +130,5 @@ func applyRuntimeObject(key client.ObjectKey, obj client.Object, c client.Client
 		return err
 	}
 }
+
+func int32Ptr(i int32) *int32 { return &i }

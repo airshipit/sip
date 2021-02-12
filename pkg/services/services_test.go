@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -65,20 +66,11 @@ var _ = Describe("Service Set", func() {
 })
 
 func testDeployment(sip *airshipv1.SIPCluster) error {
-	jumpHostPod := &corev1.Pod{}
+	loadBalancerDeployment := &appsv1.Deployment{}
 	err := k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: "default",
-		Name:      sip.GetName() + "-jump-pod",
-	}, jumpHostPod)
-	if err != nil {
-		return err
-	}
-
-	loadBalancerPod := &corev1.Pod{}
-	err = k8sClient.Get(context.Background(), types.NamespacedName{
-		Namespace: "default",
-		Name:      sip.GetName() + "-load-balancer",
-	}, loadBalancerPod)
+		Name:      services.LoadBalancerServiceName + "-" + sip.GetName(),
+	}, loadBalancerDeployment)
 	if err != nil {
 		return err
 	}
@@ -86,7 +78,7 @@ func testDeployment(sip *airshipv1.SIPCluster) error {
 	loadBalancerSecret := &corev1.Secret{}
 	err = k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: "default",
-		Name:      sip.GetName() + "-load-balancer",
+		Name:      services.LoadBalancerServiceName + "-" + sip.GetName(),
 	}, loadBalancerSecret)
 	if err != nil {
 		return err
@@ -95,8 +87,26 @@ func testDeployment(sip *airshipv1.SIPCluster) error {
 	loadBalancerService := &corev1.Service{}
 	err = k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: "default",
-		Name:      sip.GetName() + "-load-balancer-service",
+		Name:      services.LoadBalancerServiceName + "-" + sip.GetName(),
 	}, loadBalancerService)
+	if err != nil {
+		return err
+	}
+
+	jumpHostDeployment := &appsv1.Deployment{}
+	err = k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: "default",
+		Name:      services.JumpHostServiceName + "-" + sip.GetName(),
+	}, jumpHostDeployment)
+	if err != nil {
+		return err
+	}
+
+	jumpHostService := &corev1.Service{}
+	err = k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: "default",
+		Name:      services.JumpHostServiceName + "-" + sip.GetName(),
+	}, jumpHostService)
 	if err != nil {
 		return err
 	}

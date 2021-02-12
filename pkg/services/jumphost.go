@@ -15,10 +15,8 @@
 package services
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,8 +27,7 @@ import (
 )
 
 const (
-	jumpHostContainerName   = "ssh"
-	jumpHostPodNameTemplate = "%s-jump-pod"
+	JumpHostServiceName = "jumphost"
 )
 
 // JumpHost is an InfrastructureService that provides SSH capabilities to access a sub-cluster.
@@ -58,36 +55,89 @@ func newJumpHost(name, namespace string, logger logr.Logger, config airshipv1.Ju
 
 // Deploy creates a JumpHost service in the base cluster.
 func (jh jumpHost) Deploy() error {
-	jh.logger.Info("deploying jump host", "sub-cluster", jh.sipName.Name)
+	instance := JumpHostServiceName + "-" + jh.sipName.Name
+	labels := map[string]string{
+		// See https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels
+		"app.kubernetes.io/part-of":   "sip",
+		"app.kubernetes.io/name":      JumpHostServiceName,
+		"app.kubernetes.io/component": JumpHostServiceName,
+		"app.kubernetes.io/instance":  instance,
+	}
 
-	jumpHostPodName := fmt.Sprintf(jumpHostPodNameTemplate, jh.sipName.Name)
-	pod := corev1.Pod{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Pod",
-		},
+	// TODO: Validate Deployment becomes ready.
+	deployment := jh.generateDeployment(instance, labels)
+	jh.logger.Info("Applying deployment", "deployment", deployment.GetNamespace()+"/"+deployment.GetName())
+	err := applyRuntimeObject(client.ObjectKey{Name: deployment.GetName(), Namespace: deployment.GetNamespace()},
+		deployment, jh.client)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Validate Service becomes ready.
+	service := jh.generateService(instance, labels)
+	jh.logger.Info("Applying service", "service", service.GetNamespace()+"/"+service.GetName())
+	err = applyRuntimeObject(client.ObjectKey{Name: service.GetName(), Namespace: service.GetNamespace()},
+		service, jh.client)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (jh jumpHost) generateDeployment(instance string, labels map[string]string) *appsv1.Deployment {
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      jumpHostPodName,
+			Name:      instance,
 			Namespace: jh.sipName.Namespace,
+			Labels:    labels,
 		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  jumpHostContainerName,
-					Image: jh.config.Image,
+		Spec: appsv1.DeploymentSpec{
+			Replicas: int32Ptr(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  JumpHostServiceName,
+							Image: jh.config.Image,
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "ssh",
+									ContainerPort: 22,
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 	}
+}
 
-	if err := jh.client.Create(context.Background(), &pod); err != nil {
-		return err
+func (jh jumpHost) generateService(instance string, labels map[string]string) *corev1.Service {
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      instance,
+			Namespace: jh.sipName.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "ssh",
+					Port:     22,
+					NodePort: int32(jh.config.NodePort),
+				},
+			},
+			Selector: labels,
+			Type:     corev1.ServiceTypeNodePort,
+		},
 	}
-
-	jh.logger.Info("successfully deployed jump host", "sub-cluster", jh.sipName.Name, "jump host pod name",
-		jumpHostPodName, "namespace", jh.sipName.Namespace)
-
-	return nil
 }
 
 // Finalize removes a deployed JumpHost service.

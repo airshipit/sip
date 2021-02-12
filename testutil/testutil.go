@@ -245,7 +245,7 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 					{
 						SIPClusterService: airshipv1.SIPClusterService{
 							Image:         "ubuntu:20.04",
-							NodePort:      7022,
+							NodePort:      30001,
 							NodeInterface: "eno3",
 						},
 						SSHKey: "",
