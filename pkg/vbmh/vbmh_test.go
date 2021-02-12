@@ -95,12 +95,23 @@ var _ = Describe("MachineList", func() {
 
 	It("Should retrieve the BMH IP from the BMH's NetworkData secret when infra services are defined", func() {
 		// Create a BMH with a NetworkData secret
-		bmh, secret := testutil.CreateBMH(1, "default", airshipv1.VMControlPlane, 6)
+		bmh, networkData := testutil.CreateBMH(1, "default", airshipv1.VMControlPlane, 6)
+
+		// Create BMH and NetworkData secret
+		var objsToApply []runtime.Object
+		objsToApply = append(objsToApply, bmh)
+		objsToApply = append(objsToApply, networkData)
+
+		// Create BMC credential secret
+		username := "root"
+		password := "test"
+		bmcSecret := testutil.CreateBMCAuthSecret(bmh.Name, bmh.Namespace, username, password)
+
+		bmh.Spec.BMC.CredentialsName = bmcSecret.Name
+		objsToApply = append(objsToApply, bmcSecret)
+
 		m, err := NewMachine(*bmh, airshipv1.VMControlPlane, NotScheduled)
 		Expect(err).To(BeNil())
-		var objs []runtime.Object
-		objs = append(objs, bmh)
-		objs = append(objs, secret)
 
 		ml := &MachineList{
 			NamespacedName: types.NamespacedName{
@@ -126,21 +137,31 @@ var _ = Describe("MachineList", func() {
 				},
 			},
 		}
-		k8sClient := mockClient.NewFakeClient(objs...)
+		k8sClient := mockClient.NewFakeClient(objsToApply...)
 		Expect(ml.Extrapolate(*sipCluster, k8sClient)).To(BeTrue())
 
-		// NOTE(drewwalters96): Interface data is b64 encoded in the testutil convenience function.
 		Expect(ml.Machines[bmh.Name].Data.IPOnInterface).To(Equal(map[string]string{"oam-ipv4": "32.68.51.139"}))
 	})
 
 	It("Should not retrieve the BMH IP from the BMH's NetworkData secret if no infraServices are defined", func() {
 		// Create a BMH with a NetworkData secret
-		bmh, secret := testutil.CreateBMH(1, "default", airshipv1.VMControlPlane, 6)
+		bmh, networkData := testutil.CreateBMH(1, "default", airshipv1.VMControlPlane, 6)
+
+		// Create BMH and NetworkData secret
+		var objsToApply []runtime.Object
+		objsToApply = append(objsToApply, bmh)
+		objsToApply = append(objsToApply, networkData)
+
+		// Create BMC credential secret
+		username := "root"
+		password := "test"
+		bmcSecret := testutil.CreateBMCAuthSecret(bmh.Name, bmh.Namespace, username, password)
+
+		bmh.Spec.BMC.CredentialsName = bmcSecret.Name
+		objsToApply = append(objsToApply, bmcSecret)
+
 		m, err := NewMachine(*bmh, airshipv1.VMControlPlane, NotScheduled)
 		Expect(err).To(BeNil())
-		var objs []runtime.Object
-		objs = append(objs, bmh)
-		objs = append(objs, secret)
 
 		ml := &MachineList{
 			NamespacedName: types.NamespacedName{
@@ -153,10 +174,69 @@ var _ = Describe("MachineList", func() {
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
 
-		k8sClient := mockClient.NewFakeClient(objs...)
 		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
+		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
+			LoadBalancer: []airshipv1.SIPClusterService{
+				{
+					Image: "haproxy:latest",
+					NodeLabels: map[string]string{
+						"test": "true",
+					},
+					NodePort:      30000,
+					NodeInterface: "oam-ipv4",
+				},
+			},
+		}
+		k8sClient := mockClient.NewFakeClient(objsToApply...)
 		Expect(ml.Extrapolate(*sipCluster, k8sClient)).To(BeTrue())
-		Expect(len(ml.Machines[bmh.Name].Data.IPOnInterface)).To(Equal(0))
+
+		Expect(ml.Machines[bmh.Name].Data.BMCUsername).To(Equal(username))
+		Expect(ml.Machines[bmh.Name].Data.BMCPassword).To(Equal(password))
+	})
+
+	It("Should not process a BMH when its BMC secret is missing", func() {
+		var objsToApply []runtime.Object
+
+		// Create BMH and NetworkData secret
+		bmh, networkData := testutil.CreateBMH(1, "default", "master", 6)
+		objsToApply = append(objsToApply, bmh)
+		objsToApply = append(objsToApply, networkData)
+
+		bmh.Spec.BMC.CredentialsName = "foo-does-not-exist"
+
+		m, err := NewMachine(*bmh, airshipv1.VMControlPlane, NotScheduled)
+		Expect(err).To(BeNil())
+
+		ml := &MachineList{
+			NamespacedName: types.NamespacedName{
+				Name:      "vbmh",
+				Namespace: "default",
+			},
+			Machines: map[string]*Machine{
+				bmh.Name: m,
+			},
+			ReadyForScheduleCount: map[airshipv1.VMRole]int{
+				airshipv1.VMControlPlane: 1,
+				airshipv1.VMWorker:       0,
+			},
+			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
+		}
+
+		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
+		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
+			LoadBalancer: []airshipv1.SIPClusterService{
+				{
+					Image: "haproxy:latest",
+					NodeLabels: map[string]string{
+						"test": "true",
+					},
+					NodePort:      30000,
+					NodeInterface: "oam-ipv4",
+				},
+			},
+		}
+		k8sClient := mockClient.NewFakeClient(objsToApply...)
+		Expect(ml.Extrapolate(*sipCluster, k8sClient)).To(BeFalse())
 	})
 
 	It("Should not retrieve the BMH IP if it has been previously extrapolated", func() {

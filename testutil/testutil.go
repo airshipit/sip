@@ -256,3 +256,22 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 		Status: airshipv1.SIPClusterStatus{},
 	}
 }
+
+// CreateBMCAuthSecret creates a K8s Secret that matches the Metal3.io BaremetalHost credential format for use in test
+// cases.
+func CreateBMCAuthSecret(nodeName string, namespace string, username string, password string) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-bmc-credentials", nodeName),
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			"username": []byte(username),
+			"password": []byte(password),
+		},
+	}
+}

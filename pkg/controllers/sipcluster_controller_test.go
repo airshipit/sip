@@ -54,10 +54,19 @@ var _ = Describe("SIPCluster controller", func() {
 			// Create vBMH test objects
 			nodes := []airshipv1.VMRole{airshipv1.VMControlPlane, airshipv1.VMControlPlane, airshipv1.VMControlPlane,
 				airshipv1.VMWorker, airshipv1.VMWorker, airshipv1.VMWorker, airshipv1.VMWorker}
+			bmcUsername := "root"
+			bmcPassword := "test"
 			for node, role := range nodes {
 				vBMH, networkData := testutil.CreateBMH(node, testNamespace, role, 6)
+				bmcSecret := testutil.CreateBMCAuthSecret(vBMH.Name, vBMH.Namespace, bmcUsername,
+					bmcPassword)
+
+				vBMH.Spec.BMC.CredentialsName = bmcSecret.Name
+
+				Expect(k8sClient.Create(context.Background(), bmcSecret)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), vBMH)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
+
 			}
 
 			// Create SIP cluster

@@ -78,6 +78,12 @@ const (
 	SipNodeTypeLabel     = BaseAirshipSelector + "/" + SipNodeTypeLabelName
 )
 
+// Keys used to retrieve credentials from the BMC credentials secret
+const (
+	keyBMCUsername = "username"
+	keyBMCPassword = "password"
+)
+
 // MAchine represents an individual BMH CR, and the appropriate
 // attributes required to manage the SIP Cluster scheduling and
 // rocesing needs about thhem
@@ -118,6 +124,8 @@ type MachineData struct {
 	// Collect all IP's for the interfaces defined
 	// In the list of Services
 	IPOnInterface map[string]string
+	BMCUsername   string
+	BMCPassword   string
 }
 
 // MachineList contains the list of Scheduled or ToBeScheduled machines
@@ -428,6 +436,26 @@ func (ml *MachineList) Extrapolate(sip airshipv1.SIPCluster, c client.Client) bo
 			ml.ReadyForScheduleCount[machine.VMRole]--
 			extrapolateSuccess = false
 		}
+
+		// Retrieve BMC credentials
+		mgmtCredsSecret := &corev1.Secret{}
+		err = c.Get(context.Background(), client.ObjectKey{
+			Namespace: bmh.Namespace,
+			Name:      bmh.Spec.BMC.CredentialsName,
+		}, mgmtCredsSecret)
+		if err != nil {
+			machine.ScheduleStatus = UnableToSchedule
+			ml.ReadyForScheduleCount[machine.VMRole]--
+			extrapolateSuccess = false
+		}
+
+		// Parse BMC credentials from Secret
+		err = ml.getMangementCredentials(machine, mgmtCredsSecret)
+		if err != nil {
+			machine.ScheduleStatus = UnableToSchedule
+			ml.ReadyForScheduleCount[machine.VMRole]--
+			extrapolateSuccess = false
+		}
 	}
 	fmt.Printf("Schedule.Extrapolate  extrapolateSuccess:%t\n", extrapolateSuccess)
 	return extrapolateSuccess
@@ -620,6 +648,23 @@ func (ml *MachineList) getIP(machine *Machine, networkDataSecret *corev1.Secret,
 			}
 		}
 	}
+	return nil
+}
+
+// getManagementCredentials retrieves BMC credentials from a Kubernetes secret.
+func (ml *MachineList) getMangementCredentials(machine *Machine, secret *corev1.Secret) error {
+	username, exists := secret.Data[keyBMCUsername]
+	if !exists {
+		return ErrMalformedManagementCredentials{SecretName: secret.Name}
+	}
+	machine.Data.BMCUsername = string(username)
+
+	password, exists := secret.Data[keyBMCPassword]
+	if !exists {
+		return ErrMalformedManagementCredentials{SecretName: secret.Name}
+	}
+	machine.Data.BMCPassword = string(password)
+
 	return nil
 }
 

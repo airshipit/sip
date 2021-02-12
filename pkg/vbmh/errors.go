@@ -54,3 +54,13 @@ type ErrorNetworkDataNotFound struct {
 func (e ErrorNetworkDataNotFound) Error() string {
 	return fmt.Sprintf("vBMH Host %v does not define NetworkData, but is required for scheduling.", e.BMH)
 }
+
+// ErrMalformedManagementCredentials occurs when a BMC credentials secret does not contain username and password fields.
+type ErrMalformedManagementCredentials struct {
+	SecretName string
+}
+
+func (e ErrMalformedManagementCredentials) Error() string {
+	return fmt.Sprintf("secret %s contains malformed management credentials. Must contain '%s' and '%s' fields.",
+		e.SecretName, keyBMCUsername, keyBMCPassword)
+}
