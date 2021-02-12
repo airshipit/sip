@@ -111,7 +111,7 @@ USE_PROXY=true
 ### Deploy SIP
 
 ```
-# make docker-build
+# make docker-build-controller
 # kubectl get nodes
 # make deploy
 ```

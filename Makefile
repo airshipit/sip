@@ -1,15 +1,17 @@
 # Docker Image Options
-DOCKER_REGISTRY     ?= quay.io
-DOCKER_FORCE_CLEAN  ?= true
-DOCKER_IMAGE_NAME   ?= sip
-DOCKER_IMAGE_PREFIX ?= airshipit
-DOCKER_IMAGE_TAG    ?= latest
-DOCKER_TARGET_STAGE ?= release
-PUBLISH             ?= false
+DOCKER_REGISTRY		?= quay.io
+DOCKER_FORCE_CLEAN	?= true
+DOCKER_IMAGE_PREFIX	?= airshipit
+DOCKER_IMAGE_TAG	?= latest
+DOCKER_TARGET_STAGE	?= release
+PUBLISH			?= false
 
-# Image URL to use all building/pushing image targets
-#IMG ?= controller:latest
-IMG ?= $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+JUMP_HOST_IMAGE_NAME	?= jump-host
+SIP_IMAGE_NAME		?= sip
+
+# Image URLs to build/publish images
+JUMP_HOST_IMG	?= $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)/$(JUMP_HOST_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
+SIP_IMG		?= $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)/$(SIP_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
@@ -59,7 +61,7 @@ uninstall: manifests
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
-	cd config/manager && kustomize edit set image controller=${IMG}
+	cd config/manager && kustomize edit set image controller=${SIP_IMG}
 	kustomize build config/default | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
@@ -78,14 +80,23 @@ vet:
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
-# Build the docker image
-# If DOCKER_PROXY_FLAGS values are empty, we are fine with that
-docker-build:
-	docker build ${DOCKER_PROXY_FLAGS} . -t ${IMG}
+images: docker-build-controller docker-build-jump-host
 
-# Push the docker image
-docker-push:
-	docker push ${IMG}
+# Build the SIP Docker image
+# NOTE: DOCKER_PROXY_FLAGS can be empty.
+docker-build-controller:
+	docker build ${DOCKER_PROXY_FLAGS} . -t ${SIP_IMG}
+
+# Build the Jump Host Docker image
+# NOTE: DOCKER_PROXY_FLAGS can be empty.
+docker-build-jump-host:
+	docker build ${DOCKER_PROXY_FLAGS} -f images/jump-host/Dockerfile . -t ${JUMP_HOST_IMG}
+
+docker-push-controller:
+	docker push ${SIP_IMG}
+
+docker-push-jump-host:
+	docker push ${JUMP_HOST_IMG}
 
 # Generate API reference documentation
 api-docs: gen-crd-api-reference-docs

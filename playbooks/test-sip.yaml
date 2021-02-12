@@ -63,7 +63,11 @@
       make:
         chdir: "{{ zuul.project.src_dir }}"
         target: check-git-diff
-    - name: Build Docker image
+    - name: Build SIP Docker image
       make:
         chdir: "{{ zuul.project.src_dir }}"
-        target: docker-build
+        target: docker-build-controller
+    - name: Build Jump Host Docker image
+      make:
+        chdir: "{{ zuul.project.src_dir }}"
+        target: docker-build-jump-host
