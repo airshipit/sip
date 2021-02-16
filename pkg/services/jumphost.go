@@ -114,10 +114,30 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 							},
 						},
 					},
+					HostAliases: jh.generateHostAliases(),
 				},
 			},
 		},
 	}
+}
+
+func (jh jumpHost) generateHostAliases() []corev1.HostAlias {
+	hostAliases := []corev1.HostAlias{}
+	for _, machine := range jh.machines.Machines {
+		namespace := machine.BMH.Namespace
+		name := machine.BMH.Name
+		ip, exists := machine.Data.IPOnInterface[jh.config.NodeInterface]
+		if !exists {
+			jh.logger.Info("Machine does not have ip to be aliased",
+				"interface", jh.config.NodeInterface,
+				"machine", namespace+"/"+name,
+			)
+			continue
+		}
+		hostname := machine.BMH.Name
+		hostAliases = append(hostAliases, corev1.HostAlias{IP: ip, Hostnames: []string{hostname}})
+	}
+	return hostAliases
 }
 
 func (jh jumpHost) generateService(instance string, labels map[string]string) *corev1.Service {
