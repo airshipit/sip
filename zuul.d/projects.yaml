@@ -9,4 +9,5 @@
         - airship-sip-test-suite
     post:
       jobs:
+        - airship-sip-publish-images
         - airship-sip-upload-git-mirror
