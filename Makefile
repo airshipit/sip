@@ -9,6 +9,9 @@ PUBLISH			?= false
 JUMP_HOST_IMAGE_NAME	?= jump-host
 SIP_IMAGE_NAME		?= sip
 
+JUMP_HOST_BASE_IMAGE	?= gcr.io/google-appengine/python
+SIP_BASE_IMAGE		?= gcr.io/distroless/static:nonroot
+
 # Image URLs to build/publish images
 JUMP_HOST_IMG	?= $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)/$(JUMP_HOST_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 SIP_IMG		?= $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)/$(SIP_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
@@ -85,12 +88,12 @@ images: docker-build-controller docker-build-jump-host
 # Build the SIP Docker image
 # NOTE: DOCKER_PROXY_FLAGS can be empty.
 docker-build-controller:
-	docker build ${DOCKER_PROXY_FLAGS} . -t ${SIP_IMG}
+	docker build ${DOCKER_PROXY_FLAGS} --build-arg BASE_IMAGE=${SIP_BASE_IMAGE} . -t ${SIP_IMG}
 
 # Build the Jump Host Docker image
 # NOTE: DOCKER_PROXY_FLAGS can be empty.
 docker-build-jump-host:
-	docker build ${DOCKER_PROXY_FLAGS} -f images/jump-host/Dockerfile . -t ${JUMP_HOST_IMG}
+	docker build ${DOCKER_PROXY_FLAGS} -f images/jump-host/Dockerfile --build-arg BASE_IMAGE=${JUMP_HOST_BASE_IMAGE} . -t ${JUMP_HOST_IMG}
 
 docker-push-controller:
 	docker push ${SIP_IMG}
