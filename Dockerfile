@@ -5,6 +5,14 @@ FROM gcr.io/gcp-runtimes/go1-builder:1.13 as builder
 
 ENV PATH "/usr/local/go/bin:$PATH"
 
+# Inject custom root certificate authorities if needed.
+# Docker does not have a good conditional copy statement and requires that a
+# source file exists to complete the copy function without error. Therefore, the
+# README.md file will be copied to the image every time even if there are no
+# .crt files.
+COPY ./certs/* /usr/local/share/ca-certificates/
+RUN update-ca-certificates
+
 WORKDIR /workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
