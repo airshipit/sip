@@ -59,7 +59,7 @@ bool
 <tbody>
 <tr>
 <td>
-<code>inline</code><br>
+<code>SIPClusterService</code><br>
 <em>
 <a href="#airship.airshipit.org/v1.SIPClusterService">
 SIPClusterService
@@ -67,6 +67,9 @@ SIPClusterService
 </em>
 </td>
 <td>
+<p>
+(Members of <code>SIPClusterService</code> are embedded into this type.)
+</p>
 </td>
 </tr>
 <tr>

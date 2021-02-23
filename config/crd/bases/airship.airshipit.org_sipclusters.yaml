@@ -109,25 +109,20 @@ spec:
                           proxy:
                             type: boolean
                         type: object
-                      inline:
-                        properties:
-                          clusterIP:
-                            type: string
-                          image:
-                            type: string
-                          nodeInterfaceId:
-                            type: string
-                          nodeLabels:
-                            additionalProperties:
-                              type: string
-                            type: object
-                          nodePort:
-                            type: integer
+                      clusterIP:
+                        type: string
+                      image:
+                        type: string
+                      nodeInterfaceId:
+                        type: string
+                      nodeLabels:
+                        additionalProperties:
+                          type: string
                         type: object
+                      nodePort:
+                        type: integer
                       sshkey:
                         type: string
-                    required:
-                    - inline
                     type: object
                   type: array
                 loadBalancer:

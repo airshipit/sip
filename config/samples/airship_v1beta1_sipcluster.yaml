@@ -1,43 +1,65 @@
 apiVersion: airship.airshipit.org/v1
 kind: SIPCluster
 metadata:
-  name: sipcluster-test1
+  name: sipcluster-test
   namespace: sipcluster-system
   finalizers:
     - sip.airship.airshipit.org/finalizer
 spec:
-    clusterName: subcluster-test1
-    nodes:
-      Worker:
-          vmFlavor: 'vino.airshipit.org/flavor=worker'
-          spreadTopology: 'PerHost' # Support dont'care option.
-          count:
-              active: 1 #driven by capi node number
-              standby: 1 #slew for upgrades etc
-      ControlPlane:
-          vmFlavor: 'vino.airshipit.org/flavor=control-plane'
-          spreadTopology: 'PerRack'
-          count:
-              active: 1
-              standby: 1
-    infra:
-      - serviceType: auth
-        image: sshpod:foo
-        nodeLabels:
-          - airship-control-plane
-        nodePort: 7023
+  # TODO: This field will be removed in the future.
+  clusterName: subcluster-test
+  nodes:
+    ControlPlane:
+        vmFlavor: vino.airshipit.org/flavor=control-plane
+        spreadTopology: PerRack
+        count:
+            active: 1
+            standby: 1
+    Worker:
+        vmFlavor: vino.airshipit.org/flavor=worker
+        spreadTopology: PerHost
+        count:
+            active: 1
+            standby: 1 # Slew for upgrades
+  services:
+    # NOTE: The auth service has not yet been implemented.
+    # auth:
+    #   - image: sshpod:foo
+    #     # NOTE: nodeLabels not yet implemented.
+    #     nodeLabels:
+    #       kubernetes.io/os: linux
+    #     nodePort: 7023
+    #     nodeInterfaceId: oam-ipv4
+    #     clusterIP: 1.2.3.4 # IP of the base cluster VIP
+    jumpHost:
+      - image: quay.io/airshipit/jump-host:latest
+        # NOTE: nodeLabels not yet implemented.
+        # nodeLabels:
+        #   kubernetes.io/os: linux
+        nodePort: 30001
         nodeInterfaceId: oam-ipv4
-      - serviceType: jumphost
-        redfish:
+        # NOTE: clusterIP has not yet been implemented.
+        # clusterIP: 1.2.3.4 # IP of the base cluster VIP
+        bmc:
           proxy: false
-        image: quay.io/airshipit/jump-host:dev
-        nodeLabels:
-          - airship-control-plane
-        nodePort: 7022
-        nodeInterfaceId: oam-ipv4
-      - serviceType: loadbalancer
-        image: haproxy:2.3.2
-        nodeLabels:
-          - airship-control-plane
+        # NOTE: SSHKey not implemented but required by schema.
+        SSHKey: >
+          ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDM/UeCgfawmdt5ehghEk/GCGkrKgdt/
+          DY6NuFOdMZsPUmO3Ryitzw/pqwUXvpnFjCZo2AtxrZhwjbkJRluoVVEBDh1R5YSGHY9el
+          1AkTJj F6bCayjAHTW32pX93NDn4/6ZtTtiVhmZlCr2wK6uZvh4ZB1vBBLEMywME6NaJO
+          OPXId+fc62wwEQqv3PH9A1wMOwPMXvX/r/wm8nUoEguEwC50rPFmTEHkvAi4BWAjfLDOo
+          nU4Mo/cYCrZyrU74GbMR41IxtCcdeFmHSNTVFvQNG9nBSWeoM1nIquoricw+bYYp5QDJ0
+          3m7yD54vJNiPIMr6TaUwGObaAF95I/Q/CgHbEEAYIn33+jj1g2N4BjhXE4B948CW/DfC1
+          KTn2zR3ZroshghURY9Z0J1BjPsCktiTsOs3eBuUH31WCjNNtgaCJNp4SIQHd1je6m4igk
+          7pnr532a/fxdu9Y5udLJ7+ecqeQmDBFIf8UvpZFNktntOQQPq8G/XI3tvjTGl6M2RGIfM
+          = sample-key
+    loadBalancer:
+      - image: haproxy:2.3.2
+        # NOTE: nodeLabels not yet implemented.
+        # nodeLabels:
+        #   kubernetes.io/os: linux
         nodePort: 30000
         nodeInterfaceId: oam-ipv4
+        # NOTE: clusterIP has not yet been implemented.
+        # clusterIP: 1.2.3.4 # IP of the base cluster VIP
+

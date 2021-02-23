@@ -85,7 +85,7 @@ func (s SIPClusterServices) GetAll() []SIPClusterService {
 
 // JumpHostService is an infrastructure service type that represents the sub-cluster jump-host service.
 type JumpHostService struct {
-	SIPClusterService `json:"inline"`
+	SIPClusterService `json:",inline"`
 	BMC               *BMCOpts `json:"bmc,omitempty"`
 	SSHKey            string   `json:"sshkey,omitempty"`
 }
