@@ -278,20 +278,29 @@ func (r *SIPClusterReconciler) gatherVBMH(ctx context.Context, sip airshipv1.SIP
 	// TODO : this is a loop until we succeed or cannot find a schedule
 	for {
 		logger.Info("gathering machines", "machines", machines.String())
+
+		// NOTE: Schedule executes the scheduling algorithm to find hosts that meet the topology and role
+		// constraints.
 		err := machines.Schedule(sip, r.Client)
 		if err != nil {
 			return machines, err
 		}
 
-		// we extract the information in a generic way
-		// So that LB ,  Jump and Ath POD  all leverage the same
-		// If there are some issues finnding information the vBMH
-		// Are flagged Unschedulable
-		// Loop and Try to find new vBMH to complete tge schedule
-		if machines.Extrapolate(sip, r.Client) {
-			logger.Info("successfully extrapolated machines")
-			break
+		if err = machines.ExtrapolateServiceAddresses(sip, r.Client); err != nil {
+			logger.Error(err, "unable to retrieve infrastructure service IP addresses from selected BMHs."+
+				"Selecting replacement hosts.")
+
+			continue
 		}
+
+		if err = machines.ExtrapolateBMCAuth(sip, r.Client); err != nil {
+			logger.Error(err, "unable to retrieve BMC auth info from selected BMHs. Selecting replacement"+
+				"hosts.")
+
+			continue
+		}
+
+		break
 	}
 
 	return machines, nil
