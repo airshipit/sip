@@ -1,3 +1,5 @@
+ARG BASE_IMAGE=gcr.io/distroless/static:nonroot
+
 # Build the manager binary
 FROM gcr.io/gcp-runtimes/go1-builder:1.13 as builder
 
@@ -21,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager 
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+FROM ${BASE_IMAGE}
 WORKDIR /
 COPY --from=builder /workspace/manager .
 USER nonroot:nonroot
