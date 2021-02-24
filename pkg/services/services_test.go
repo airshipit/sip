@@ -27,6 +27,9 @@ const (
 var bmh1 *metal3.BareMetalHost
 var bmh2 *metal3.BareMetalHost
 
+var m1 *vbmh.Machine
+var m2 *vbmh.Machine
+
 // Re-declared from services package for testing purposes
 type host struct {
 	Name string `json:"name"`
@@ -54,7 +57,7 @@ var _ = Describe("Service Set", func() {
 		bmh1.Spec.BMC.CredentialsName = bmcSecret.Name
 		bmh2.Spec.BMC.CredentialsName = bmcSecret.Name
 
-		m1 := &vbmh.Machine{
+		m1 = &vbmh.Machine{
 			BMH: *bmh1,
 			Data: &vbmh.MachineData{
 				IPOnInterface: map[string]string{
@@ -63,7 +66,7 @@ var _ = Describe("Service Set", func() {
 			},
 		}
 
-		m2 := &vbmh.Machine{
+		m2 = &vbmh.Machine{
 			BMH: *bmh2,
 			Data: &vbmh.MachineData{
 				IPOnInterface: map[string]string{
@@ -91,8 +94,16 @@ var _ = Describe("Service Set", func() {
 		It("Deploys services", func() {
 			By("Getting machine IPs and creating secrets, pods, and nodeport service")
 
-			sip := testutil.CreateSIPCluster("default", "default", 1, 1)
-			set := services.NewServiceSet(logger, *sip, machineList, k8sClient)
+			sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("default", "default", 1, 1)
+			Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
+			machineList = &vbmh.MachineList{
+				Machines: map[string]*vbmh.Machine{
+					bmh1.GetName(): m1,
+					bmh2.GetName(): m2,
+				},
+			}
+
+			set := services.NewServiceSet(logger, *sipCluster, machineList, k8sClient)
 
 			serviceList, err := set.ServiceList()
 			Expect(serviceList).To(HaveLen(2))
@@ -103,12 +114,12 @@ var _ = Describe("Service Set", func() {
 			}
 
 			Eventually(func() error {
-				return testDeployment(sip, *machineList)
+				return testDeployment(sipCluster, *machineList)
 			}, 5, 1).Should(Succeed())
 		})
 
 		It("Does not deploy a Jump Host when an invalid SSH key is provided", func() {
-			sip := testutil.CreateSIPCluster("default", "default", 1, 1)
+			sip, _ := testutil.CreateSIPCluster("default", "default", 1, 1)
 			sip.Spec.Services.Auth = []airshipv1.SIPClusterService{}
 			sip.Spec.Services.LoadBalancer = []airshipv1.SIPClusterService{}
 			sip.Spec.Services.JumpHost[0].SSHAuthorizedKeys = []string{

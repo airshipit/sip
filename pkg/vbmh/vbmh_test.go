@@ -124,7 +124,7 @@ var _ = Describe("MachineList", func() {
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
 
-		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
+		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
 			LoadBalancer: []airshipv1.SIPClusterService{
 				{
@@ -137,6 +137,7 @@ var _ = Describe("MachineList", func() {
 				},
 			},
 		}
+		objsToApply = append(objsToApply, nodeSSHPrivateKeys)
 		k8sClient := mockClient.NewFakeClient(objsToApply...)
 		Expect(ml.ExtrapolateServiceAddresses(*sipCluster, k8sClient)).To(BeNil())
 
@@ -174,7 +175,7 @@ var _ = Describe("MachineList", func() {
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
 
-		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
+		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
 			LoadBalancer: []airshipv1.SIPClusterService{
 				{
@@ -187,6 +188,7 @@ var _ = Describe("MachineList", func() {
 				},
 			},
 		}
+		objsToApply = append(objsToApply, nodeSSHPrivateKeys)
 		k8sClient := mockClient.NewFakeClient(objsToApply...)
 		Expect(ml.ExtrapolateBMCAuth(*sipCluster, k8sClient)).To(BeNil())
 
@@ -222,7 +224,7 @@ var _ = Describe("MachineList", func() {
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
 
-		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
+		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
 			LoadBalancer: []airshipv1.SIPClusterService{
 				{
@@ -235,6 +237,7 @@ var _ = Describe("MachineList", func() {
 				},
 			},
 		}
+		objsToApply = append(objsToApply, nodeSSHPrivateKeys)
 		k8sClient := mockClient.NewFakeClient(objsToApply...)
 		Expect(ml.ExtrapolateBMCAuth(*sipCluster, k8sClient)).ToNot(BeNil())
 	})
@@ -274,7 +277,7 @@ var _ = Describe("MachineList", func() {
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
 
-		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
+		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
 			LoadBalancer: []airshipv1.SIPClusterService{
 				{
@@ -287,6 +290,7 @@ var _ = Describe("MachineList", func() {
 				},
 			},
 		}
+		objsToApply = append(objsToApply, nodeSSHPrivateKeys)
 		k8sClient := mockClient.NewFakeClient(objsToApply...)
 		Expect(ml.ExtrapolateBMCAuth(*sipCluster, k8sClient)).ToNot(BeNil())
 	})
@@ -320,7 +324,7 @@ var _ = Describe("MachineList", func() {
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
 
-		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
+		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
 			LoadBalancer: []airshipv1.SIPClusterService{
 				{
@@ -333,6 +337,7 @@ var _ = Describe("MachineList", func() {
 				},
 			},
 		}
+		objsToApply = append(objsToApply, nodeSSHPrivateKeys)
 		k8sClient := mockClient.NewFakeClient(objsToApply...)
 		Expect(ml.ExtrapolateServiceAddresses(*sipCluster, k8sClient)).ToNot(BeNil())
 	})
@@ -365,7 +370,7 @@ var _ = Describe("MachineList", func() {
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
 
-		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
+		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
 			LoadBalancer: []airshipv1.SIPClusterService{
 				{
@@ -378,22 +383,24 @@ var _ = Describe("MachineList", func() {
 				},
 			},
 		}
+		objsToApply = append(objsToApply, nodeSSHPrivateKeys)
 		k8sClient := mockClient.NewFakeClient(objsToApply...)
 		Expect(ml.ExtrapolateServiceAddresses(*sipCluster, k8sClient)).ToNot(BeNil())
 	})
 
 	It("Should not retrieve the BMH IP if it has been previously extrapolated", func() {
 		// Store an IP address for each machine
-		var objs []runtime.Object
+		var objectsToApply []runtime.Object
 		for _, machine := range machineList.Machines {
 			machine.Data.IPOnInterface = map[string]string{
 				"oam-ipv4": "32.68.51.139",
 			}
-			objs = append(objs, &machine.BMH)
+			objectsToApply = append(objectsToApply, &machine.BMH)
 		}
 
-		k8sClient := mockClient.NewFakeClient(objs...)
-		sipCluster := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
+		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
+		objectsToApply = append(objectsToApply, nodeSSHPrivateKeys)
+		k8sClient := mockClient.NewFakeClient(objectsToApply...)
 		Expect(machineList.ExtrapolateServiceAddresses(*sipCluster, k8sClient)).To(BeNil())
 	})
 

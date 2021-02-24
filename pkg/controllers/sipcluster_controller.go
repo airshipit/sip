@@ -51,6 +51,7 @@ const (
 // +kubebuilder:rbac:groups=airship.airshipit.org,resources=sipclusters/status,verbs=get;update;patch
 
 // +kubebuilder:rbac:groups="metal3.io",resources=baremetalhosts,verbs=get;update;patch;list
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;
 
 func (r *SIPClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.NamespacedName = req.NamespacedName

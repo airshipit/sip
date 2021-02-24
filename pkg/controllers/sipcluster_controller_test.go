@@ -41,7 +41,7 @@ const (
 var _ = Describe("SIPCluster controller", func() {
 
 	AfterEach(func() {
-		opts := []client.DeleteAllOfOption{client.InNamespace("default")}
+		opts := []client.DeleteAllOfOption{client.InNamespace(testNamespace)}
 		Expect(k8sClient.DeleteAllOf(context.Background(), &metal3.BareMetalHost{}, opts...)).Should(Succeed())
 		Expect(k8sClient.DeleteAllOf(context.Background(), &airshipv1.SIPCluster{}, opts...)).Should(Succeed())
 		Expect(k8sClient.DeleteAllOf(context.Background(), &corev1.Secret{}, opts...)).Should(Succeed())
@@ -71,7 +71,8 @@ var _ = Describe("SIPCluster controller", func() {
 
 			// Create SIP cluster
 			name := "subcluster-test1"
-			sipCluster := testutil.CreateSIPCluster(name, testNamespace, 3, 4)
+			sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 3, 4)
+			Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
 			// Poll BMHs until SIP has scheduled them to the SIP cluster
@@ -107,7 +108,8 @@ var _ = Describe("SIPCluster controller", func() {
 
 			// Create SIP cluster
 			name := "subcluster-test2"
-			sipCluster := testutil.CreateSIPCluster(name, testNamespace, 3, 4)
+			sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 3, 4)
+			Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
 			// Poll BMHs and validate they are not scheduled
@@ -153,7 +155,8 @@ var _ = Describe("SIPCluster controller", func() {
 
 			// Create SIP cluster
 			name := "subcluster-test4"
-			sipCluster := testutil.CreateSIPCluster(name, testNamespace, 3, 4)
+			sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 3, 4)
+			Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
 			// Poll BMHs and validate they are not scheduled
@@ -215,7 +218,8 @@ var _ = Describe("SIPCluster controller", func() {
 
 				// Create SIP cluster
 				name := "subcluster-test5"
-				sipCluster := testutil.CreateSIPCluster(name, testNamespace, 1, 2)
+				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 1, 2)
+				Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
 				// Poll BMHs and validate they are not scheduled
@@ -276,7 +280,8 @@ var _ = Describe("SIPCluster controller", func() {
 
 				// Create SIP cluster
 				name := "subcluster-test6"
-				sipCluster := testutil.CreateSIPCluster(name, testNamespace, 2, 1)
+				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 2, 1)
+				Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
 				// Poll BMHs and validate they are not scheduled
@@ -336,7 +341,7 @@ var _ = Describe("SIPCluster controller", func() {
 
 				// Create SIP cluster
 				name := "subcluster-test3"
-				sipCluster := testutil.CreateSIPCluster(name, testNamespace, 1, 2)
+				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 1, 2)
 
 				controlPlaneSpec := sipCluster.Spec.Nodes[airshipv1.VMControlPlane]
 				controlPlaneSpec.Scheduling = airshipv1.RackAntiAffinity
@@ -346,6 +351,7 @@ var _ = Describe("SIPCluster controller", func() {
 				workerSpec.Scheduling = airshipv1.RackAntiAffinity
 				sipCluster.Spec.Nodes[airshipv1.VMWorker] = workerSpec
 
+				Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
 				// Poll BMHs and validate they are not scheduled
@@ -402,7 +408,7 @@ var _ = Describe("SIPCluster controller", func() {
 
 				// Create SIP cluster
 				name := "subcluster-test3"
-				sipCluster := testutil.CreateSIPCluster(name, testNamespace, 2, 1)
+				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 2, 1)
 
 				controlPlaneSpec := sipCluster.Spec.Nodes[airshipv1.VMControlPlane]
 				controlPlaneSpec.Scheduling = airshipv1.RackAntiAffinity
@@ -412,6 +418,7 @@ var _ = Describe("SIPCluster controller", func() {
 				workerSpec.Scheduling = airshipv1.RackAntiAffinity
 				sipCluster.Spec.Nodes[airshipv1.VMWorker] = workerSpec
 
+				Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
 				// Poll BMHs and validate they are not scheduled

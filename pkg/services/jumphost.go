@@ -15,8 +15,11 @@
 package services
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/url"
 	"strings"
 
@@ -35,16 +38,23 @@ import (
 const (
 	JumpHostServiceName = "jumphost"
 
-	mountPathData    = "/etc/opt/sip"
-	mountPathScripts = "/opt/sip/bin"
+	subPathHosts     = "hosts"
+	subPathSSHConfig = "ssh_config"
 
 	sshDir             = "/home/ubuntu/.ssh"
 	authorizedKeysFile = "authorized_keys"
-	mountPathSSH       = sshDir + "/" + authorizedKeysFile
 
-	nameAuthorizedKeysVolume = "authorized-keys"
-	nameHostsVolume          = "hosts"
-	nameRebootVolume         = "vm"
+	mountPathData               = "/etc/opt/sip"
+	mountPathScripts            = "/opt/sip/bin"
+	mountPathHosts              = mountPathData + "/" + subPathHosts
+	mountPathSSHConfig          = sshDir + "/config"
+	mountPathSSH                = sshDir + "/" + authorizedKeysFile
+	mountPathNodeSSHPrivateKeys = mountPathData + "/" + nameNodeSSHPrivateKeysVolume
+
+	nameDataVolume               = "data"
+	nameScriptsVolume            = "scripts"
+	nameAuthorizedKeysVolume     = "authorized-keys"
+	nameNodeSSHPrivateKeysVolume = "ssh-private-keys"
 )
 
 // JumpHost is an InfrastructureService that provides SSH and power-management capabilities for sub-clusters.
@@ -81,6 +91,8 @@ func (jh jumpHost) Deploy() error {
 		"app.kubernetes.io/instance":  instance,
 	}
 
+	hostAliases := jh.generateHostAliases()
+
 	// TODO: Validate Service becomes ready.
 	service := jh.generateService(instance, labels)
 	jh.logger.Info("Applying service", "service", service.GetNamespace()+"/"+service.GetName())
@@ -90,8 +102,7 @@ func (jh jumpHost) Deploy() error {
 		return err
 	}
 
-	// TODO: Validate Secret becomes ready.
-	secret, err := jh.generateSecret(instance, labels)
+	secret, err := jh.generateSecret(instance, labels, hostAliases)
 	if err != nil {
 		return err
 	}
@@ -115,7 +126,7 @@ func (jh jumpHost) Deploy() error {
 	}
 
 	// TODO: Validate Deployment becomes ready.
-	deployment := jh.generateDeployment(instance, labels)
+	deployment := jh.generateDeployment(instance, labels, hostAliases)
 	jh.logger.Info("Applying deployment", "deployment", deployment.GetNamespace()+"/"+deployment.GetName())
 	err = applyRuntimeObject(client.ObjectKey{Name: deployment.GetName(), Namespace: deployment.GetNamespace()},
 		deployment, jh.client)
@@ -126,7 +137,8 @@ func (jh jumpHost) Deploy() error {
 	return nil
 }
 
-func (jh jumpHost) generateDeployment(instance string, labels map[string]string) *appsv1.Deployment {
+func (jh jumpHost) generateDeployment(instance string, labels map[string]string,
+	hostAliases []corev1.HostAlias) *appsv1.Deployment {
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance,
@@ -167,17 +179,27 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
+									Name:      nameDataVolume,
+									MountPath: mountPathHosts,
+									SubPath:   subPathHosts,
+								},
+								{
+									Name:      nameScriptsVolume,
+									MountPath: mountPathScripts,
+								},
+								{
+									Name:      nameDataVolume,
+									MountPath: mountPathSSHConfig,
+									SubPath:   subPathSSHConfig,
+								},
+								{
+									Name:      nameNodeSSHPrivateKeysVolume,
+									MountPath: mountPathNodeSSHPrivateKeys,
+								},
+								{
 									Name:      nameAuthorizedKeysVolume,
 									MountPath: mountPathSSH,
 									SubPath:   authorizedKeysFile,
-								},
-								{
-									Name:      nameHostsVolume,
-									MountPath: mountPathData,
-								},
-								{
-									Name:      nameRebootVolume,
-									MountPath: mountPathScripts,
 								},
 							},
 						},
@@ -187,7 +209,7 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: nameHostsVolume,
+							Name: nameDataVolume,
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
 									SecretName: instance,
@@ -213,24 +235,26 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 							},
 						},
 						{
-							Name: nameRebootVolume,
+							Name: nameScriptsVolume,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: instance,
 									},
 									DefaultMode: int32Ptr(0777),
-									Items: []corev1.KeyToPath{
-										{
-											Key:  nameRebootVolume,
-											Path: nameRebootVolume,
-										},
-									},
+								},
+							},
+						},
+						{
+							Name: nameNodeSSHPrivateKeysVolume,
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: jh.config.NodeSSHPrivateKeys,
 								},
 							},
 						},
 					},
-					HostAliases: jh.generateHostAliases(),
+					HostAliases: hostAliases,
 				},
 			},
 		},
@@ -281,18 +305,23 @@ func (jh jumpHost) generateConfigMap(instance string, labels map[string]string) 
 		},
 		Data: map[string]string{
 			nameAuthorizedKeysVolume: strings.Join(jh.config.SSHAuthorizedKeys, "\n"),
-			nameRebootVolume:         fmt.Sprintf(rebootScript, mountPathData, nameHostsVolume),
+			"vm":                     fmt.Sprintf(rebootScript, mountPathHosts),
 		},
 	}, nil
 }
 
-func (jh jumpHost) generateSecret(instance string, labels map[string]string) (*corev1.Secret, error) {
+func (jh jumpHost) generateSecret(instance string, labels map[string]string, hostAliases []corev1.HostAlias) (
+	*corev1.Secret, error) {
 	hostData, err := generateHostList(*jh.machines)
 	if err != nil {
 		return nil, err
 	}
+	sshConfig, err := jh.generateSSHConfig(hostAliases)
+	if err != nil {
+		return nil, err
+	}
 
-	return &corev1.Secret{
+	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
 			Kind:       "Secret",
@@ -303,10 +332,68 @@ func (jh jumpHost) generateSecret(instance string, labels map[string]string) (*c
 			Labels:    labels,
 		},
 		Data: map[string][]byte{
-			nameHostsVolume: hostData,
+			subPathHosts:     hostData,
+			subPathSSHConfig: sshConfig,
 		},
-	}, nil
+	}
+
+	return secret, nil
 }
+
+func (jh jumpHost) generateSSHConfig(hostAliases []corev1.HostAlias) ([]byte, error) {
+	key := types.NamespacedName{
+		Namespace: jh.sipName.Namespace,
+		Name:      jh.config.NodeSSHPrivateKeys,
+	}
+	secret := &corev1.Secret{}
+	if err := jh.client.Get(context.Background(), key, secret); err != nil {
+		return nil, err
+	}
+
+	identityFiles := []string{}
+	for k := range secret.Data {
+		identityFiles = append(identityFiles, mountPathNodeSSHPrivateKeys+"/"+k)
+	}
+	hostNames := []string{}
+	for _, hostAlias := range hostAliases {
+		hostNames = append(hostNames, hostAlias.Hostnames[0])
+	}
+
+	tmpl, err := template.New("ssh-config").Parse(sshConfigTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	data := sshConfigTemplateData{
+		IdentityFiles: identityFiles,
+		HostNames:     hostNames,
+	}
+
+	w := bytes.NewBuffer([]byte{})
+	if err := tmpl.Execute(w, data); err != nil {
+		return nil, err
+	}
+
+	rendered := w.Bytes()
+	return rendered, nil
+}
+
+type sshConfigTemplateData struct {
+	IdentityFiles []string
+	HostNames     []string
+}
+
+const sshConfigTemplate = `
+Host *
+{{- range .IdentityFiles }}
+	IdentityFile {{ . }}
+{{ end -}}
+
+{{- range .HostNames }}
+Host {{ . }}
+	HostName {{ . }}
+{{ end -}}
+`
 
 func (jh jumpHost) generateHostAliases() []corev1.HostAlias {
 	hostAliases := []corev1.HostAlias{}
@@ -410,7 +497,7 @@ var rebootScript = `#!/bin/sh
 # Support Infrastructure Provider (SIP) VM Utility
 # DO NOT MODIFY: generated by SIP
 
-HOSTS_FILE="%s/%s"
+HOSTS_FILE="%s"
 
 LIST_COMMAND="list"
 REBOOT_COMMAND="reboot"
