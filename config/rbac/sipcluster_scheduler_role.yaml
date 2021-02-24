@@ -50,7 +50,6 @@ rules:
   - ""
   resources:
   - namespaces
-  - deployments
   - secrets
   verbs:
   - create
@@ -67,8 +66,10 @@ metadata:
 rules:
 - apiGroups:
   - ""
+  - apps
   resources:
   - configmaps
+  - deployments
   - services
   verbs:
   - create
