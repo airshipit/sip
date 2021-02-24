@@ -30,10 +30,10 @@ import (
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	kerror "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ScheduledState
 type ScheduledState string
 
 // Possible Node or VM Roles  for a Tenant
@@ -396,69 +396,92 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VMRole, nodeCfg airshipv1.N
 	return nil
 }
 
-// Extrapolate intention is to extract the IP information from the referenced networkData field for the BareMetalHost
-func (ml *MachineList) Extrapolate(sip airshipv1.SIPCluster, c client.Client) bool {
-	// Lets get the data for all selected BMH's.
-	extrapolateSuccess := true
-	fmt.Printf("Schedule.Extrapolate  ml.Vbmhs:%d\n", len(ml.Machines))
-	for _, machine := range ml.Machines {
-		fmt.Printf("Schedule.Extrapolate machine.Data.IPOnInterface len:%d machine:%v\n",
-			len(machine.Data.IPOnInterface), machine)
+// ExtrapolateServiceAddresses extracts the IP addresses of each network interface mapped to a service in the SIPCluster
+// CR by inspecting each BMH's Network Data Secret.
+func (ml *MachineList) ExtrapolateServiceAddresses(sip airshipv1.SIPCluster, c client.Client) error {
+	// NOTE: At this point in the scheduling algorithm, the list of Machines in the MachineList each have BMH
+	// objects that meet the SIPCluster CR topology and role constraints.
 
-		// Skip if I alread extrapolated tehh data for this machine
+	var extrapolateErrs error
+	for _, machine := range ml.Machines {
+		// Skip machines whose service addresses have been extracted
 		if len(machine.Data.IPOnInterface) > 0 {
 			continue
 		}
-		bmh := machine.BMH
-		// Identify Network Data Secret name
 
+		// Retrieve BMH Network Data Secret
 		networkDataSecret := &corev1.Secret{}
-		fmt.Printf("Schedule.Extrapolate Namespace:%s Name:%s\n", bmh.Spec.NetworkData.Namespace,
-			bmh.Spec.NetworkData.Name)
-		// c is a created client.
 		err := c.Get(context.Background(), client.ObjectKey{
-			Namespace: bmh.Spec.NetworkData.Namespace,
-			Name:      bmh.Spec.NetworkData.Name,
+			Namespace: machine.BMH.Spec.NetworkData.Namespace,
+			Name:      machine.BMH.Spec.NetworkData.Name,
 		}, networkDataSecret)
 		if err != nil {
+			ml.Log.Error(err, "unable to retrieve BMH Network Data Secret", "BMH", machine.BMH.Name,
+				"Secret", machine.BMH.Spec.NetworkData.Name,
+				"Secret Namespace", machine.BMH.Spec.NetworkData.Namespace)
+
 			machine.ScheduleStatus = UnableToSchedule
 			ml.ReadyForScheduleCount[machine.VMRole]--
-			extrapolateSuccess = false
-		}
-		//fmt.Printf("Schedule.Extrapolate  networkDataSecret:%v\n", networkDataSecret)
-		// Assuming there might be other data
-		// Retrieve IP's for Service defined Network Interfaces
-		err = ml.getIP(machine, networkDataSecret, sip.Spec.Services)
-		if err != nil {
-			// Lets mark the machine as NotScheduleable.
-			// Update the count of what I have found so far,
-			machine.ScheduleStatus = UnableToSchedule
-			ml.ReadyForScheduleCount[machine.VMRole]--
-			extrapolateSuccess = false
+			extrapolateErrs = kerror.NewAggregate([]error{extrapolateErrs, err})
+
+			continue
 		}
 
-		// Retrieve BMC credentials
-		mgmtCredsSecret := &corev1.Secret{}
-		err = c.Get(context.Background(), client.ObjectKey{
-			Namespace: bmh.Namespace,
-			Name:      bmh.Spec.BMC.CredentialsName,
-		}, mgmtCredsSecret)
+		// Parse the interface IP addresses from the BMH's Network Data
+		err = ml.getIP(machine, networkDataSecret, sip.Spec.Services)
 		if err != nil {
+			ml.Log.Error(err, "unable to parse BMH Network Data Secret", "BMH", machine.BMH.Name,
+				"Secret", machine.BMH.Spec.NetworkData.Name,
+				"Secret Namespace", machine.BMH.Spec.NetworkData.Namespace)
+
 			machine.ScheduleStatus = UnableToSchedule
 			ml.ReadyForScheduleCount[machine.VMRole]--
-			extrapolateSuccess = false
+			extrapolateErrs = kerror.NewAggregate([]error{extrapolateErrs, err})
+		}
+	}
+
+	return extrapolateErrs
+}
+
+// ExtrapolateBMCAuth extracts the BMC authentication information in each BMH's BMC Credentials Secret.
+func (ml *MachineList) ExtrapolateBMCAuth(sip airshipv1.SIPCluster, c client.Client) error {
+	// NOTE: At this point in the scheduling algorithm, the list of Machines in the MachineList each have BMH
+	// objects that meet the SIPCluster CR topology and role constraints.
+
+	var extrapolateErrs error
+	for _, machine := range ml.Machines {
+		// Retrieve BMC credentials Secret
+		bmcCredsSecret := &corev1.Secret{}
+		err := c.Get(context.Background(), client.ObjectKey{
+			Namespace: machine.BMH.Namespace,
+			Name:      machine.BMH.Spec.BMC.CredentialsName,
+		}, bmcCredsSecret)
+		if err != nil {
+			ml.Log.Error(err, "unable to retrieve BMH BMC credentials Secret", "BMH", machine.BMH.Name,
+				"Secret", machine.BMH.Spec.BMC.CredentialsName,
+				"Secret Namespace", machine.BMH.Namespace)
+
+			machine.ScheduleStatus = UnableToSchedule
+			ml.ReadyForScheduleCount[machine.VMRole]--
+			extrapolateErrs = kerror.NewAggregate([]error{extrapolateErrs, err})
+
+			continue
 		}
 
 		// Parse BMC credentials from Secret
-		err = ml.getMangementCredentials(machine, mgmtCredsSecret)
+		err = ml.getMangementCredentials(machine, bmcCredsSecret)
 		if err != nil {
+			ml.Log.Error(err, "unable to parse BMH BMC credentials Secret", "BMH", machine.BMH.Name,
+				"Secret", machine.BMH.Spec.BMC.CredentialsName,
+				"Secret Namespace", machine.BMH.Namespace)
+
 			machine.ScheduleStatus = UnableToSchedule
 			ml.ReadyForScheduleCount[machine.VMRole]--
-			extrapolateSuccess = false
+			extrapolateErrs = kerror.NewAggregate([]error{extrapolateErrs, err})
 		}
 	}
-	fmt.Printf("Schedule.Extrapolate  extrapolateSuccess:%t\n", extrapolateSuccess)
-	return extrapolateSuccess
+
+	return extrapolateErrs
 }
 
 /***
