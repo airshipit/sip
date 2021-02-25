@@ -58,7 +58,7 @@ spec:
     credentialsName: rdm9r007o001-bmc-credentials
     disableCertificateVerification: true
   networkData:
-    name: rdm9r006o002-networkdata
+    name: rdm9r007o001-networkdata
     namespace: sipcluster-system
   userData:
     name: controlplane-l5vvf
@@ -77,10 +77,10 @@ spec:
   online: true
   bmc:
     address: redfish+https://32.68.51.12/redfish/v1/Systems/System.Embedded.1
-    credentialsName: rdm9r007o001-bmc-credentials
+    credentialsName: rdm9r007o002-bmc-credentials
     disableCertificateVerification: true
   networkData:
-    name: rdm9r006o002-networkdata
+    name: rdm9r007o002-networkdata
     namespace: sipcluster-system
   userData:
     name: controlplane-l5vvf
@@ -89,7 +89,7 @@ spec:
 apiVersion: metal3.io/v1alpha1
 kind: BareMetalHost
 metadata:
-  name: rdm9r008c002
+  name: rdm9r008o002
   labels:
     vino.airshipit.org/flavor: worker
     sip.airshipit.org/scheduled: "false"
@@ -99,10 +99,10 @@ spec:
   online: true
   bmc:
     address: redfish+https://32.68.51.12/redfish/v1/Systems/System.Embedded.1
-    credentialsName: rdm9r007o001-bmc-credentials
+    credentialsName: rdm9r008o002-bmc-credentials
     disableCertificateVerification: true
   networkData:
-    name: rdm9r006o002-networkdata
+    name: rdm9r008o002-networkdata
     namespace: sipcluster-system
   userData:
     name: controlplane-l5vvf
@@ -111,7 +111,7 @@ spec:
 apiVersion: metal3.io/v1alpha1
 kind: BareMetalHost
 metadata:
-  name: rdm9r009c002
+  name: rdm9r009o002
   labels:
     vino.airshipit.org/flavor: worker
     sip.airshipit.org/scheduled: "false"
@@ -121,10 +121,10 @@ spec:
   online: true
   bmc:
     address: redfish+https://32.68.51.12/redfish/v1/Systems/System.Embedded.1
-    credentialsName: rdm9r007o001-bmc-credentials
+    credentialsName: rdm9r009o002-bmc-credentials
     disableCertificateVerification: true
   networkData:
-    name: rdm9r006o002-networkdata
+    name: rdm9r009o002-networkdata
     namespace: sipcluster-system
   userData:
     name: controlplane-l5vvf
