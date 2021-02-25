@@ -12,6 +12,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"sipcluster/pkg/services"
 	"sipcluster/pkg/vbmh"
@@ -39,48 +40,58 @@ type bmc struct {
 }
 
 var _ = Describe("Service Set", func() {
+	var machineList *vbmh.MachineList
+	BeforeEach(func() {
+		bmh1, _ = testutil.CreateBMH(1, "default", "control-plane", 1)
+		bmh2, _ = testutil.CreateBMH(2, "default", "control-plane", 2)
+
+		bmcUsername := "root"
+		bmcPassword := "password"
+		bmcSecret := testutil.CreateBMCAuthSecret(bmh1.GetName(), bmh1.GetNamespace(), bmcUsername,
+			bmcPassword)
+		Expect(k8sClient.Create(context.Background(), bmcSecret)).Should(Succeed())
+
+		bmh1.Spec.BMC.CredentialsName = bmcSecret.Name
+		bmh2.Spec.BMC.CredentialsName = bmcSecret.Name
+
+		m1 := &vbmh.Machine{
+			BMH: *bmh1,
+			Data: &vbmh.MachineData{
+				IPOnInterface: map[string]string{
+					"eno3": ip1,
+				},
+			},
+		}
+
+		m2 := &vbmh.Machine{
+			BMH: *bmh2,
+			Data: &vbmh.MachineData{
+				IPOnInterface: map[string]string{
+					"eno3": ip2,
+				},
+			},
+		}
+
+		machineList = &vbmh.MachineList{
+			Machines: map[string]*vbmh.Machine{
+				bmh1.GetName(): m1,
+				bmh2.GetName(): m2,
+			},
+		}
+	})
+
+	AfterEach(func() {
+		opts := []client.DeleteAllOfOption{client.InNamespace("default")}
+		Expect(k8sClient.DeleteAllOf(context.Background(), &metal3.BareMetalHost{}, opts...)).Should(Succeed())
+		Expect(k8sClient.DeleteAllOf(context.Background(), &airshipv1.SIPCluster{}, opts...)).Should(Succeed())
+		Expect(k8sClient.DeleteAllOf(context.Background(), &corev1.Secret{}, opts...)).Should(Succeed())
+	})
+
 	Context("When new SIP cluster is created", func() {
 		It("Deploys services", func() {
 			By("Getting machine IPs and creating secrets, pods, and nodeport service")
 
-			bmh1, _ = testutil.CreateBMH(1, "default", "control-plane", 1)
-			bmh2, _ = testutil.CreateBMH(2, "default", "control-plane", 2)
-
-			bmcUsername := "root"
-			bmcPassword := "password"
-			bmcSecret := testutil.CreateBMCAuthSecret(bmh1.GetName(), bmh1.GetNamespace(), bmcUsername,
-				bmcPassword)
-			Expect(k8sClient.Create(context.Background(), bmcSecret)).Should(Succeed())
-
-			bmh1.Spec.BMC.CredentialsName = bmcSecret.Name
-			bmh2.Spec.BMC.CredentialsName = bmcSecret.Name
-
-			m1 := &vbmh.Machine{
-				BMH: *bmh1,
-				Data: &vbmh.MachineData{
-					IPOnInterface: map[string]string{
-						"eno3": ip1,
-					},
-				},
-			}
-
-			m2 := &vbmh.Machine{
-				BMH: *bmh2,
-				Data: &vbmh.MachineData{
-					IPOnInterface: map[string]string{
-						"eno3": ip2,
-					},
-				},
-			}
-
 			sip := testutil.CreateSIPCluster("default", "default", 1, 1)
-			machineList := &vbmh.MachineList{
-				Machines: map[string]*vbmh.Machine{
-					bmh1.GetName(): m1,
-					bmh2.GetName(): m2,
-				},
-			}
-
 			set := services.NewServiceSet(logger, *sip, machineList, k8sClient)
 
 			serviceList, err := set.ServiceList()
@@ -95,7 +106,27 @@ var _ = Describe("Service Set", func() {
 				return testDeployment(sip, *machineList)
 			}, 5, 1).Should(Succeed())
 		})
+
+		It("Does not deploy a Jump Host when an invalid SSH key is provided", func() {
+			sip := testutil.CreateSIPCluster("default", "default", 1, 1)
+			sip.Spec.Services.Auth = []airshipv1.SIPClusterService{}
+			sip.Spec.Services.LoadBalancer = []airshipv1.SIPClusterService{}
+			sip.Spec.Services.JumpHost[0].SSHAuthorizedKeys = []string{
+				"sshrsaAAAAAAAAAAAAAAAAAAAAAinvalidkey",
+			}
+
+			set := services.NewServiceSet(logger, *sip, machineList, k8sClient)
+			serviceList, err := set.ServiceList()
+			Expect(err).To(Succeed())
+
+			for _, svc := range serviceList {
+				err := svc.Deploy()
+				Expect(err).To(HaveOccurred())
+			}
+		})
+
 	})
+
 })
 
 func testDeployment(sip *airshipv1.SIPCluster, machineList vbmh.MachineList) error {

@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=gcr.io/google-appengine/python
+ARG BASE_IMAGE=gcr.io/gcp-runtimes/ubuntu_18_0_4
 FROM ${BASE_IMAGE}
 
 # Inject custom root certificate authorities if needed.
@@ -10,9 +10,15 @@ COPY ./certs/* /usr/local/share/ca-certificates/
 RUN update-ca-certificates
 
 RUN apt-get update
-RUN apt-get install -y --no-install-recommends jq
+RUN apt-get install -y --no-install-recommends jq openssh-server python3-pip python3-setuptools
 
+RUN pip3 install --upgrade pip
 RUN pip3 config set global.cert /etc/ssl/certs/ca-certificates.crt
 RUN pip3 install requests python-dateutil redfishtool
 
-CMD ["/bin/bash"]
+COPY images/jump-host/assets/entrypoint.sh /
+COPY images/jump-host/assets/sshd_config /etc/ssh
+
+RUN useradd -m ubuntu
+
+ENTRYPOINT ["/entrypoint.sh"]

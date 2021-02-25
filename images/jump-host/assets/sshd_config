@@ -1,0 +1,7 @@
+AuthorizedKeysFile %h/.ssh/authorized_keys
+ChallengeResponseAuthentication no
+PasswordAuthentication no
+PermitRootLogin no
+PubKeyAuthentication yes
+UsePAM yes
+X11Forwarding no

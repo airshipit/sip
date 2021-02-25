@@ -29,6 +29,16 @@ func (e ErrInfraServiceNotSupported) Error() string {
 	return fmt.Sprintf("invalid Infrastructure Service: %v", e.Service)
 }
 
+// ErrInvalidAuthorizedKeyFormat occurs when an authorized key in the SIP CR does not meet the expected format.
+type ErrInvalidAuthorizedKeyFormat struct {
+	SSHErr string
+	Key    string
+}
+
+func (e ErrInvalidAuthorizedKeyFormat) Error() string {
+	return fmt.Sprintf("encountered invalid Authorized Key: %s. The invalid key is %s", e.SSHErr, e.Key)
+}
+
 // ErrMalformedRedfishAddress occurs when a Redfish address does not meet the expected format.
 type ErrMalformedRedfishAddress struct {
 	Address string

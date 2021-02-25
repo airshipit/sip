@@ -86,9 +86,9 @@ BMCOpts
 </tr>
 <tr>
 <td>
-<code>sshkey</code><br>
+<code>sshAuthorizedKeys</code><br>
 <em>
-string
+[]string
 </em>
 </td>
 <td>
