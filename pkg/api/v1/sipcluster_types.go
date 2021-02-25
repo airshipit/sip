@@ -159,9 +159,9 @@ const (
 )
 
 type SIPClusterService struct {
-	Image         string            `json:"image,omitempty"`
+	Image         string            `json:"image"`
 	NodeLabels    map[string]string `json:"nodeLabels,omitempty"`
-	NodePort      int               `json:"nodePort,omitempty"`
+	NodePort      int               `json:"nodePort"`
 	NodeInterface string            `json:"nodeInterfaceId,omitempty"`
 	ClusterIP     *string           `json:"clusterIP,omitempty"`
 }
