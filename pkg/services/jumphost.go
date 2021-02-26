@@ -74,19 +74,10 @@ func (jh jumpHost) Deploy() error {
 		"app.kubernetes.io/instance":  instance,
 	}
 
-	// TODO: Validate Deployment becomes ready.
-	deployment := jh.generateDeployment(instance, labels)
-	jh.logger.Info("Applying deployment", "deployment", deployment.GetNamespace()+"/"+deployment.GetName())
-	err := applyRuntimeObject(client.ObjectKey{Name: deployment.GetName(), Namespace: deployment.GetNamespace()},
-		deployment, jh.client)
-	if err != nil {
-		return err
-	}
-
 	// TODO: Validate Service becomes ready.
 	service := jh.generateService(instance, labels)
 	jh.logger.Info("Applying service", "service", service.GetNamespace()+"/"+service.GetName())
-	err = applyRuntimeObject(client.ObjectKey{Name: service.GetName(), Namespace: service.GetNamespace()},
+	err := applyRuntimeObject(client.ObjectKey{Name: service.GetName(), Namespace: service.GetNamespace()},
 		service, jh.client)
 	if err != nil {
 		return err
@@ -105,11 +96,19 @@ func (jh jumpHost) Deploy() error {
 		return err
 	}
 
-	// TODO: Validate ConfigMap becomes ready.
 	configMap := jh.generateConfigMap(instance, labels)
 	jh.logger.Info("Applying configmap", "configmap", configMap.GetNamespace()+"/"+configMap.GetName())
 	err = applyRuntimeObject(client.ObjectKey{Name: configMap.GetName(), Namespace: configMap.GetNamespace()},
-		secret, jh.client)
+		configMap, jh.client)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Validate Deployment becomes ready.
+	deployment := jh.generateDeployment(instance, labels)
+	jh.logger.Info("Applying deployment", "deployment", deployment.GetNamespace()+"/"+deployment.GetName())
+	err = applyRuntimeObject(client.ObjectKey{Name: deployment.GetName(), Namespace: deployment.GetNamespace()},
+		deployment, jh.client)
 	if err != nil {
 		return err
 	}
@@ -118,50 +117,7 @@ func (jh jumpHost) Deploy() error {
 }
 
 func (jh jumpHost) generateDeployment(instance string, labels map[string]string) *appsv1.Deployment {
-	// NOTE(drewwalters96): the jump host container is declared here so environment variables can be easily added
-	// below based on configuration values in the SIPCluster CR.
-	jhContainer := corev1.Container{
-		Name:  JumpHostServiceName,
-		Image: jh.config.Image,
-		Ports: []corev1.ContainerPort{
-			{
-				Name:          "ssh",
-				ContainerPort: 22,
-			},
-		},
-		VolumeMounts: []corev1.VolumeMount{
-			{
-				Name:      nameHostsVolume,
-				MountPath: mountPathData,
-			},
-			{
-				Name:      nameRebootVolume,
-				MountPath: mountPathScripts,
-			},
-		},
-		Command: []string{"/bin/sh"},
-		Args:    []string{"-c", "while true; do sleep 30; done"},
-	}
-
-	// Set NO_PROXY env variables when Redfish proxy setting is false (Default: false).
-	var proxy bool
-	if jh.config.BMC != nil {
-		proxy = jh.config.BMC.Proxy
-	}
-	if proxy == false {
-		jhContainer.Env = []corev1.EnvVar{
-			{
-				Name:  "NO_PROXY",
-				Value: "*",
-			},
-			{
-				Name:  "no_proxy",
-				Value: "*",
-			},
-		}
-	}
-
-	return &appsv1.Deployment{
+	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance,
 			Namespace: jh.sipName.Namespace,
@@ -178,7 +134,26 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						jhContainer,
+						{
+							Name:  JumpHostServiceName,
+							Image: jh.config.Image,
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "ssh",
+									ContainerPort: 22,
+								},
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      nameHostsVolume,
+									MountPath: mountPathData,
+								},
+								{
+									Name:      nameRebootVolume,
+									MountPath: mountPathScripts,
+								},
+							},
+						},
 					},
 					Volumes: []corev1.Volume{
 						{
@@ -206,6 +181,30 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 			},
 		},
 	}
+
+	// Set NO_PROXY env variables when Redfish proxy setting is false (Default: false).
+	var proxy bool
+	if jh.config.BMC != nil {
+		proxy = jh.config.BMC.Proxy
+	}
+	if proxy == false {
+		// TODO: We may need to identify the container with Redfish functionality in the future if some
+		// containers require communication over a proxy server.
+		for _, container := range deployment.Spec.Template.Spec.Containers {
+			container.Env = []corev1.EnvVar{
+				{
+					Name:  "NO_PROXY",
+					Value: "*",
+				},
+				{
+					Name:  "no_proxy",
+					Value: "*",
+				},
+			}
+		}
+	}
+
+	return deployment
 }
 
 func (jh jumpHost) generateConfigMap(instance string, labels map[string]string) *corev1.ConfigMap {
