@@ -95,6 +95,9 @@ spec:
                         type: object
                       nodePort:
                         type: integer
+                    required:
+                    - image
+                    - nodePort
                     type: object
                   type: array
                 jumpHost:
@@ -123,6 +126,9 @@ spec:
                         type: integer
                       sshkey:
                         type: string
+                    required:
+                    - image
+                    - nodePort
                     type: object
                   type: array
                 loadBalancer:
@@ -142,6 +148,9 @@ spec:
                         type: object
                       nodePort:
                         type: integer
+                    required:
+                    - image
+                    - nodePort
                     type: object
                   type: array
               type: object
