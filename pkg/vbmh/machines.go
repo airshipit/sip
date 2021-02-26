@@ -353,7 +353,7 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.VMRole, nodeCfg airshipv1.N
 					// If its in the list already for the constraint , theen this bmh is disqualified. Skip it
 					if scheduleSet.Exists(bmhConstraintCondition) {
 						logger.Info("Constraint slot is alrady taken some BMH from this constraint is already allocated, skipping it")
-						break
+						continue
 					} else {
 						scheduleSet.Add(bmhConstraintCondition)
 					}
