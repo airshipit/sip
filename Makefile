@@ -138,6 +138,9 @@ else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
+flux-helm-controller:
+	kustomize build "github.com/fluxcd/helm-controller/config/default/?ref=v0.8.0" | kubectl apply -f -
+
 .PHONY: lint
 lint: $(LINTER)
 	@echo "Performing linting step..."
