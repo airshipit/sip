@@ -300,7 +300,7 @@ backend kube-apiservers
   # downinter 2s makes it check more frequently to recover from that state sooner.
   # Also changing fall to 4 so that it takes longer (4 failures) for it to take down a backend.
   default-server check check-ssl verify none inter 5s downinter 2s fall 4 on-marked-down shutdown-sessions
-    {{- range .Backends }}
-    {{- $backEnd := . }}
-    server {{ $backEnd.Name }} {{ $backEnd.IP }}:{{ $backEnd.Port }}
-    {{ end -}}`
+{{- range .Backends }}
+{{- $backEnd := . }}
+  server {{ $backEnd.Name }} {{ $backEnd.IP }}:{{ $backEnd.Port }}
+{{ end -}}`
