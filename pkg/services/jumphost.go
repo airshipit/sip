@@ -135,8 +135,9 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  JumpHostServiceName,
-							Image: jh.config.Image,
+							Name:            JumpHostServiceName,
+							Image:           jh.config.Image,
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "ssh",

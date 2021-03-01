@@ -108,8 +108,9 @@ func (lb loadBalancer) generateDeploymentAndSecret(instance string, labels map[s
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  LoadBalancerServiceName,
-							Image: lb.config.Image,
+							Name:            LoadBalancerServiceName,
+							Image:           lb.config.Image,
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Ports: []corev1.ContainerPort{
 								{
 									Name:          "http",
