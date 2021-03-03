@@ -65,7 +65,7 @@ func (ss ServiceSet) Finalize() error {
 			Kind:       "Namespace",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: ss.sip.Spec.ClusterName,
+			Name: ss.sip.GetName(),
 		},
 	}
 	return ss.client.Delete(context.TODO(), serviceNamespace)
@@ -98,7 +98,7 @@ func (ss ServiceSet) ServiceList() ([]InfraService, error) {
 	for _, svc := range services.LoadBalancer {
 		serviceList = append(serviceList,
 			newLB(ss.sip.GetName(),
-				ss.sip.Spec.ClusterName,
+				ss.sip.GetName(),
 				ss.logger,
 				svc,
 				ss.machines,
@@ -110,7 +110,7 @@ func (ss ServiceSet) ServiceList() ([]InfraService, error) {
 	for _, svc := range services.JumpHost {
 		serviceList = append(serviceList,
 			newJumpHost(ss.sip.GetName(),
-				ss.sip.Spec.ClusterName,
+				ss.sip.GetName(),
 				ss.logger,
 				svc,
 				ss.machines,

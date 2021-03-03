@@ -308,7 +308,7 @@ func (r *SIPClusterReconciler) gatherVBMH(ctx context.Context, sip airshipv1.SIP
 
 func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *airshipvms.MachineList,
 	logger logr.Logger) error {
-	if err := airshipsvc.CreateNS(sip.Spec.ClusterName, r.Client); err != nil {
+	if err := airshipsvc.CreateNS(sip.Name, r.Client); err != nil {
 		return err
 	}
 	newServiceSet := airshipsvc.NewServiceSet(logger, sip, machines, r.Client)

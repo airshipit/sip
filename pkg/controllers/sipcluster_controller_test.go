@@ -70,15 +70,15 @@ var _ = Describe("SIPCluster controller", func() {
 			}
 
 			// Create SIP cluster
-			clusterName := "subcluster-test1"
-			sipCluster := testutil.CreateSIPCluster(clusterName, testNamespace, 3, 4)
+			name := "subcluster-test1"
+			sipCluster := testutil.CreateSIPCluster(name, testNamespace, 3, 4)
 			Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
 			// Poll BMHs until SIP has scheduled them to the SIP cluster
 			Eventually(func() error {
 				expectedLabels := map[string]string{
 					vbmh.SipScheduleLabel: "true",
-					vbmh.SipClusterLabel:  clusterName,
+					vbmh.SipClusterLabel:  name,
 				}
 
 				var bmh metal3.BareMetalHost
@@ -106,8 +106,8 @@ var _ = Describe("SIPCluster controller", func() {
 			}
 
 			// Create SIP cluster
-			clusterName := "subcluster-test2"
-			sipCluster := testutil.CreateSIPCluster(clusterName, testNamespace, 3, 4)
+			name := "subcluster-test2"
+			sipCluster := testutil.CreateSIPCluster(name, testNamespace, 3, 4)
 			Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
 			// Poll BMHs and validate they are not scheduled
@@ -130,7 +130,7 @@ var _ = Describe("SIPCluster controller", func() {
 			// Validate SIP CR ready condition has been updated
 			var sipCR airshipv1.SIPCluster
 			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      clusterName,
+				Name:      name,
 				Namespace: testNamespace,
 			}, &sipCR)).To(Succeed())
 
@@ -152,8 +152,8 @@ var _ = Describe("SIPCluster controller", func() {
 			}
 
 			// Create SIP cluster
-			clusterName := "subcluster-test4"
-			sipCluster := testutil.CreateSIPCluster(clusterName, testNamespace, 3, 4)
+			name := "subcluster-test4"
+			sipCluster := testutil.CreateSIPCluster(name, testNamespace, 3, 4)
 			Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
 			// Poll BMHs and validate they are not scheduled
@@ -176,7 +176,7 @@ var _ = Describe("SIPCluster controller", func() {
 			// Validate SIP CR ready condition has been updated
 			var sipCR airshipv1.SIPCluster
 			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      clusterName,
+				Name:      name,
 				Namespace: testNamespace,
 			}, &sipCR)).To(Succeed())
 
@@ -214,8 +214,8 @@ var _ = Describe("SIPCluster controller", func() {
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
 				// Create SIP cluster
-				clusterName := "subcluster-test5"
-				sipCluster := testutil.CreateSIPCluster(clusterName, testNamespace, 1, 2)
+				name := "subcluster-test5"
+				sipCluster := testutil.CreateSIPCluster(name, testNamespace, 1, 2)
 				Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
 				// Poll BMHs and validate they are not scheduled
@@ -238,7 +238,7 @@ var _ = Describe("SIPCluster controller", func() {
 				// Validate SIP CR ready condition has been updated
 				var sipCR airshipv1.SIPCluster
 				Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      clusterName,
+					Name:      name,
 					Namespace: testNamespace,
 				}, &sipCR)).To(Succeed())
 
@@ -275,8 +275,8 @@ var _ = Describe("SIPCluster controller", func() {
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
 				// Create SIP cluster
-				clusterName := "subcluster-test6"
-				sipCluster := testutil.CreateSIPCluster(clusterName, testNamespace, 2, 1)
+				name := "subcluster-test6"
+				sipCluster := testutil.CreateSIPCluster(name, testNamespace, 2, 1)
 				Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
 				// Poll BMHs and validate they are not scheduled
@@ -299,7 +299,7 @@ var _ = Describe("SIPCluster controller", func() {
 				// Validate SIP CR ready condition has been updated
 				var sipCR airshipv1.SIPCluster
 				Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      clusterName,
+					Name:      name,
 					Namespace: testNamespace,
 				}, &sipCR)).To(Succeed())
 
@@ -335,8 +335,8 @@ var _ = Describe("SIPCluster controller", func() {
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
 				// Create SIP cluster
-				clusterName := "subcluster-test3"
-				sipCluster := testutil.CreateSIPCluster(clusterName, testNamespace, 1, 2)
+				name := "subcluster-test3"
+				sipCluster := testutil.CreateSIPCluster(name, testNamespace, 1, 2)
 
 				controlPlaneSpec := sipCluster.Spec.Nodes[airshipv1.VMControlPlane]
 				controlPlaneSpec.Scheduling = airshipv1.RackAntiAffinity
@@ -368,7 +368,7 @@ var _ = Describe("SIPCluster controller", func() {
 				// Validate SIP CR ready condition has been updated
 				var sipCR airshipv1.SIPCluster
 				Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      clusterName,
+					Name:      name,
 					Namespace: testNamespace,
 				}, &sipCR)).To(Succeed())
 
@@ -401,8 +401,8 @@ var _ = Describe("SIPCluster controller", func() {
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
 				// Create SIP cluster
-				clusterName := "subcluster-test3"
-				sipCluster := testutil.CreateSIPCluster(clusterName, testNamespace, 2, 1)
+				name := "subcluster-test3"
+				sipCluster := testutil.CreateSIPCluster(name, testNamespace, 2, 1)
 
 				controlPlaneSpec := sipCluster.Spec.Nodes[airshipv1.VMControlPlane]
 				controlPlaneSpec.Scheduling = airshipv1.RackAntiAffinity
@@ -434,7 +434,7 @@ var _ = Describe("SIPCluster controller", func() {
 				// Validate SIP CR ready condition has been updated
 				var sipCR airshipv1.SIPCluster
 				Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      clusterName,
+					Name:      name,
 					Namespace: testNamespace,
 				}, &sipCR)).To(Succeed())
 

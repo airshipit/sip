@@ -6,8 +6,6 @@ metadata:
   finalizers:
     - sip.airship.airshipit.org/finalizer
 spec:
-  # TODO: This field will be removed in the future.
-  clusterName: subcluster-test
   nodes:
     ControlPlane:
         vmFlavor: vino.airshipit.org/flavor=control-plane
