@@ -240,7 +240,7 @@ func (ml *MachineList) identifyNodes(sip airshipv1.SIPCluster,
 			return err
 		}
 		logger.Info("Matching hosts against constraints")
-		err = ml.scheduleIt(nodeRole, nodeCfg, bmhList, scheduleSetMap, c, sip.GetName())
+		err = ml.scheduleIt(nodeRole, nodeCfg, bmhList, scheduleSetMap, c, sip.GetNamespace())
 		if err != nil {
 			return err
 		}
@@ -743,7 +743,7 @@ func (ml *MachineList) ApplyLabels(sip airshipv1.SIPCluster, c client.Client) er
 		if machine.ScheduleStatus == ToBeScheduled {
 			bmh := &machine.BMH
 			fmt.Printf("ApplyLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
-			bmh.Labels[SipClusterLabel] = sip.GetName()
+			bmh.Labels[SipClusterLabel] = sip.GetNamespace()
 			bmh.Labels[SipScheduleLabel] = "true"
 			bmh.Labels[SipNodeTypeLabel] = string(machine.VMRole)
 
@@ -789,7 +789,7 @@ func (ml *MachineList) GetCluster(sip airshipv1.SIPCluster, c client.Client) err
 	bmhList := &metal3.BareMetalHostList{}
 	scheduleLabels := map[string]string{
 		SipScheduleLabel: "true",
-		SipClusterLabel:  sip.GetName(),
+		SipClusterLabel:  sip.GetNamespace(),
 	}
 
 	err := c.List(context.Background(), bmhList, client.MatchingLabels(scheduleLabels))

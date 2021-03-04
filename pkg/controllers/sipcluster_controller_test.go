@@ -78,7 +78,7 @@ var _ = Describe("SIPCluster controller", func() {
 			Eventually(func() error {
 				expectedLabels := map[string]string{
 					vbmh.SipScheduleLabel: "true",
-					vbmh.SipClusterLabel:  name,
+					vbmh.SipClusterLabel:  testNamespace,
 				}
 
 				var bmh metal3.BareMetalHost

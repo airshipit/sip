@@ -18,9 +18,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 	apierror "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -59,36 +57,7 @@ func NewServiceSet(
 }
 
 func (ss ServiceSet) Finalize() error {
-	serviceNamespace := &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Namespace",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: ss.sip.GetName(),
-		},
-	}
-	return ss.client.Delete(context.TODO(), serviceNamespace)
-}
-
-func CreateNS(serviceNamespaceName string, c client.Client) error {
-	ns := &corev1.Namespace{}
-	key := client.ObjectKey{Name: serviceNamespaceName}
-	if err := c.Get(context.Background(), key, ns); err == nil {
-		// Namespace already exists
-		return nil
-	}
-
-	serviceNamespace := &corev1.Namespace{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: corev1.SchemeGroupVersion.String(),
-			Kind:       "Namespace",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: serviceNamespaceName,
-		},
-	}
-	return c.Create(context.TODO(), serviceNamespace)
+	return nil
 }
 
 // ServiceList returns all services defined in Set
@@ -98,7 +67,7 @@ func (ss ServiceSet) ServiceList() ([]InfraService, error) {
 	for _, svc := range services.LoadBalancer {
 		serviceList = append(serviceList,
 			newLB(ss.sip.GetName(),
-				ss.sip.GetName(),
+				ss.sip.GetNamespace(),
 				ss.logger,
 				svc,
 				ss.machines,
@@ -110,7 +79,7 @@ func (ss ServiceSet) ServiceList() ([]InfraService, error) {
 	for _, svc := range services.JumpHost {
 		serviceList = append(serviceList,
 			newJumpHost(ss.sip.GetName(),
-				ss.sip.GetName(),
+				ss.sip.GetNamespace(),
 				ss.logger,
 				svc,
 				ss.machines,
