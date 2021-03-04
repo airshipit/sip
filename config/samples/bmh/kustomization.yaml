@@ -1,4 +1,4 @@
 resources:
-- crd.yaml
 - bmh.yaml
 - bmh_secrets.yaml
+- crd/metal3.io_baremetalhosts.yaml
