@@ -36,10 +36,6 @@ spec:
         spec:
           description: SIPClusterSpec defines the desired state of a SIPCluster
           properties:
-            clusterName:
-              description: ClusterName is the name of the cluster to associate machines
-                with
-              type: string
             nodes:
               additionalProperties:
                 description: 'NodeSet are the the list of Nodes objects workers, or

@@ -49,9 +49,6 @@ type SIPClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make manifests to regenerate code after modifying this file
 
-	// ClusterName is the name of the cluster to associate machines with
-	ClusterName string `json:"clusterName,omitempty"`
-
 	// Nodes defines the set of nodes to schedule for each vm role.
 	Nodes map[VMRole]NodeSet `json:"nodes,omitempty"`
 

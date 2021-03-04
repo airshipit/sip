@@ -210,17 +210,6 @@ SIPClusterSpec
 <table>
 <tr>
 <td>
-<code>clusterName</code><br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>ClusterName is the name of the cluster to associate machines with</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>nodes</code><br>
 <em>
 <a href="#airship.airshipit.org/v1.NodeSet">
@@ -412,17 +401,6 @@ string
 </tr>
 </thead>
 <tbody>
-<tr>
-<td>
-<code>clusterName</code><br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>ClusterName is the name of the cluster to associate machines with</p>
-</td>
-</tr>
 <tr>
 <td>
 <code>nodes</code><br>
