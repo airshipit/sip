@@ -49,8 +49,8 @@ type SIPClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make manifests to regenerate code after modifying this file
 
-	// Nodes defines the set of nodes to schedule for each vm role.
-	Nodes map[VMRole]NodeSet `json:"nodes,omitempty"`
+	// Nodes defines the set of nodes to schedule for each BMH role.
+	Nodes map[BMHRole]NodeSet `json:"nodes,omitempty"`
 
 	// Services defines the services that are deployed when a SIPCluster is provisioned.
 	Services SIPClusterServices `json:"services"`
@@ -109,7 +109,7 @@ const (
 	ReasonTypeProgressing string = "Progressing"
 
 	// ReasonTypeUnableToApplyLabels indicates that a resource has a specified condition because SIP was unable to
-	// apply labels to vBMHs for the SIPCluster.
+	// apply labels to BMHs for the SIPCluster.
 	ReasonTypeUnableToApplyLabels string = "UnableToApplyLabels"
 
 	// ReasonTypeUnableToDecommission indicates that a resource has a specified condition because SIP was unable to
@@ -117,7 +117,7 @@ const (
 	ReasonTypeUnableToDecommission string = "UnableToDecommission"
 
 	// ReasonTypeUnschedulable indicates that a resource has a specified condition because SIP was unable to
-	// schedule vBMHs for the SIPCluster.
+	// schedule BMHs for the SIPCluster.
 	ReasonTypeUnschedulable string = "Unschedulable"
 
 	// ReasonTypeReconciliationSucceeded indicates that a resource has a specified condition because SIP completed
@@ -137,16 +137,15 @@ const (
 //
 type NodeSet struct {
 
-	// VMFlavor is essentially a Flavor label identifying the
-	// type of Node that meets the construction reqirements
-	VMFlavor string `json:"vmFlavor,omitempty"`
+	// LabelSelector is the BMH label selector to use.
+	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
 	// PlaceHolder until we define the real expected
 	// Implementation
 	// Scheduling define constraints that allow the SIP Scheduler
 	// to identify the required BMH's to allow CAPI to build a cluster
 	Scheduling SpreadTopology `json:"spreadTopology,omitempty"`
 	// Count defines the scale expectations for the Nodes
-	Count *VMCount `json:"count,omitempty"`
+	Count *NodeCount `json:"count,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=PerRack;PerHost
@@ -173,18 +172,18 @@ type BMCOpts struct {
 	Proxy bool `json:"proxy,omitempty"`
 }
 
-// VMRole defines the states the provisioner will report
+// BMHRole defines the states the provisioner will report
 // the tenant has having.
-type VMRole string
+type BMHRole string
 
-// Possible Node or VM Roles for a Tenant
+// Possible BMH Roles for a Tenant
 const (
-	VMControlPlane VMRole = "ControlPlane"
-	VMWorker              = "Worker"
+	RoleControlPlane BMHRole = "ControlPlane"
+	RoleWorker               = "Worker"
 )
 
-// VMCount
-type VMCount struct {
+// NodeCount
+type NodeCount struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Active  int `json:"active,omitempty"`

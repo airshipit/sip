@@ -14,8 +14,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"sipcluster/pkg/bmh"
 	"sipcluster/pkg/services"
-	"sipcluster/pkg/vbmh"
 	"sipcluster/testutil"
 )
 
@@ -27,8 +27,8 @@ const (
 var bmh1 *metal3.BareMetalHost
 var bmh2 *metal3.BareMetalHost
 
-var m1 *vbmh.Machine
-var m2 *vbmh.Machine
+var m1 *bmh.Machine
+var m2 *bmh.Machine
 
 // Re-declared from services package for testing purposes
 type host struct {
@@ -43,7 +43,7 @@ type bmc struct {
 }
 
 var _ = Describe("Service Set", func() {
-	var machineList *vbmh.MachineList
+	var machineList *bmh.MachineList
 	BeforeEach(func() {
 		bmh1, _ = testutil.CreateBMH(1, "default", "control-plane", 1)
 		bmh2, _ = testutil.CreateBMH(2, "default", "control-plane", 2)
@@ -57,26 +57,26 @@ var _ = Describe("Service Set", func() {
 		bmh1.Spec.BMC.CredentialsName = bmcSecret.Name
 		bmh2.Spec.BMC.CredentialsName = bmcSecret.Name
 
-		m1 = &vbmh.Machine{
+		m1 = &bmh.Machine{
 			BMH: *bmh1,
-			Data: &vbmh.MachineData{
+			Data: &bmh.MachineData{
 				IPOnInterface: map[string]string{
 					"eno3": ip1,
 				},
 			},
 		}
 
-		m2 = &vbmh.Machine{
+		m2 = &bmh.Machine{
 			BMH: *bmh2,
-			Data: &vbmh.MachineData{
+			Data: &bmh.MachineData{
 				IPOnInterface: map[string]string{
 					"eno3": ip2,
 				},
 			},
 		}
 
-		machineList = &vbmh.MachineList{
-			Machines: map[string]*vbmh.Machine{
+		machineList = &bmh.MachineList{
+			Machines: map[string]*bmh.Machine{
 				bmh1.GetName(): m1,
 				bmh2.GetName(): m2,
 			},
@@ -96,8 +96,8 @@ var _ = Describe("Service Set", func() {
 
 			sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("default", "default", 1, 1)
 			Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
-			machineList = &vbmh.MachineList{
-				Machines: map[string]*vbmh.Machine{
+			machineList = &bmh.MachineList{
+				Machines: map[string]*bmh.Machine{
 					bmh1.GetName(): m1,
 					bmh2.GetName(): m2,
 				},
@@ -140,7 +140,7 @@ var _ = Describe("Service Set", func() {
 
 })
 
-func testDeployment(sip *airshipv1.SIPCluster, machineList vbmh.MachineList) error {
+func testDeployment(sip *airshipv1.SIPCluster, machineList bmh.MachineList) error {
 	loadBalancerDeployment := &appsv1.Deployment{}
 	err := k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: "default",

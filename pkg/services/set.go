@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	airshipv1 "sipcluster/pkg/api/v1"
-	airshipvms "sipcluster/pkg/vbmh"
+	bmh "sipcluster/pkg/bmh"
 )
 
 // InfraService generalizes inftracture services
@@ -36,7 +36,7 @@ type InfraService interface {
 type ServiceSet struct {
 	logger   logr.Logger
 	sip      airshipv1.SIPCluster
-	machines *airshipvms.MachineList
+	machines *bmh.MachineList
 	client   client.Client
 }
 
@@ -44,7 +44,7 @@ type ServiceSet struct {
 func NewServiceSet(
 	logger logr.Logger,
 	sip airshipv1.SIPCluster,
-	machines *airshipvms.MachineList,
+	machines *bmh.MachineList,
 	client client.Client) ServiceSet {
 	logger = logger.WithValues("SIPCluster", types.NamespacedName{Name: sip.GetNamespace(), Namespace: sip.GetName()})
 

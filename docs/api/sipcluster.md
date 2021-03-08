@@ -40,6 +40,10 @@ bool
 </table>
 </div>
 </div>
+<h3 id="airship.airshipit.org/v1.BMHRole">BMHRole
+(<code>string</code> alias)</h3>
+<p>BMHRole defines the states the provisioner will report
+the tenant has having.</p>
 <h3 id="airship.airshipit.org/v1.JumpHostService">JumpHostService
 </h3>
 <p>
@@ -112,6 +116,49 @@ directory, and then configured as identity files in the SSH config file of the d
 </table>
 </div>
 </div>
+<h3 id="airship.airshipit.org/v1.NodeCount">NodeCount
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#airship.airshipit.org/v1.NodeSet">NodeSet</a>)
+</p>
+<p>NodeCount</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>active</code><br>
+<em>
+int
+</em>
+</td>
+<td>
+<p>INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+Important: Run &ldquo;make&rdquo; to regenerate code after modifying this file</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>standby</code><br>
+<em>
+int
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <h3 id="airship.airshipit.org/v1.NodeSet">NodeSet
 </h3>
 <p>
@@ -139,14 +186,15 @@ Such as :
 <tbody>
 <tr>
 <td>
-<code>vmFlavor</code><br>
+<code>labelSelector</code><br>
 <em>
-string
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#labelselector-v1-meta">
+Kubernetes meta/v1.LabelSelector
+</a>
 </em>
 </td>
 <td>
-<p>VMFlavor is essentially a Flavor label identifying the
-type of Node that meets the construction reqirements</p>
+<p>LabelSelector is the BMH label selector to use.</p>
 </td>
 </tr>
 <tr>
@@ -169,8 +217,8 @@ to identify the required BMH&rsquo;s to allow CAPI to build a cluster</p>
 <td>
 <code>count</code><br>
 <em>
-<a href="#airship.airshipit.org/v1.VMCount">
-VMCount
+<a href="#airship.airshipit.org/v1.NodeCount">
+NodeCount
 </a>
 </em>
 </td>
@@ -227,12 +275,12 @@ SIPClusterSpec
 <code>nodes</code><br>
 <em>
 <a href="#airship.airshipit.org/v1.NodeSet">
-map[./pkg/api/v1.VMRole]./pkg/api/v1.NodeSet
+map[./pkg/api/v1.BMHRole]./pkg/api/v1.NodeSet
 </a>
 </em>
 </td>
 <td>
-<p>Nodes defines the set of nodes to schedule for each vm role.</p>
+<p>Nodes defines the set of nodes to schedule for each BMH role.</p>
 </td>
 </tr>
 <tr>
@@ -420,12 +468,12 @@ string
 <code>nodes</code><br>
 <em>
 <a href="#airship.airshipit.org/v1.NodeSet">
-map[./pkg/api/v1.VMRole]./pkg/api/v1.NodeSet
+map[./pkg/api/v1.BMHRole]./pkg/api/v1.NodeSet
 </a>
 </em>
 </td>
 <td>
-<p>Nodes defines the set of nodes to schedule for each vm role.</p>
+<p>Nodes defines the set of nodes to schedule for each BMH role.</p>
 </td>
 </tr>
 <tr>
@@ -484,53 +532,6 @@ SIPClusterServices
 (<em>Appears on:</em>
 <a href="#airship.airshipit.org/v1.NodeSet">NodeSet</a>)
 </p>
-<h3 id="airship.airshipit.org/v1.VMCount">VMCount
-</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#airship.airshipit.org/v1.NodeSet">NodeSet</a>)
-</p>
-<p>VMCount</p>
-<div class="md-typeset__scrollwrap">
-<div class="md-typeset__table">
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>active</code><br>
-<em>
-int
-</em>
-</td>
-<td>
-<p>INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-Important: Run &ldquo;make&rdquo; to regenerate code after modifying this file</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>standby</code><br>
-<em>
-int
-</em>
-</td>
-<td>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<h3 id="airship.airshipit.org/v1.VMRole">VMRole
-(<code>string</code> alias)</h3>
-<p>VMRole defines the states the provisioner will report
-the tenant has having.</p>
 <div class="admonition note">
 <p class="last">This page was automatically generated with <code>gen-crd-api-reference-docs</code></p>
 </div>

@@ -10,18 +10,18 @@ import (
 	airshipv1 "sipcluster/pkg/api/v1"
 )
 
-var vinoFlavorMap = map[airshipv1.VMRole]string{
-	airshipv1.VMControlPlane: "control-plane",
-	airshipv1.VMWorker:       "worker",
+var bmhRoleToLabelValue = map[airshipv1.BMHRole]string{
+	airshipv1.RoleControlPlane: "control-plane",
+	airshipv1.RoleWorker:       "worker",
 }
 
-// NOTE(aw442m): These constants have been redefined from the vbmh package in order to avoid an import cycle.
+// NOTE(aw442m): These constants have been redefined from the bmh package in order to avoid an import cycle.
 const (
 	sipRackLabel     = "sip.airshipit.org/rack"
 	sipScheduleLabel = "sip.airshipit.org/scheduled"
 	sipServerLabel   = "sip.airshipit.org/server"
 
-	VinoFlavorLabel = "vino.airshipit.org/flavor"
+	bmhLabel = "example.org/bmh-label"
 
 	sshPrivateKeyBase64 = "DUMMY_DATA"
 
@@ -173,7 +173,7 @@ const (
 )
 
 // CreateBMH initializes a BaremetalHost with specific parameters for use in test cases.
-func CreateBMH(node int, namespace string, role airshipv1.VMRole, rack int) (*metal3.BareMetalHost, *corev1.Secret) {
+func CreateBMH(node int, namespace string, role airshipv1.BMHRole, rack int) (*metal3.BareMetalHost, *corev1.Secret) {
 	rackLabel := fmt.Sprintf("r%d", rack)
 	networkDataName := fmt.Sprintf("node%d-network-data", node)
 	return &metal3.BareMetalHost{
@@ -181,10 +181,10 @@ func CreateBMH(node int, namespace string, role airshipv1.VMRole, rack int) (*me
 				Name:      fmt.Sprintf("node0%d", node),
 				Namespace: namespace,
 				Labels: map[string]string{
-					"vino.airshipit.org/flavor": vinoFlavorMap[role],
-					sipScheduleLabel:            "false",
-					sipRackLabel:                rackLabel,
-					sipServerLabel:              fmt.Sprintf("stl2%so%d", rackLabel, node),
+					bmhLabel:         bmhRoleToLabelValue[role],
+					sipScheduleLabel: "false",
+					sipRackLabel:     rackLabel,
+					sipServerLabel:   fmt.Sprintf("stl2%so%d", rackLabel, node),
 				},
 			},
 			Spec: metal3.BareMetalHostSpec{
@@ -222,19 +222,27 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 				Namespace: namespace,
 			},
 			Spec: airshipv1.SIPClusterSpec{
-				Nodes: map[airshipv1.VMRole]airshipv1.NodeSet{
-					airshipv1.VMControlPlane: {
-						VMFlavor:   "vino.airshipit.org/flavor=" + vinoFlavorMap[airshipv1.VMControlPlane],
+				Nodes: map[airshipv1.BMHRole]airshipv1.NodeSet{
+					airshipv1.RoleControlPlane: {
+						LabelSelector: metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								bmhLabel: bmhRoleToLabelValue[airshipv1.RoleControlPlane],
+							},
+						},
 						Scheduling: airshipv1.HostAntiAffinity,
-						Count: &airshipv1.VMCount{
+						Count: &airshipv1.NodeCount{
 							Active:  controlPlanes,
 							Standby: 0,
 						},
 					},
-					airshipv1.VMWorker: {
-						VMFlavor:   "vino.airshipit.org/flavor=" + vinoFlavorMap[airshipv1.VMWorker],
+					airshipv1.RoleWorker: {
+						LabelSelector: metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								bmhLabel: bmhRoleToLabelValue[airshipv1.RoleWorker],
+							},
+						},
 						Scheduling: airshipv1.HostAntiAffinity,
-						Count: &airshipv1.VMCount{
+						Count: &airshipv1.NodeCount{
 							Active:  workers,
 							Standby: 0,
 						},

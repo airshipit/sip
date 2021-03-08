@@ -1,4 +1,4 @@
-package vbmh
+package bmh
 
 import (
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	// numNodes is the number of test vBMH objects (nodes) created for each test
+	// numNodes is the number of test BMH objects (nodes) created for each test
 	numNodes = 7
 )
 
@@ -25,14 +25,14 @@ var _ = Describe("MachineList", func() {
 	BeforeEach(func() {
 		nodes := map[string]*Machine{}
 		for n := 0; n < numNodes; n++ {
-			bmh, _ := testutil.CreateBMH(n, "default", airshipv1.VMControlPlane, 6)
-			nodes[bmh.Name], err = NewMachine(*bmh, airshipv1.VMControlPlane, NotScheduled)
+			bmh, _ := testutil.CreateBMH(n, "default", airshipv1.RoleControlPlane, 6)
+			nodes[bmh.Name], err = NewMachine(*bmh, airshipv1.RoleControlPlane, NotScheduled)
 			Expect(err).To(BeNil())
 		}
 
 		machineList = &MachineList{
 			NamespacedName: types.NamespacedName{
-				Name:      "vbmh",
+				Name:      "bmh",
 				Namespace: "default",
 			},
 			Machines: nodes,
@@ -95,7 +95,7 @@ var _ = Describe("MachineList", func() {
 
 	It("Should retrieve the BMH IP from the BMH's NetworkData secret when infra services are defined", func() {
 		// Create a BMH with a NetworkData secret
-		bmh, networkData := testutil.CreateBMH(1, "default", airshipv1.VMControlPlane, 6)
+		bmh, networkData := testutil.CreateBMH(1, "default", airshipv1.RoleControlPlane, 6)
 
 		// Create BMH and NetworkData secret
 		var objsToApply []runtime.Object
@@ -110,12 +110,12 @@ var _ = Describe("MachineList", func() {
 		bmh.Spec.BMC.CredentialsName = bmcSecret.Name
 		objsToApply = append(objsToApply, bmcSecret)
 
-		m, err := NewMachine(*bmh, airshipv1.VMControlPlane, NotScheduled)
+		m, err := NewMachine(*bmh, airshipv1.RoleControlPlane, NotScheduled)
 		Expect(err).To(BeNil())
 
 		ml := &MachineList{
 			NamespacedName: types.NamespacedName{
-				Name:      "vbmh",
+				Name:      "bmh",
 				Namespace: "default",
 			},
 			Machines: map[string]*Machine{
@@ -146,7 +146,7 @@ var _ = Describe("MachineList", func() {
 
 	It("Should not retrieve the BMH IP from the BMH's NetworkData secret if no infraServices are defined", func() {
 		// Create a BMH with a NetworkData secret
-		bmh, networkData := testutil.CreateBMH(1, "default", airshipv1.VMControlPlane, 6)
+		bmh, networkData := testutil.CreateBMH(1, "default", airshipv1.RoleControlPlane, 6)
 
 		// Create BMH and NetworkData secret
 		var objsToApply []runtime.Object
@@ -161,12 +161,12 @@ var _ = Describe("MachineList", func() {
 		bmh.Spec.BMC.CredentialsName = bmcSecret.Name
 		objsToApply = append(objsToApply, bmcSecret)
 
-		m, err := NewMachine(*bmh, airshipv1.VMControlPlane, NotScheduled)
+		m, err := NewMachine(*bmh, airshipv1.RoleControlPlane, NotScheduled)
 		Expect(err).To(BeNil())
 
 		ml := &MachineList{
 			NamespacedName: types.NamespacedName{
-				Name:      "vbmh",
+				Name:      "bmh",
 				Namespace: "default",
 			},
 			Machines: map[string]*Machine{
@@ -206,20 +206,20 @@ var _ = Describe("MachineList", func() {
 
 		bmh.Spec.BMC.CredentialsName = "foo-does-not-exist"
 
-		m, err := NewMachine(*bmh, airshipv1.VMControlPlane, NotScheduled)
+		m, err := NewMachine(*bmh, airshipv1.RoleControlPlane, NotScheduled)
 		Expect(err).To(BeNil())
 
 		ml := &MachineList{
 			NamespacedName: types.NamespacedName{
-				Name:      "vbmh",
+				Name:      "bmh",
 				Namespace: "default",
 			},
 			Machines: map[string]*Machine{
 				bmh.Name: m,
 			},
-			ReadyForScheduleCount: map[airshipv1.VMRole]int{
-				airshipv1.VMControlPlane: 1,
-				airshipv1.VMWorker:       0,
+			ReadyForScheduleCount: map[airshipv1.BMHRole]int{
+				airshipv1.RoleControlPlane: 1,
+				airshipv1.RoleWorker:       0,
 			},
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
@@ -259,20 +259,20 @@ var _ = Describe("MachineList", func() {
 		bmh.Spec.BMC.CredentialsName = bmcSecret.Name
 		objsToApply = append(objsToApply, bmcSecret)
 
-		m, err := NewMachine(*bmh, airshipv1.VMControlPlane, NotScheduled)
+		m, err := NewMachine(*bmh, airshipv1.RoleControlPlane, NotScheduled)
 		Expect(err).To(BeNil())
 
 		ml := &MachineList{
 			NamespacedName: types.NamespacedName{
-				Name:      "vbmh",
+				Name:      "bmh",
 				Namespace: "default",
 			},
 			Machines: map[string]*Machine{
 				bmh.Name: m,
 			},
-			ReadyForScheduleCount: map[airshipv1.VMRole]int{
-				airshipv1.VMControlPlane: 1,
-				airshipv1.VMWorker:       0,
+			ReadyForScheduleCount: map[airshipv1.BMHRole]int{
+				airshipv1.RoleControlPlane: 1,
+				airshipv1.RoleWorker:       0,
 			},
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
@@ -306,20 +306,20 @@ var _ = Describe("MachineList", func() {
 		bmh.Spec.NetworkData.Name = "foo-does-not-exist"
 		bmh.Spec.NetworkData.Namespace = "foo-does-not-exist"
 
-		m, err := NewMachine(*bmh, airshipv1.VMControlPlane, NotScheduled)
+		m, err := NewMachine(*bmh, airshipv1.RoleControlPlane, NotScheduled)
 		Expect(err).To(BeNil())
 
 		ml := &MachineList{
 			NamespacedName: types.NamespacedName{
-				Name:      "vbmh",
+				Name:      "bmh",
 				Namespace: "default",
 			},
 			Machines: map[string]*Machine{
 				bmh.Name: m,
 			},
-			ReadyForScheduleCount: map[airshipv1.VMRole]int{
-				airshipv1.VMControlPlane: 1,
-				airshipv1.VMWorker:       0,
+			ReadyForScheduleCount: map[airshipv1.BMHRole]int{
+				airshipv1.RoleControlPlane: 1,
+				airshipv1.RoleWorker:       0,
 			},
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
@@ -352,20 +352,20 @@ var _ = Describe("MachineList", func() {
 
 		networkData.Data = map[string][]byte{"foo": []byte("bad data!")}
 
-		m, err := NewMachine(*bmh, airshipv1.VMControlPlane, NotScheduled)
+		m, err := NewMachine(*bmh, airshipv1.RoleControlPlane, NotScheduled)
 		Expect(err).To(BeNil())
 
 		ml := &MachineList{
 			NamespacedName: types.NamespacedName{
-				Name:      "vbmh",
+				Name:      "bmh",
 				Namespace: "default",
 			},
 			Machines: map[string]*Machine{
 				bmh.Name: m,
 			},
-			ReadyForScheduleCount: map[airshipv1.VMRole]int{
-				airshipv1.VMControlPlane: 1,
-				airshipv1.VMWorker:       0,
+			ReadyForScheduleCount: map[airshipv1.BMHRole]int{
+				airshipv1.RoleControlPlane: 1,
+				airshipv1.RoleWorker:       0,
 			},
 			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
 		}
@@ -406,9 +406,9 @@ var _ = Describe("MachineList", func() {
 
 	It("Should not schedule BMH if it is missing networkdata", func() {
 		// Create a BMH without NetworkData
-		bmh, _ := testutil.CreateBMH(1, "default", airshipv1.VMControlPlane, 6)
+		bmh, _ := testutil.CreateBMH(1, "default", airshipv1.RoleControlPlane, 6)
 		bmh.Spec.NetworkData = nil
-		_, err := NewMachine(*bmh, airshipv1.VMControlPlane, NotScheduled)
+		_, err := NewMachine(*bmh, airshipv1.RoleControlPlane, NotScheduled)
 		Expect(err).ToNot(BeNil())
 	})
 })

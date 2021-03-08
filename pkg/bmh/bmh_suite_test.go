@@ -1,4 +1,4 @@
-package vbmh_test
+package bmh_test
 
 import (
 	"testing"

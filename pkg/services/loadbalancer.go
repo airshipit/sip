@@ -19,7 +19,7 @@ import (
 
 	"html/template"
 	airshipv1 "sipcluster/pkg/api/v1"
-	airshipvms "sipcluster/pkg/vbmh"
+	bmh "sipcluster/pkg/bmh"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
@@ -149,7 +149,7 @@ func (lb loadBalancer) generateSecret(instance string) (*corev1.Secret, error) {
 		Backends:  make([]backend, 0),
 	}
 	for _, machine := range lb.machines.Machines {
-		if machine.VMRole == airshipv1.VMControlPlane {
+		if machine.BMHRole == airshipv1.RoleControlPlane {
 			name := machine.BMH.Name
 			namespace := machine.BMH.Namespace
 			ip, exists := machine.Data.IPOnInterface[lb.config.NodeInterface]
@@ -215,13 +215,13 @@ type loadBalancer struct {
 	sipName  types.NamespacedName
 	logger   logr.Logger
 	config   airshipv1.SIPClusterService
-	machines *airshipvms.MachineList
+	machines *bmh.MachineList
 }
 
 func newLB(name, namespace string,
 	logger logr.Logger,
 	config airshipv1.SIPClusterService,
-	machines *airshipvms.MachineList,
+	machines *bmh.MachineList,
 	client client.Client) loadBalancer {
 	return loadBalancer{
 		sipName: types.NamespacedName{

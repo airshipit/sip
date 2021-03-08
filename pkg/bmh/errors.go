@@ -1,9 +1,10 @@
-package vbmh
+package bmh
 
 import (
 	"fmt"
 
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	airshipv1 "sipcluster/pkg/api/v1"
 )
@@ -17,13 +18,13 @@ func (e ErrorConstraintNotFound) Error() string {
 }
 
 type ErrorUnableToFullySchedule struct {
-	TargetNode   airshipv1.VMRole
-	TargetFlavor string
+	TargetNode          airshipv1.BMHRole
+	TargetLabelSelector metav1.LabelSelector
 }
 
 func (e ErrorUnableToFullySchedule) Error() string {
-	return fmt.Sprintf("Unable to complete a schedule with a target of %v nodes, with a flavor of %v",
-		e.TargetNode, e.TargetFlavor)
+	return fmt.Sprintf("Unable to complete a schedule with a target of %v nodes, with a label selector of %v",
+		e.TargetNode, e.TargetLabelSelector)
 }
 
 type ErrorHostIPNotFound struct {

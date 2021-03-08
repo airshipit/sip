@@ -8,13 +8,15 @@ metadata:
 spec:
   nodes:
     ControlPlane:
-        vmFlavor: vino.airshipit.org/flavor=control-plane
+        labelSelector:
+          vino.airshipit.org/flavor: control-plane
         spreadTopology: PerRack
         count:
             active: 1
             standby: 1
     Worker:
-        vmFlavor: vino.airshipit.org/flavor=worker
+        labelSelector:
+          vino.airshipit.org/flavor: worker
         spreadTopology: PerHost
         count:
             active: 1

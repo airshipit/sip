@@ -23,8 +23,8 @@ While ViNO is responsible for setting up VM infrastructure, such as:
 - networking
 - bmh objects, with labels:
     * location - i.e. `rack: 8` and `node: rdm8r008c002` - should follow k8s semi-standard
-    * vm role - i.e. `node-type: worker`
-    * vm flavor - i.e `node-flavor: foobar`
+    * role - i.e. `node-type: worker`
+    * flavor - i.e `node-flavor: foobar`
     * networks - i.e. `networks: [foo, bar]`
 and the details for ViNO can be found [here](https://hackmd.io/KSu8p4QeTc2kXIjlrso2eA)
 

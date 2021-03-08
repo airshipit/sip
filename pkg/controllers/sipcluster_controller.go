@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	airshipv1 "sipcluster/pkg/api/v1"
+	bmh "sipcluster/pkg/bmh"
 	airshipsvc "sipcluster/pkg/services"
-	airshipvms "sipcluster/pkg/vbmh"
 )
 
 // SIPClusterReconciler reconciles a SIPCluster object
@@ -124,7 +124,7 @@ func (r *SIPClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			log.Error(err, "unable to set condition", "condition", readyCondition)
 		}
 
-		log.Error(err, "unable to gather vBMHs")
+		log.Error(err, "unable to gather BMHs")
 		return ctrl.Result{Requeue: true}, err
 	}
 
@@ -242,7 +242,7 @@ func removeString(slice []string, s string) []string {
 /*
 ### Gather Phase
 
-#### Identity BMH VM's
+#### Identity BMH's
 - Gather BMH's that meet the criteria expected for the groups
 - Check for existing labeled BMH's
 - Complete the expected scheduling contraints :
@@ -265,14 +265,14 @@ func removeString(slice []string, s string) []string {
 
 // machines
 func (r *SIPClusterReconciler) gatherVBMH(ctx context.Context, sip airshipv1.SIPCluster) (
-	*airshipvms.MachineList, error) {
+	*bmh.MachineList, error) {
 	// 1- Let me retrieve all BMH  that are unlabeled or already labeled with the target Tenant/CNF
 	// 2- Let me now select the one's that meet the scheduling criteria
 	// If I schedule successfully then
 	// If Not complete schedule , then throw an error.
 	logger := logr.FromContext(ctx)
 	logger.Info("starting to gather BaremetalHost machines for SIPcluster")
-	machines := &airshipvms.MachineList{
+	machines := &bmh.MachineList{
 		Log:            logger.WithName("machines"),
 		NamespacedName: r.NamespacedName,
 	}
@@ -307,7 +307,7 @@ func (r *SIPClusterReconciler) gatherVBMH(ctx context.Context, sip airshipv1.SIP
 	return machines, nil
 }
 
-func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *airshipvms.MachineList,
+func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *bmh.MachineList,
 	logger logr.Logger) error {
 	newServiceSet := airshipsvc.NewServiceSet(logger, sip, machines, r.Client)
 	serviceList, err := newServiceSet.ServiceList()
@@ -326,18 +326,18 @@ func (r *SIPClusterReconciler) deployInfra(sip airshipv1.SIPCluster, machines *a
 /*
 finish shoulld  take care of any wrpa up tasks..
 */
-func (r *SIPClusterReconciler) finish(sip airshipv1.SIPCluster, machines *airshipvms.MachineList) error {
-	// UnLabel the vBMH's
+func (r *SIPClusterReconciler) finish(sip airshipv1.SIPCluster, machines *bmh.MachineList) error {
+	// UnLabel the BMH's
 	return machines.ApplyLabels(sip, r.Client)
 }
 
 /**
 Deal with Deletion and Finalizers if any is needed
-Such as i'e what are we doing with the lables on the vBMH's
+Such as i'e what are we doing with the lables on the BMH's
 **/
 func (r *SIPClusterReconciler) finalize(ctx context.Context, sip airshipv1.SIPCluster) error {
 	logger := logr.FromContext(ctx)
-	machines := &airshipvms.MachineList{}
+	machines := &bmh.MachineList{}
 	serviceSet := airshipsvc.NewServiceSet(logger, sip, machines, r.Client)
 	serviceList, err := serviceSet.ServiceList()
 	if err != nil {
@@ -354,7 +354,7 @@ func (r *SIPClusterReconciler) finalize(ctx context.Context, sip airshipv1.SIPCl
 		return err
 	}
 
-	// 1- Let me retrieve all vBMH mapped for this SIP Cluster
+	// 1- Let me retrieve all BMH mapped for this SIP Cluster
 	// 2- Let me now select the one's that meet the scheduling criteria
 	// If I schedule successfully then
 	// If Not complete schedule , then throw an error.
