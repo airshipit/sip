@@ -84,7 +84,7 @@ func (s SIPClusterServices) GetAll() []SIPClusterService {
 type JumpHostService struct {
 	SIPClusterService `json:",inline"`
 	BMC               *BMCOpts `json:"bmc,omitempty"`
-	SSHKey            string   `json:"sshkey,omitempty"`
+	SSHAuthorizedKeys []string `json:"sshAuthorizedKeys,omitempty"`
 }
 
 // SIPClusterStatus defines the observed state of SIPCluster

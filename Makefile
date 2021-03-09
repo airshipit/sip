@@ -9,7 +9,7 @@ PUBLISH			?= false
 JUMP_HOST_IMAGE_NAME	?= jump-host
 SIP_IMAGE_NAME		?= sip
 
-JUMP_HOST_BASE_IMAGE	?= gcr.io/google-appengine/python
+JUMP_HOST_BASE_IMAGE	?= gcr.io/gcp-runtimes/ubuntu_18_0_4
 SIP_BASE_IMAGE		?= gcr.io/distroless/static:nonroot
 
 # Image URLs to build/publish images

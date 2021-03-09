@@ -101,3 +101,5 @@ func applyRuntimeObject(key client.ObjectKey, obj client.Object, c client.Client
 }
 
 func int32Ptr(i int32) *int32 { return &i }
+
+func int64Ptr(i int64) *int64 { return &i }

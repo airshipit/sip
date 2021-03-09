@@ -18,8 +18,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/go-logr/logr"
+	"golang.org/x/crypto/ssh"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,8 +38,13 @@ const (
 	mountPathData    = "/etc/opt/sip"
 	mountPathScripts = "/opt/sip/bin"
 
-	nameHostsVolume  = "hosts"
-	nameRebootVolume = "vm"
+	sshDir             = "/home/ubuntu/.ssh"
+	authorizedKeysFile = "authorized_keys"
+	mountPathSSH       = sshDir + "/" + authorizedKeysFile
+
+	nameAuthorizedKeysVolume = "authorized-keys"
+	nameHostsVolume          = "hosts"
+	nameRebootVolume         = "vm"
 )
 
 // JumpHost is an InfrastructureService that provides SSH and power-management capabilities for sub-clusters.
@@ -96,7 +103,10 @@ func (jh jumpHost) Deploy() error {
 		return err
 	}
 
-	configMap := jh.generateConfigMap(instance, labels)
+	configMap, err := jh.generateConfigMap(instance, labels)
+	if err != nil {
+		return err
+	}
 	jh.logger.Info("Applying configmap", "configmap", configMap.GetNamespace()+"/"+configMap.GetName())
 	err = applyRuntimeObject(client.ObjectKey{Name: configMap.GetName(), Namespace: configMap.GetNamespace()},
 		configMap, jh.client)
@@ -133,6 +143,17 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						{
+							Name:            "ssh-perms",
+							Image:           jh.config.Image,
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Command:         []string{"/bin/sh", "-c"},
+							Args: []string{
+								fmt.Sprintf("mkdir -m700 %s", sshDir),
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Name:            JumpHostServiceName,
@@ -146,6 +167,11 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
+									Name:      nameAuthorizedKeysVolume,
+									MountPath: mountPathSSH,
+									SubPath:   authorizedKeysFile,
+								},
+								{
 									Name:      nameHostsVolume,
 									MountPath: mountPathData,
 								},
@@ -155,6 +181,9 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 								},
 							},
 						},
+					},
+					SecurityContext: &corev1.PodSecurityContext{
+						FSGroup: int64Ptr(1000),
 					},
 					Volumes: []corev1.Volume{
 						{
@@ -166,6 +195,24 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 							},
 						},
 						{
+							Name: nameAuthorizedKeysVolume,
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: instance,
+									},
+									DefaultMode: int32Ptr(0700),
+									Items: []corev1.KeyToPath{
+										{
+											Key:  nameAuthorizedKeysVolume,
+											Path: authorizedKeysFile,
+											Mode: int32Ptr(0600),
+										},
+									},
+								},
+							},
+						},
+						{
 							Name: nameRebootVolume,
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -173,6 +220,12 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 										Name: instance,
 									},
 									DefaultMode: int32Ptr(0777),
+									Items: []corev1.KeyToPath{
+										{
+											Key:  nameRebootVolume,
+											Path: nameRebootVolume,
+										},
+									},
 								},
 							},
 						},
@@ -208,7 +261,14 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string)
 	return deployment
 }
 
-func (jh jumpHost) generateConfigMap(instance string, labels map[string]string) *corev1.ConfigMap {
+func (jh jumpHost) generateConfigMap(instance string, labels map[string]string) (*corev1.ConfigMap, error) {
+	for _, key := range jh.config.SSHAuthorizedKeys {
+		_, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key))
+		if err != nil {
+			return nil, ErrInvalidAuthorizedKeyFormat{SSHErr: err.Error(), Key: key}
+		}
+	}
+
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -220,9 +280,10 @@ func (jh jumpHost) generateConfigMap(instance string, labels map[string]string) 
 			Labels:    labels,
 		},
 		Data: map[string]string{
-			nameRebootVolume: fmt.Sprintf(rebootScript, mountPathData, nameHostsVolume),
+			nameAuthorizedKeysVolume: strings.Join(jh.config.SSHAuthorizedKeys, "\n"),
+			nameRebootVolume:         fmt.Sprintf(rebootScript, mountPathData, nameHostsVolume),
 		},
-	}
+	}, nil
 }
 
 func (jh jumpHost) generateSecret(instance string, labels map[string]string) (*corev1.Secret, error) {

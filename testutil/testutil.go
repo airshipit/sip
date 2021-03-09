@@ -246,11 +246,14 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 				JumpHost: []airshipv1.JumpHostService{
 					{
 						SIPClusterService: airshipv1.SIPClusterService{
-							Image:         "ubuntu:20.04",
+							Image:         "quay.io/airshipit/jump-host",
 							NodePort:      30001,
 							NodeInterface: "eno3",
 						},
-						SSHKey: "",
+						SSHAuthorizedKeys: []string{
+							"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCyaozS8kZRw2a1d0O4YXhxtJlDPThqIZilGCsXLbukIFOyMUmMTwQAtwWp5epwU1+5ponC2uBENB6xCCj3cl5Rd43d2/B6HxyAPQGKo6/zKYGAKW2nzYDxSWMl6NUSsiJAyXUA7ZlNZQe0m8PmaferlkQyLLZo3NJpizz6U6ZCtxvj43vEl7NYWnLUEIzGP9zMqltIGnD4vYrU9keVKKXSsp+DkApnbrDapeigeGATCammy2xRrUQDuOvGHsfnQbXr2j0onpTIh0PiLrXLQAPDg8UJRgVB+ThX+neI3rQ320djzRABckNeE6e4Kkwzn+QdZsmA2SDvM9IU7boK1jVQlgUPp7zF5q3hbb8Rx7AadyTarBayUkCgNlrMqth+tmTMWttMqCPxJRGnhhvesAHIl55a28Kzz/2Oqa3J9zwzbyDIwlEXho0eAq3YXEPeBhl34k+7gOt/5Zdbh+yacFoxDh0LrshQgboAijcVVaXPeN0LsHEiVvYIzugwIvCkoFMPWoPj/kEGzPY6FCkVneDA7VoLTCoG8dlrN08Lf05/BGC7Wllm66pTNZC/cKXP+cjpQn1iEuiuPxnPldlMHx9sx2y/BRoft6oT/GzqkNy1NTY/xI+MfmxXnF5kwSbcTbzZQ9fZ8xjh/vmpPBgDNrxOEAT4N6OG7GQIhb9HEhXQCQ== example-key", //nolint
+							"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCwpOyZjZ4gB0OTvmofH3llh6cBCWaEiEmHZWSkDXr8Bih6HcXVOtYMcFi/ZnUVGUBPw3ATNQBZUaVCYKeF+nDfKTJ9hmnlsyHxV2LeMsVg1o15Pb6f+QJuavEqtE6HI7mHyId4Z1quVTJXDWDW8OZEG7M3VktauqAn/e9UJvlL0bGmTFD1XkNcbRsWMRWkQgt2ozqlgrpPtvrg2/+bNucxX++VUjnsn+fGgAT07kbnrZwppGnAfjbYthxhv7GeSD0+Z0Lf1kiKy/bhUqXsZIuexOfF0YrRyUH1KBl8GCX2OLBYvXHyusByqsrOPiROqRdjX5PsK6HSAS0lk0niTt1p example-key-2",                                                                                                                                                                                                                                                                                                                                                       // nolint
+						},
 					},
 				},
 			},
