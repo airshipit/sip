@@ -35,7 +35,13 @@ var _ = BeforeSuite(func(done Done) {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		CRDInstallOptions: envtest.CRDInstallOptions{
+			ErrorIfPathMissing: true,
+			Paths: []string{
+				filepath.Join("..", "..", "config", "crd", "bases"),          // SIP CRD
+				filepath.Join("..", "..", "config", "samples", "bmh", "crd"), // BMH CRD
+			},
+		},
 	}
 
 	var err error
