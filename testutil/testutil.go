@@ -3,9 +3,13 @@ package testutil
 import (
 	"fmt"
 
+	"github.com/onsi/gomega"
+
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 
 	airshipv1 "sipcluster/pkg/api/v1"
 )
@@ -15,11 +19,18 @@ var bmhRoleToLabelValue = map[airshipv1.BMHRole]string{
 	airshipv1.RoleWorker:       "worker",
 }
 
+func UnscheduledSelector() labels.Selector {
+	sel := labels.NewSelector()
+	r, err := labels.NewRequirement(sipClusterLabel, selection.DoesNotExist, nil)
+	gomega.Expect(err).Should(gomega.Succeed())
+	return sel.Add(*r)
+}
+
 // NOTE(aw442m): These constants have been redefined from the bmh package in order to avoid an import cycle.
 const (
-	sipRackLabel     = "sip.airshipit.org/rack"
-	sipScheduleLabel = "sip.airshipit.org/scheduled"
-	sipServerLabel   = "sip.airshipit.org/server"
+	sipRackLabel    = "sip.airshipit.org/rack"
+	sipClusterLabel = "sip.airshipit.org/cluster"
+	sipServerLabel  = "sip.airshipit.org/server"
 
 	bmhLabel = "example.org/bmh-label"
 
@@ -181,10 +192,9 @@ func CreateBMH(node int, namespace string, role airshipv1.BMHRole, rack int) (*m
 				Name:      fmt.Sprintf("node0%d", node),
 				Namespace: namespace,
 				Labels: map[string]string{
-					bmhLabel:         bmhRoleToLabelValue[role],
-					sipScheduleLabel: "false",
-					sipRackLabel:     rackLabel,
-					sipServerLabel:   fmt.Sprintf("stl2%so%d", rackLabel, node),
+					bmhLabel:       bmhRoleToLabelValue[role],
+					sipRackLabel:   rackLabel,
+					sipServerLabel: fmt.Sprintf("stl2%so%d", rackLabel, node),
 				},
 			},
 			Spec: metal3.BareMetalHostSpec{
@@ -302,4 +312,12 @@ func CreateBMCAuthSecret(nodeName string, namespace string, username string, pas
 			"password": []byte(password),
 		},
 	}
+}
+
+func CompareLabels(expected labels.Selector, actual map[string]string) error {
+	if !expected.Matches(labels.Set(actual)) {
+		return fmt.Errorf("labels do not match expected selector %v. Has labels %v", expected, actual)
+	}
+
+	return nil
 }

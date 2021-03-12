@@ -31,6 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	kerror "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,21 +60,15 @@ const (
 )
 
 const (
-	BaseAirshipSelector  = "sip.airshipit.org"
-	SipScheduleLabelName = "scheduled"
-	SipScheduleLabel     = BaseAirshipSelector + "/" + SipScheduleLabelName
-
-	SipScheduled    = SipScheduleLabel + "=true"
-	SipNotScheduled = SipScheduleLabel + "=false"
+	BaseAirshipSelector = "sip.airshipit.org"
 
 	// This is a placeholder . Need to synchronize with ViNO the constants below
 	// Probable pll this or eqivakent values from a ViNO pkg
 	RackLabel   = BaseAirshipSelector + "/rack"
 	ServerLabel = BaseAirshipSelector + "/server"
 
-	// Thislabekl is associated to group the colletcion of scheduled BMH's
-	// Will represent the Tenant Cluster or Service Function  Cluster
-	SipClusterLabelName = "workload-cluster"
+	// This label is applied to all BMHs scheduled to a given SIPCluster.
+	SipClusterLabelName = "cluster"
 	SipClusterLabel     = BaseAirshipSelector + "/" + SipClusterLabelName
 
 	SipNodeTypeLabelName = "node-type"
@@ -199,17 +194,15 @@ func (ml *MachineList) init(nodes map[airshipv1.BMHRole]airshipv1.NodeSet) {
 func (ml *MachineList) getBMHs(c client.Client) (*metal3.BareMetalHostList, error) {
 	bmhList := &metal3.BareMetalHostList{}
 
-	// I am thinking we can add a Label for unsccheduled.
-	// SIP Cluster can change it to scheduled.
-	// We can then simple use this to select UNSCHEDULED
-	/*
-		This possible will not be needed if I figured out how to provide a != label.
-		Then we can use DOESNT HAVE A TENANT LABEL
-	*/
-	scheduleLabels := map[string]string{SipScheduleLabel: "false"}
+	// Select BMH not yet labeled as scheduled by SIP
+	unscheduledSelector := labels.NewSelector()
+	r, err := labels.NewRequirement(SipClusterLabel, selection.DoesNotExist, nil)
+	if err == nil {
+		unscheduledSelector = unscheduledSelector.Add(*r)
+	}
 
 	ml.Log.Info("Getting all available BaremetalHosts that are not scheduled")
-	err := c.List(context.Background(), bmhList, client.MatchingLabels(scheduleLabels))
+	err = c.List(context.Background(), bmhList, client.MatchingLabelsSelector{Selector: unscheduledSelector})
 	if err != nil {
 		ml.Log.Info("Received an error while getting BaremetalHost list", "error", err.Error())
 		return bmhList, err
@@ -218,7 +211,7 @@ func (ml *MachineList) getBMHs(c client.Client) (*metal3.BareMetalHostList, erro
 	if len(bmhList.Items) > 0 {
 		return bmhList, nil
 	}
-	return bmhList, fmt.Errorf("Unable to identify BMH available for scheduling. Selecting  %v ", scheduleLabels)
+	return bmhList, fmt.Errorf("Unable to identify BMH available for scheduling. Selecting  %v ", unscheduledSelector)
 }
 
 func (ml *MachineList) identifyNodes(sip airshipv1.SIPCluster,
@@ -277,7 +270,6 @@ func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.BMHRole
 	bmhList := &metal3.BareMetalHostList{}
 
 	scheduleLabels := map[string]string{
-		SipScheduleLabel: "true",
 		SipClusterLabel:  clusterName,
 		SipNodeTypeLabel: string(nodeRole),
 	}
@@ -749,7 +741,6 @@ func (ml *MachineList) ApplyLabels(sip airshipv1.SIPCluster, c client.Client) er
 			bmh := &machine.BMH
 			fmt.Printf("ApplyLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
 			bmh.Labels[SipClusterLabel] = GetClusterLabel(sip)
-			bmh.Labels[SipScheduleLabel] = "true"
 			bmh.Labels[SipNodeTypeLabel] = string(machine.BMHRole)
 
 			// This is bombing when it find 1 error
@@ -773,7 +764,6 @@ func (ml *MachineList) RemoveLabels(c client.Client) error {
 		fmt.Printf("RemoveLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
 		delete(bmh.Labels, SipClusterLabel)
 		delete(bmh.Labels, SipNodeTypeLabel)
-		bmh.Labels[SipScheduleLabel] = "false"
 
 		// This is bombing when it find 1 error
 		// Might be better to acculumalte the errors, and
@@ -793,8 +783,7 @@ func (ml *MachineList) GetCluster(sip airshipv1.SIPCluster, c client.Client) err
 
 	bmhList := &metal3.BareMetalHostList{}
 	scheduleLabels := map[string]string{
-		SipScheduleLabel: "true",
-		SipClusterLabel:  GetClusterLabel(sip),
+		SipClusterLabel: GetClusterLabel(sip),
 	}
 
 	err := c.List(context.Background(), bmhList, client.MatchingLabels(scheduleLabels))

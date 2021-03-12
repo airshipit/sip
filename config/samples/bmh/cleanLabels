@@ -1,6 +1,6 @@
-kubectl label baremetalhosts -n metal3 --overwrite rdm9r006o001 sip.airshipit.org/scheduled=false sip.airshipit.org/node-type- sip.airshipit.org/workload-cluster- scheduled-
-kubectl label baremetalhosts -n metal3 --overwrite rdm9r006o002 sip.airshipit.org/scheduled=false sip.airshipit.org/node-type- sip.airshipit.org/workload-cluster- scheduled-
-kubectl label baremetalhosts -n metal3 --overwrite rdm9r007o001 sip.airshipit.org/scheduled=false sip.airshipit.org/node-type- sip.airshipit.org/workload-cluster- scheduled-
-kubectl label baremetalhosts -n metal3 --overwrite rdm9r007o002 sip.airshipit.org/scheduled=false sip.airshipit.org/node-type- sip.airshipit.org/workload-cluster- scheduled-
-kubectl label baremetalhosts -n metal3 --overwrite rdm9r008c002 sip.airshipit.org/scheduled=false sip.airshipit.org/node-type- sip.airshipit.org/workload-cluster- scheduled-
-kubectl label baremetalhosts -n metal3 --overwrite rdm9r009c002 sip.airshipit.org/scheduled=false sip.airshipit.org/node-type- sip.airshipit.org/workload-cluster- scheduled-
+kubectl label baremetalhosts -n metal3 --overwrite rdm9r006o001 sip.airshipit.org/node-type- sip.airshipit.org/cluster-
+kubectl label baremetalhosts -n metal3 --overwrite rdm9r006o002 sip.airshipit.org/node-type- sip.airshipit.org/cluster-
+kubectl label baremetalhosts -n metal3 --overwrite rdm9r007o001 sip.airshipit.org/node-type- sip.airshipit.org/cluster-
+kubectl label baremetalhosts -n metal3 --overwrite rdm9r007o002 sip.airshipit.org/node-type- sip.airshipit.org/cluster-
+kubectl label baremetalhosts -n metal3 --overwrite rdm9r008c002 sip.airshipit.org/node-type- sip.airshipit.org/cluster-
+kubectl label baremetalhosts -n metal3 --overwrite rdm9r009c002 sip.airshipit.org/node-type- sip.airshipit.org/cluster-
