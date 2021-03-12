@@ -62,11 +62,6 @@ const (
 const (
 	BaseAirshipSelector = "sip.airshipit.org"
 
-	// This is a placeholder . Need to synchronize with ViNO the constants below
-	// Probable pll this or eqivakent values from a ViNO pkg
-	RackLabel   = BaseAirshipSelector + "/rack"
-	ServerLabel = BaseAirshipSelector + "/server"
-
 	// This label is applied to all BMHs scheduled to a given SIPCluster.
 	SipClusterLabelName = "cluster"
 	SipClusterLabel     = BaseAirshipSelector + "/" + SipClusterLabelName
@@ -216,23 +211,15 @@ func (ml *MachineList) identifyNodes(sip airshipv1.SIPCluster,
 	// If using the SIP Sheduled label, we now have a list of BMH;'s
 	// that are not scheduled
 	// Next I need to apply the constraints
-
-	// This willl be a poor mans simple scheduler
-	// Only deals with AntiAffinity at :
-	// - Racks  : Dont select two machines in the same rack
-	// - Server : Dont select two machines in the same server
 	ml.Log.Info("Trying to identify BaremetalHosts that match scheduling parameters",
 		"initial BMH count", len(bmhList.Items))
 	for nodeRole, nodeCfg := range sip.Spec.Nodes {
 		logger := ml.Log.WithValues("role", nodeRole) //nolint:govet
 		ml.ReadyForScheduleCount[nodeRole] = 0
 		logger.Info("Getting host constraints")
-		scheduleSetMap, err := ml.initScheduleMaps(nodeRole, nodeCfg.Scheduling)
-		if err != nil {
-			return err
-		}
+		scheduleSetMap := ml.initScheduleMaps(nodeRole, nodeCfg.TopologyKey)
 		logger.Info("Matching hosts against constraints")
-		err = ml.scheduleIt(nodeRole, nodeCfg, bmhList, scheduleSetMap, c, GetClusterLabel(sip))
+		err := ml.scheduleIt(nodeRole, nodeCfg, bmhList, scheduleSetMap, c, GetClusterLabel(sip))
 		if err != nil {
 			return err
 		}
@@ -241,25 +228,15 @@ func (ml *MachineList) identifyNodes(sip airshipv1.SIPCluster,
 }
 
 func (ml *MachineList) initScheduleMaps(role airshipv1.BMHRole,
-	constraint airshipv1.SpreadTopology) (*ScheduleSet, error) {
-	logger := ml.Log.WithValues("role", role, "spread topology", constraint)
-	var labelName string
-	switch constraint {
-	case airshipv1.RackAntiAffinity:
-		labelName = RackLabel
-	case airshipv1.HostAntiAffinity:
-		labelName = ServerLabel
-	default:
-		logger.Info("constraint not supported")
-		return nil, ErrorUknownSpreadTopology{Topology: constraint}
-	}
+	topologyKey string) *ScheduleSet {
+	logger := ml.Log.WithValues("role", role, "topologyKey", topologyKey)
 
-	logger.Info("Marking constraint as active")
+	logger.Info("Marking schedule set as active")
 	return &ScheduleSet{
-		active:    true,
-		set:       make(map[string]bool),
-		labelName: labelName,
-	}, nil
+		active:      true,
+		set:         make(map[string]bool),
+		topologyKey: topologyKey,
+	}
 }
 
 func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.BMHRole,
@@ -328,28 +305,28 @@ func (ml *MachineList) scheduleIt(nodeRole airshipv1.BMHRole, nodeCfg airshipv1.
 
 		if !ml.hasMachine(bmh) {
 			logger.Info("BaremetalHost not yet marked as ready to be scheduled")
-			constraint := nodeCfg.Scheduling
+			topologyKey := nodeCfg.TopologyKey
 			// Do I care about this constraint
-			logger := logger.WithValues("constraint", constraint) //nolint:govet
+			logger := logger.WithValues("topologyKey", topologyKey) //nolint:govet
 			if scheduleSet.Active() {
 				logger.Info("constraint is active")
 				// Check if bmh has the label
-				bmhConstraintCondition, match, err := scheduleSet.GetLabels(labels.Set(bmh.Labels), &nodeCfg.LabelSelector)
+				topologyDomain, match, err := scheduleSet.GetLabels(labels.Set(bmh.Labels), &nodeCfg.LabelSelector)
 				if err != nil {
 					return err
 				}
-				logger.Info("Checked BMH constraint condition and label selector",
-					"constraint condition", bmhConstraintCondition,
+				logger.Info("Checked BMH topology key and label selector",
+					"topology domain", topologyDomain,
 					"label selector match", match)
 				validBmh = match
-				// If it does match the flavor
-				if bmhConstraintCondition != "" && match {
+				// If it does match the label selector
+				if topologyDomain != "" && match {
 					// If its in the list already for the constraint , theen this bmh is disqualified. Skip it
-					if scheduleSet.Exists(bmhConstraintCondition) {
-						logger.Info("Constraint slot is alrady taken some BMH from this constraint is already allocated, skipping it")
+					if scheduleSet.Exists(topologyDomain) {
+						logger.Info("Topology domain has already been scheduled to, skipping it")
 						continue
 					} else {
-						scheduleSet.Add(bmhConstraintCondition)
+						scheduleSet.Add(topologyDomain)
 					}
 				}
 			}
@@ -691,8 +668,8 @@ type ScheduleSet struct {
 	active bool
 	// Holds list of elements in the Set
 	set map[string]bool
-	// Holds the label name that identifies the constraint
-	labelName string
+	// Holds the topology key that identifies the constraint
+	topologyKey string
 }
 
 func (ss *ScheduleSet) Active() bool {
@@ -717,7 +694,7 @@ func (ss *ScheduleSet) GetLabels(labels labels.Labels, labelSelector *metav1.Lab
 	if err == nil {
 		match = selector.Matches(labels)
 	}
-	return labels.Get(ss.labelName), match, err
+	return labels.Get(ss.topologyKey), match, err
 }
 
 // ApplyLabels adds the appropriate labels to the BMHs that are ready to be scheduled

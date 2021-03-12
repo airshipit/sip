@@ -26,13 +26,14 @@ func UnscheduledSelector() labels.Selector {
 	return sel.Add(*r)
 }
 
-// NOTE(aw442m): These constants have been redefined from the bmh package in order to avoid an import cycle.
 const (
-	sipRackLabel    = "sip.airshipit.org/rack"
-	sipClusterLabel = "sip.airshipit.org/cluster"
-	sipServerLabel  = "sip.airshipit.org/server"
+	// NOTE(aw442m): These constants have been redefined from the bmh package in order to avoid an import cycle.
+	sipClusterLabelName = "cluster"
+	sipClusterLabel     = "sip.airshipit.org" + "/" + sipClusterLabelName
 
-	bmhLabel = "example.org/bmh-label"
+	HostLabel = "vino.airshipit.org/host"
+	RackLabel = "vino.airshipit.org/rack"
+	bmhLabel  = "example.org/bmh-label"
 
 	sshPrivateKeyBase64 = "DUMMY_DATA"
 
@@ -185,16 +186,17 @@ const (
 
 // CreateBMH initializes a BaremetalHost with specific parameters for use in test cases.
 func CreateBMH(node int, namespace string, role airshipv1.BMHRole, rack int) (*metal3.BareMetalHost, *corev1.Secret) {
-	rackLabel := fmt.Sprintf("r%d", rack)
+	rackLabelValue := fmt.Sprintf("r%d", rack)
+	hostLabelValue := fmt.Sprintf("stl2%so%d", rackLabelValue, node)
 	networkDataName := fmt.Sprintf("node%d-network-data", node)
 	return &metal3.BareMetalHost{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("node0%d", node),
 				Namespace: namespace,
 				Labels: map[string]string{
-					bmhLabel:       bmhRoleToLabelValue[role],
-					sipRackLabel:   rackLabel,
-					sipServerLabel: fmt.Sprintf("stl2%so%d", rackLabel, node),
+					bmhLabel:  bmhRoleToLabelValue[role],
+					RackLabel: rackLabelValue,
+					HostLabel: hostLabelValue,
 				},
 			},
 			Spec: metal3.BareMetalHostSpec{
@@ -239,7 +241,7 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 								bmhLabel: bmhRoleToLabelValue[airshipv1.RoleControlPlane],
 							},
 						},
-						Scheduling: airshipv1.HostAntiAffinity,
+						TopologyKey: HostLabel,
 						Count: &airshipv1.NodeCount{
 							Active:  controlPlanes,
 							Standby: 0,
@@ -251,7 +253,7 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 								bmhLabel: bmhRoleToLabelValue[airshipv1.RoleWorker],
 							},
 						},
-						Scheduling: airshipv1.HostAntiAffinity,
+						TopologyKey: HostLabel,
 						Count: &airshipv1.NodeCount{
 							Active:  workers,
 							Standby: 0,

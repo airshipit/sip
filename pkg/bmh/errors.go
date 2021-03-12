@@ -38,15 +38,6 @@ func (e ErrorHostIPNotFound) Error() string {
 		"Infrastructure Service %s", e.HostName, e.IPInterface, e.Message)
 }
 
-// ErrorUknownSpreadTopology is returned when wrong AuthType is provided
-type ErrorUknownSpreadTopology struct {
-	Topology airshipv1.SpreadTopology
-}
-
-func (e ErrorUknownSpreadTopology) Error() string {
-	return fmt.Sprintf("Uknown spread topology '%s'", e.Topology)
-}
-
 // ErrorNetworkDataNotFound is returned when NetworkData metadata is missing from BMH
 type ErrorNetworkDataNotFound struct {
 	BMH metal3.BareMetalHost

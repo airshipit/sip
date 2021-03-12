@@ -190,24 +190,24 @@ var _ = Describe("SIPCluster controller", func() {
 
 				// Create BMH test objects
 				var nodes []*metal3.BareMetalHost
-				baremetalServer := "r06o001"
+				hostLabel := "r06o001"
 
 				bmh, networkData := testutil.CreateBMH(0, testNamespace, airshipv1.RoleControlPlane, 6)
-				bmh.Labels[bmhpkg.ServerLabel] = baremetalServer
+				bmh.Labels[testutil.HostLabel] = hostLabel
 
 				nodes = append(nodes, bmh)
 				Expect(k8sClient.Create(context.Background(), bmh)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
 				bmh, networkData = testutil.CreateBMH(1, testNamespace, airshipv1.RoleWorker, 6)
-				bmh.Labels[bmhpkg.ServerLabel] = baremetalServer
+				bmh.Labels[testutil.HostLabel] = hostLabel
 
 				nodes = append(nodes, bmh)
 				Expect(k8sClient.Create(context.Background(), bmh)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
 				bmh, networkData = testutil.CreateBMH(2, testNamespace, airshipv1.RoleWorker, 6)
-				bmh.Labels[bmhpkg.ServerLabel] = baremetalServer
+				bmh.Labels[testutil.HostLabel] = hostLabel
 
 				nodes = append(nodes, bmh)
 				Expect(k8sClient.Create(context.Background(), bmh)).Should(Succeed())
@@ -250,24 +250,24 @@ var _ = Describe("SIPCluster controller", func() {
 
 				// Create BMH test objects
 				var nodes []*metal3.BareMetalHost
-				baremetalServer := "r06o001"
+				hostLabel := "r06o001"
 
 				bmh, networkData := testutil.CreateBMH(0, testNamespace, airshipv1.RoleControlPlane, 6)
-				bmh.Labels[bmhpkg.ServerLabel] = baremetalServer
+				bmh.Labels[testutil.HostLabel] = hostLabel
 
 				nodes = append(nodes, bmh)
 				Expect(k8sClient.Create(context.Background(), bmh)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
 				bmh, networkData = testutil.CreateBMH(1, testNamespace, airshipv1.RoleControlPlane, 6)
-				bmh.Labels[bmhpkg.ServerLabel] = baremetalServer
+				bmh.Labels[testutil.HostLabel] = hostLabel
 
 				nodes = append(nodes, bmh)
 				Expect(k8sClient.Create(context.Background(), bmh)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
 				bmh, networkData = testutil.CreateBMH(2, testNamespace, airshipv1.RoleWorker, 6)
-				bmh.Labels[bmhpkg.ServerLabel] = baremetalServer
+				bmh.Labels[testutil.HostLabel] = hostLabel
 
 				nodes = append(nodes, bmh)
 				Expect(k8sClient.Create(context.Background(), bmh)).Should(Succeed())
@@ -337,11 +337,11 @@ var _ = Describe("SIPCluster controller", func() {
 				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(clusterName, testNamespace, 1, 2)
 
 				controlPlaneSpec := sipCluster.Spec.Nodes[airshipv1.RoleControlPlane]
-				controlPlaneSpec.Scheduling = airshipv1.RackAntiAffinity
+				controlPlaneSpec.TopologyKey = testutil.RackLabel
 				sipCluster.Spec.Nodes[airshipv1.RoleControlPlane] = controlPlaneSpec
 
 				workerSpec := sipCluster.Spec.Nodes[airshipv1.RoleWorker]
-				workerSpec.Scheduling = airshipv1.RackAntiAffinity
+				workerSpec.TopologyKey = testutil.RackLabel
 				sipCluster.Spec.Nodes[airshipv1.RoleWorker] = workerSpec
 
 				Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
@@ -402,11 +402,11 @@ var _ = Describe("SIPCluster controller", func() {
 				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(clusterName, testNamespace, 2, 1)
 
 				controlPlaneSpec := sipCluster.Spec.Nodes[airshipv1.RoleControlPlane]
-				controlPlaneSpec.Scheduling = airshipv1.RackAntiAffinity
+				controlPlaneSpec.TopologyKey = testutil.RackLabel
 				sipCluster.Spec.Nodes[airshipv1.RoleControlPlane] = controlPlaneSpec
 
 				workerSpec := sipCluster.Spec.Nodes[airshipv1.RoleWorker]
-				workerSpec.Scheduling = airshipv1.RackAntiAffinity
+				workerSpec.TopologyKey = testutil.RackLabel
 				sipCluster.Spec.Nodes[airshipv1.RoleWorker] = workerSpec
 
 				Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())

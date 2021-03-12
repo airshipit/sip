@@ -41,7 +41,7 @@ spec:
                 description: 'NodeSet are the the list of Nodes objects workers, or
                   ControlPlane that define expectations for  the Tenant Clusters Includes
                   artifacts to associate with each defined namespace Such as : - Roles
-                  for the Nodes - Flavor for theh Nodes image - Scheduling expectations
+                  for the Nodes - Flavor for the Nodes image - Anti-affinity expectations
                   - Scale of the group of Nodes'
                 properties:
                   count:
@@ -99,13 +99,12 @@ spec:
                           "value". The requirements are ANDed.
                         type: object
                     type: object
-                  spreadTopology:
-                    description: PlaceHolder until we define the real expected Implementation
-                      Scheduling define constraints that allow the SIP Scheduler to
-                      identify the required BMH's to allow CAPI to build a cluster
-                    enum:
-                    - PerRack
-                    - PerHost
+                  topologyKey:
+                    description: TopologyKey is similar to the same named field in
+                      the kubernetes Pod anti-affinity API. If two BMHs are labeled
+                      with this key and have identical values for that label, they
+                      are considered to be in the same topology domain, and thus only
+                      one will be scheduled.
                     type: string
                 type: object
               description: Nodes defines the set of nodes to schedule for each BMH

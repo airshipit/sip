@@ -20,9 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // +kubebuilder:object:root=true
 
 // SIPClusterList contains a list of SIPCluster
@@ -46,9 +43,6 @@ type SIPCluster struct {
 
 // SIPClusterSpec defines the desired state of a SIPCluster
 type SIPClusterSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make manifests to regenerate code after modifying this file
-
 	// Nodes defines the set of nodes to schedule for each BMH role.
 	Nodes map[BMHRole]NodeSet `json:"nodes,omitempty"`
 
@@ -131,33 +125,19 @@ const (
 // Includes artifacts to associate with each defined namespace
 // Such as :
 // - Roles for the Nodes
-// - Flavor for theh Nodes image
-// - Scheduling expectations
+// - Flavor for the Nodes image
+// - Anti-affinity expectations
 // - Scale of the group of Nodes
-//
 type NodeSet struct {
-
 	// LabelSelector is the BMH label selector to use.
 	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
-	// PlaceHolder until we define the real expected
-	// Implementation
-	// Scheduling define constraints that allow the SIP Scheduler
-	// to identify the required BMH's to allow CAPI to build a cluster
-	Scheduling SpreadTopology `json:"spreadTopology,omitempty"`
+	// TopologyKey is similar to the same named field in the kubernetes Pod anti-affinity API.
+	// If two BMHs are labeled with this key and have identical values for that
+	// label, they are considered to be in the same topology domain, and thus only one will be scheduled.
+	TopologyKey string `json:"topologyKey,omitempty"`
 	// Count defines the scale expectations for the Nodes
 	Count *NodeCount `json:"count,omitempty"`
 }
-
-// +kubebuilder:validation:Enum=PerRack;PerHost
-type SpreadTopology string
-
-const (
-	// RackAntiAffinity means the scheduling should target separate racks.
-	RackAntiAffinity SpreadTopology = "PerRack"
-
-	// HostAntiAffinity means the scheduling should target separate hosts.
-	HostAntiAffinity SpreadTopology = "PerHost"
-)
 
 type SIPClusterService struct {
 	Image         string            `json:"image"`

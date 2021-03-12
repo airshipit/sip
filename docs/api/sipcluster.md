@@ -171,8 +171,8 @@ for  the Tenant Clusters
 Includes artifacts to associate with each defined namespace
 Such as :
 - Roles for the Nodes
-- Flavor for theh Nodes image
-- Scheduling expectations
+- Flavor for the Nodes image
+- Anti-affinity expectations
 - Scale of the group of Nodes</p>
 <div class="md-typeset__scrollwrap">
 <div class="md-typeset__table">
@@ -199,18 +199,15 @@ Kubernetes meta/v1.LabelSelector
 </tr>
 <tr>
 <td>
-<code>spreadTopology</code><br>
+<code>topologyKey</code><br>
 <em>
-<a href="#airship.airshipit.org/v1.SpreadTopology">
-SpreadTopology
-</a>
+string
 </em>
 </td>
 <td>
-<p>PlaceHolder until we define the real expected
-Implementation
-Scheduling define constraints that allow the SIP Scheduler
-to identify the required BMH&rsquo;s to allow CAPI to build a cluster</p>
+<p>TopologyKey is similar to the same named field in the kubernetes Pod anti-affinity API.
+If two BMHs are labeled with this key and have identical values for that
+label, they are considered to be in the same topology domain, and thus only one will be scheduled.</p>
 </td>
 </tr>
 <tr>
@@ -526,12 +523,6 @@ SIPClusterServices
 </table>
 </div>
 </div>
-<h3 id="airship.airshipit.org/v1.SpreadTopology">SpreadTopology
-(<code>string</code> alias)</h3>
-<p>
-(<em>Appears on:</em>
-<a href="#airship.airshipit.org/v1.NodeSet">NodeSet</a>)
-</p>
 <div class="admonition note">
 <p class="last">This page was automatically generated with <code>gen-crd-api-reference-docs</code></p>
 </div>

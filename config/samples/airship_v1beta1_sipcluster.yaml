@@ -10,14 +10,14 @@ spec:
     ControlPlane:
         labelSelector:
           vino.airshipit.org/flavor: control-plane
-        spreadTopology: PerRack
+        topologyKey: vino.airshipit.org/rack
         count:
             active: 1
             standby: 1
     Worker:
         labelSelector:
           vino.airshipit.org/flavor: worker
-        spreadTopology: PerHost
+        topologyKey: vino.airshipit.org/host
         count:
             active: 1
             standby: 1 # Slew for upgrades
