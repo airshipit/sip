@@ -23,6 +23,8 @@ const (
 
 	VinoFlavorLabel = "vino.airshipit.org/flavor"
 
+	sshPrivateKeyBase64 = "DUMMY_DATA"
+
 	networkDataContent = `
 {
     "links": [
@@ -207,59 +209,72 @@ func CreateBMH(node int, namespace string, role airshipv1.VMRole, rack int) (*me
 }
 
 // CreateSIPCluster initializes a SIPCluster with specific parameters for use in test cases.
-func CreateSIPCluster(name string, namespace string, controlPlanes int, workers int) *airshipv1.SIPCluster {
+func CreateSIPCluster(name string, namespace string, controlPlanes int, workers int) (
+	*airshipv1.SIPCluster, *corev1.Secret) {
+	sshPrivateKeySecretName := fmt.Sprintf("%s-ssh-private-key", name)
 	return &airshipv1.SIPCluster{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "SIPCluster",
-			APIVersion: "airship.airshipit.org/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: airshipv1.SIPClusterSpec{
-			Nodes: map[airshipv1.VMRole]airshipv1.NodeSet{
-				airshipv1.VMControlPlane: {
-					VMFlavor:   "vino.airshipit.org/flavor=" + vinoFlavorMap[airshipv1.VMControlPlane],
-					Scheduling: airshipv1.HostAntiAffinity,
-					Count: &airshipv1.VMCount{
-						Active:  controlPlanes,
-						Standby: 0,
-					},
-				},
-				airshipv1.VMWorker: {
-					VMFlavor:   "vino.airshipit.org/flavor=" + vinoFlavorMap[airshipv1.VMWorker],
-					Scheduling: airshipv1.HostAntiAffinity,
-					Count: &airshipv1.VMCount{
-						Active:  workers,
-						Standby: 0,
-					},
-				},
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "SIPCluster",
+				APIVersion: "airship.airshipit.org/v1",
 			},
-			Services: airshipv1.SIPClusterServices{
-				LoadBalancer: []airshipv1.SIPClusterService{
-					{
-						NodeInterface: "eno3",
-						NodePort:      30000,
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+			Spec: airshipv1.SIPClusterSpec{
+				Nodes: map[airshipv1.VMRole]airshipv1.NodeSet{
+					airshipv1.VMControlPlane: {
+						VMFlavor:   "vino.airshipit.org/flavor=" + vinoFlavorMap[airshipv1.VMControlPlane],
+						Scheduling: airshipv1.HostAntiAffinity,
+						Count: &airshipv1.VMCount{
+							Active:  controlPlanes,
+							Standby: 0,
+						},
+					},
+					airshipv1.VMWorker: {
+						VMFlavor:   "vino.airshipit.org/flavor=" + vinoFlavorMap[airshipv1.VMWorker],
+						Scheduling: airshipv1.HostAntiAffinity,
+						Count: &airshipv1.VMCount{
+							Active:  workers,
+							Standby: 0,
+						},
 					},
 				},
-				JumpHost: []airshipv1.JumpHostService{
-					{
-						SIPClusterService: airshipv1.SIPClusterService{
-							Image:         "quay.io/airshipit/jump-host",
-							NodePort:      30001,
+				Services: airshipv1.SIPClusterServices{
+					LoadBalancer: []airshipv1.SIPClusterService{
+						{
 							NodeInterface: "eno3",
+							NodePort:      30000,
 						},
-						SSHAuthorizedKeys: []string{
-							"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCyaozS8kZRw2a1d0O4YXhxtJlDPThqIZilGCsXLbukIFOyMUmMTwQAtwWp5epwU1+5ponC2uBENB6xCCj3cl5Rd43d2/B6HxyAPQGKo6/zKYGAKW2nzYDxSWMl6NUSsiJAyXUA7ZlNZQe0m8PmaferlkQyLLZo3NJpizz6U6ZCtxvj43vEl7NYWnLUEIzGP9zMqltIGnD4vYrU9keVKKXSsp+DkApnbrDapeigeGATCammy2xRrUQDuOvGHsfnQbXr2j0onpTIh0PiLrXLQAPDg8UJRgVB+ThX+neI3rQ320djzRABckNeE6e4Kkwzn+QdZsmA2SDvM9IU7boK1jVQlgUPp7zF5q3hbb8Rx7AadyTarBayUkCgNlrMqth+tmTMWttMqCPxJRGnhhvesAHIl55a28Kzz/2Oqa3J9zwzbyDIwlEXho0eAq3YXEPeBhl34k+7gOt/5Zdbh+yacFoxDh0LrshQgboAijcVVaXPeN0LsHEiVvYIzugwIvCkoFMPWoPj/kEGzPY6FCkVneDA7VoLTCoG8dlrN08Lf05/BGC7Wllm66pTNZC/cKXP+cjpQn1iEuiuPxnPldlMHx9sx2y/BRoft6oT/GzqkNy1NTY/xI+MfmxXnF5kwSbcTbzZQ9fZ8xjh/vmpPBgDNrxOEAT4N6OG7GQIhb9HEhXQCQ== example-key", //nolint
-							"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCwpOyZjZ4gB0OTvmofH3llh6cBCWaEiEmHZWSkDXr8Bih6HcXVOtYMcFi/ZnUVGUBPw3ATNQBZUaVCYKeF+nDfKTJ9hmnlsyHxV2LeMsVg1o15Pb6f+QJuavEqtE6HI7mHyId4Z1quVTJXDWDW8OZEG7M3VktauqAn/e9UJvlL0bGmTFD1XkNcbRsWMRWkQgt2ozqlgrpPtvrg2/+bNucxX++VUjnsn+fGgAT07kbnrZwppGnAfjbYthxhv7GeSD0+Z0Lf1kiKy/bhUqXsZIuexOfF0YrRyUH1KBl8GCX2OLBYvXHyusByqsrOPiROqRdjX5PsK6HSAS0lk0niTt1p example-key-2",                                                                                                                                                                                                                                                                                                                                                       // nolint
+					},
+					JumpHost: []airshipv1.JumpHostService{
+						{
+							SIPClusterService: airshipv1.SIPClusterService{
+								Image:         "quay.io/airshipit/jump-host",
+								NodePort:      30001,
+								NodeInterface: "eno3",
+							},
+							SSHAuthorizedKeys: []string{
+								"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCyaozS8kZRw2a1d0O4YXhxtJlDPThqIZilGCsXLbukIFOyMUmMTwQAtwWp5epwU1+5ponC2uBENB6xCCj3cl5Rd43d2/B6HxyAPQGKo6/zKYGAKW2nzYDxSWMl6NUSsiJAyXUA7ZlNZQe0m8PmaferlkQyLLZo3NJpizz6U6ZCtxvj43vEl7NYWnLUEIzGP9zMqltIGnD4vYrU9keVKKXSsp+DkApnbrDapeigeGATCammy2xRrUQDuOvGHsfnQbXr2j0onpTIh0PiLrXLQAPDg8UJRgVB+ThX+neI3rQ320djzRABckNeE6e4Kkwzn+QdZsmA2SDvM9IU7boK1jVQlgUPp7zF5q3hbb8Rx7AadyTarBayUkCgNlrMqth+tmTMWttMqCPxJRGnhhvesAHIl55a28Kzz/2Oqa3J9zwzbyDIwlEXho0eAq3YXEPeBhl34k+7gOt/5Zdbh+yacFoxDh0LrshQgboAijcVVaXPeN0LsHEiVvYIzugwIvCkoFMPWoPj/kEGzPY6FCkVneDA7VoLTCoG8dlrN08Lf05/BGC7Wllm66pTNZC/cKXP+cjpQn1iEuiuPxnPldlMHx9sx2y/BRoft6oT/GzqkNy1NTY/xI+MfmxXnF5kwSbcTbzZQ9fZ8xjh/vmpPBgDNrxOEAT4N6OG7GQIhb9HEhXQCQ== example-key", //nolint
+								"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCwpOyZjZ4gB0OTvmofH3llh6cBCWaEiEmHZWSkDXr8Bih6HcXVOtYMcFi/ZnUVGUBPw3ATNQBZUaVCYKeF+nDfKTJ9hmnlsyHxV2LeMsVg1o15Pb6f+QJuavEqtE6HI7mHyId4Z1quVTJXDWDW8OZEG7M3VktauqAn/e9UJvlL0bGmTFD1XkNcbRsWMRWkQgt2ozqlgrpPtvrg2/+bNucxX++VUjnsn+fGgAT07kbnrZwppGnAfjbYthxhv7GeSD0+Z0Lf1kiKy/bhUqXsZIuexOfF0YrRyUH1KBl8GCX2OLBYvXHyusByqsrOPiROqRdjX5PsK6HSAS0lk0niTt1p example-key-2",                                                                                                                                                                                                                                                                                                                                                       // nolint
+							},
+							NodeSSHPrivateKeys: sshPrivateKeySecretName,
 						},
 					},
 				},
 			},
+			Status: airshipv1.SIPClusterStatus{},
 		},
-		Status: airshipv1.SIPClusterStatus{},
-	}
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      sshPrivateKeySecretName,
+				Namespace: namespace,
+			},
+			Data: map[string][]byte{
+				"key": []byte(sshPrivateKeyBase64),
+			},
+			Type: corev1.SecretTypeOpaque,
+		}
 }
 
 // CreateBMCAuthSecret creates a K8s Secret that matches the Metal3.io BaremetalHost credential format for use in test

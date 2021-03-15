@@ -120,6 +120,15 @@ spec:
                         type: object
                       nodePort:
                         type: integer
+                      nodeSSHPrivateKeys:
+                        description: NodeSSHPrivateKeys holds the name of a Secret
+                          in the same namespace as the SIPCluster CR, whose key values
+                          each represent an ssh private key that can be used to access
+                          the cluster nodes. They are mounted into the jumphost with
+                          the secret keys serving as file names relative to a common
+                          directory, and then configured as identity files in the
+                          SSH config file of the default user.
+                        type: string
                       sshAuthorizedKeys:
                         items:
                           type: string
@@ -127,6 +136,7 @@ spec:
                     required:
                     - image
                     - nodePort
+                    - nodeSSHPrivateKeys
                     type: object
                   type: array
                 loadBalancer:

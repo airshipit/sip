@@ -94,6 +94,20 @@ BMCOpts
 <td>
 </td>
 </tr>
+<tr>
+<td>
+<code>nodeSSHPrivateKeys</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>NodeSSHPrivateKeys holds the name of a Secret in the same namespace as the SIPCluster CR,
+whose key values each represent an ssh private key that can be used to access the cluster nodes.
+They are mounted into the jumphost with the secret keys serving as file names relative to a common
+directory, and then configured as identity files in the SSH config file of the default user.</p>
+</td>
+</tr>
 </tbody>
 </table>
 </div>
