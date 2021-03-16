@@ -64,9 +64,18 @@ func (ss ServiceSet) Finalize() error {
 func (ss ServiceSet) ServiceList() ([]InfraService, error) {
 	serviceList := []InfraService{}
 	services := ss.sip.Spec.Services
-	for _, svc := range services.LoadBalancer {
+	for _, svc := range services.LoadBalancerControlPlane {
 		serviceList = append(serviceList,
-			newLB(ss.sip.GetName(),
+			newLBControlPlane(ss.sip.GetName(),
+				ss.sip.GetNamespace(),
+				ss.logger,
+				svc,
+				ss.machines,
+				ss.client))
+	}
+	for _, svc := range services.LoadBalancerWorker {
+		serviceList = append(serviceList,
+			newLBWorker(ss.sip.GetName(),
 				ss.sip.GetNamespace(),
 				ss.logger,
 				svc,

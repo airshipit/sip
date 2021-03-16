@@ -53,7 +53,10 @@ type SIPClusterSpec struct {
 // SIPClusterServices defines the services that are deployed when a SIPCluster is provisioned.
 type SIPClusterServices struct {
 	// LoadBalancer defines the sub-cluster load balancer services.
-	LoadBalancer []SIPClusterService `json:"loadBalancer,omitempty"`
+	LoadBalancerControlPlane []LoadBalancerServiceControlPlane `json:"loadBalancerControlPlane,omitempty"`
+	//  LoadBalancer defines the sub-cluster load balancer services.
+	LoadBalancerWorker []LoadBalancerServiceWorker `json:"loadBalancerWorker,omitempty"`
+
 	// Auth defines the sub-cluster authentication services.
 	Auth []SIPClusterService `json:"auth,omitempty"`
 	// JumpHost defines the sub-cluster jump host services.
@@ -62,8 +65,11 @@ type SIPClusterServices struct {
 
 func (s SIPClusterServices) GetAll() []SIPClusterService {
 	all := []SIPClusterService{}
-	for _, s := range s.LoadBalancer {
-		all = append(all, s)
+	for _, s := range s.LoadBalancerControlPlane {
+		all = append(all, s.SIPClusterService)
+	}
+	for _, s := range s.LoadBalancerWorker {
+		all = append(all, s.SIPClusterService)
 	}
 	for _, s := range s.Auth {
 		all = append(all, s)
@@ -84,6 +90,18 @@ type JumpHostService struct {
 	// They are mounted into the jumphost with the secret keys serving as file names relative to a common
 	// directory, and then configured as identity files in the SSH config file of the default user.
 	NodeSSHPrivateKeys string `json:"nodeSSHPrivateKeys"`
+}
+
+/*
+LoadBalancerServiceControlPlane is an infrastructure service type that represents the sub-cluster load balancer service.
+*/
+type LoadBalancerServiceControlPlane struct {
+	SIPClusterService `json:",inline"`
+}
+
+// LoadBalancerServiceWorker is an infrastructure service type that represents the sub-cluster load balancer service.
+type LoadBalancerServiceWorker struct {
+	SIPClusterService `json:",inline"`
 }
 
 // SIPClusterStatus defines the observed state of SIPCluster

@@ -128,14 +128,28 @@ var _ = Describe("MachineList", func() {
 
 		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
-			LoadBalancer: []airshipv1.SIPClusterService{
+			LoadBalancerControlPlane: []airshipv1.LoadBalancerServiceControlPlane{
 				{
-					Image: "haproxy:latest",
-					NodeLabels: map[string]string{
-						"test": "true",
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodePort:      30001,
+						NodeInterface: "oam-ipv4",
 					},
-					NodePort:      30000,
-					NodeInterface: "oam-ipv4",
+				},
+			},
+			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
+				{
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodePort:      30002,
+						NodeInterface: "oam-ipv4",
+					},
 				},
 			},
 		}
@@ -179,14 +193,28 @@ var _ = Describe("MachineList", func() {
 
 		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
-			LoadBalancer: []airshipv1.SIPClusterService{
+			LoadBalancerControlPlane: []airshipv1.LoadBalancerServiceControlPlane{
 				{
-					Image: "haproxy:latest",
-					NodeLabels: map[string]string{
-						"test": "true",
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodePort:      30001,
+						NodeInterface: "oam-ipv4",
 					},
-					NodePort:      30000,
-					NodeInterface: "oam-ipv4",
+				},
+			},
+			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
+				{
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodePort:      30002,
+						NodeInterface: "oam-ipv4",
+					},
 				},
 			},
 		}
@@ -228,14 +256,28 @@ var _ = Describe("MachineList", func() {
 
 		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
-			LoadBalancer: []airshipv1.SIPClusterService{
+			LoadBalancerControlPlane: []airshipv1.LoadBalancerServiceControlPlane{
 				{
-					Image: "haproxy:latest",
-					NodeLabels: map[string]string{
-						"test": "true",
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodePort:      30001,
+						NodeInterface: "oam-ipv4",
 					},
-					NodePort:      30000,
-					NodeInterface: "oam-ipv4",
+				},
+			},
+			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
+				{
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodePort:      30002,
+						NodeInterface: "oam-ipv4",
+					},
 				},
 			},
 		}
@@ -281,14 +323,28 @@ var _ = Describe("MachineList", func() {
 
 		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
-			LoadBalancer: []airshipv1.SIPClusterService{
+			LoadBalancerControlPlane: []airshipv1.LoadBalancerServiceControlPlane{
 				{
-					Image: "haproxy:latest",
-					NodeLabels: map[string]string{
-						"test": "true",
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodePort:      30001,
+						NodeInterface: "oam-ipv4",
 					},
-					NodePort:      30000,
-					NodeInterface: "oam-ipv4",
+				},
+			},
+			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
+				{
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodePort:      30002,
+						NodeInterface: "oam-ip4",
+					},
 				},
 			},
 		}
@@ -328,14 +384,28 @@ var _ = Describe("MachineList", func() {
 
 		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
-			LoadBalancer: []airshipv1.SIPClusterService{
+			LoadBalancerControlPlane: []airshipv1.LoadBalancerServiceControlPlane{
 				{
-					Image: "haproxy:latest",
-					NodeLabels: map[string]string{
-						"test": "true",
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodePort:      30001,
+						NodeInterface: "oam-ipv4",
 					},
-					NodePort:      30000,
-					NodeInterface: "oam-ipv4",
+				},
+			},
+			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
+				{
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodePort:      30002,
+						NodeInterface: "oam-ipv4",
+					},
 				},
 			},
 		}
@@ -374,14 +444,28 @@ var _ = Describe("MachineList", func() {
 
 		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
 		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
-			LoadBalancer: []airshipv1.SIPClusterService{
+			LoadBalancerControlPlane: []airshipv1.LoadBalancerServiceControlPlane{
 				{
-					Image: "haproxy:latest",
-					NodeLabels: map[string]string{
-						"test": "true",
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodePort:      30001,
+						NodeInterface: "oam-ipv4",
 					},
-					NodePort:      30000,
-					NodeInterface: "oam-ipv4",
+				},
+			},
+			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
+				{
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodePort:      30002,
+						NodeInterface: "oam-ipv4",
+					},
 				},
 			},
 		}

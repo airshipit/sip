@@ -261,17 +261,11 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 					},
 				},
 				Services: airshipv1.SIPClusterServices{
-					LoadBalancer: []airshipv1.SIPClusterService{
-						{
-							NodeInterface: "eno3",
-							NodePort:      30000,
-						},
-					},
 					JumpHost: []airshipv1.JumpHostService{
 						{
 							SIPClusterService: airshipv1.SIPClusterService{
 								Image:         "quay.io/airshipit/jump-host",
-								NodePort:      30001,
+								NodePort:      30000,
 								NodeInterface: "eno3",
 							},
 							SSHAuthorizedKeys: []string{
@@ -279,6 +273,22 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 								"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCwpOyZjZ4gB0OTvmofH3llh6cBCWaEiEmHZWSkDXr8Bih6HcXVOtYMcFi/ZnUVGUBPw3ATNQBZUaVCYKeF+nDfKTJ9hmnlsyHxV2LeMsVg1o15Pb6f+QJuavEqtE6HI7mHyId4Z1quVTJXDWDW8OZEG7M3VktauqAn/e9UJvlL0bGmTFD1XkNcbRsWMRWkQgt2ozqlgrpPtvrg2/+bNucxX++VUjnsn+fGgAT07kbnrZwppGnAfjbYthxhv7GeSD0+Z0Lf1kiKy/bhUqXsZIuexOfF0YrRyUH1KBl8GCX2OLBYvXHyusByqsrOPiROqRdjX5PsK6HSAS0lk0niTt1p example-key-2",                                                                                                                                                                                                                                                                                                                                                       // nolint
 							},
 							NodeSSHPrivateKeys: sshPrivateKeySecretName,
+						},
+					},
+					LoadBalancerControlPlane: []airshipv1.LoadBalancerServiceControlPlane{
+						{
+							SIPClusterService: airshipv1.SIPClusterService{
+								NodeInterface: "eno3",
+								NodePort:      30001,
+							},
+						},
+					},
+					LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
+						{
+							SIPClusterService: airshipv1.SIPClusterService{
+								NodeInterface: "eno3",
+								NodePort:      30002,
+							},
 						},
 					},
 				},
