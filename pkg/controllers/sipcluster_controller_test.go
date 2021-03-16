@@ -70,8 +70,8 @@ var _ = Describe("SIPCluster controller", func() {
 			}
 
 			// Create SIP cluster
-			name := "subcluster-test1"
-			sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 3, 4)
+			clusterName := "subcluster-test1"
+			sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(clusterName, testNamespace, 3, 4)
 			Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
@@ -79,7 +79,7 @@ var _ = Describe("SIPCluster controller", func() {
 			Eventually(func() error {
 				expectedLabels := map[string]string{
 					bmhpkg.SipScheduleLabel: "true",
-					bmhpkg.SipClusterLabel:  testNamespace,
+					bmhpkg.SipClusterLabel:  bmhpkg.GetClusterLabel(*sipCluster),
 				}
 
 				var bmh metal3.BareMetalHost
@@ -107,8 +107,8 @@ var _ = Describe("SIPCluster controller", func() {
 			}
 
 			// Create SIP cluster
-			name := "subcluster-test2"
-			sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 3, 4)
+			clusterName := "subcluster-test2"
+			sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(clusterName, testNamespace, 3, 4)
 			Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
@@ -132,7 +132,7 @@ var _ = Describe("SIPCluster controller", func() {
 			// Validate SIP CR ready condition has been updated
 			var sipCR airshipv1.SIPCluster
 			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      name,
+				Name:      clusterName,
 				Namespace: testNamespace,
 			}, &sipCR)).To(Succeed())
 
@@ -154,8 +154,8 @@ var _ = Describe("SIPCluster controller", func() {
 			}
 
 			// Create SIP cluster
-			name := "subcluster-test4"
-			sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 3, 4)
+			clusterName := "subcluster-test4"
+			sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(clusterName, testNamespace, 3, 4)
 			Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
 			Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
@@ -179,7 +179,7 @@ var _ = Describe("SIPCluster controller", func() {
 			// Validate SIP CR ready condition has been updated
 			var sipCR airshipv1.SIPCluster
 			Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-				Name:      name,
+				Name:      clusterName,
 				Namespace: testNamespace,
 			}, &sipCR)).To(Succeed())
 
@@ -217,8 +217,8 @@ var _ = Describe("SIPCluster controller", func() {
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
 				// Create SIP cluster
-				name := "subcluster-test5"
-				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 1, 2)
+				clusterName := "subcluster-test5"
+				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(clusterName, testNamespace, 1, 2)
 				Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
@@ -242,7 +242,7 @@ var _ = Describe("SIPCluster controller", func() {
 				// Validate SIP CR ready condition has been updated
 				var sipCR airshipv1.SIPCluster
 				Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      name,
+					Name:      clusterName,
 					Namespace: testNamespace,
 				}, &sipCR)).To(Succeed())
 
@@ -279,8 +279,8 @@ var _ = Describe("SIPCluster controller", func() {
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
 				// Create SIP cluster
-				name := "subcluster-test6"
-				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 2, 1)
+				clusterName := "subcluster-test6"
+				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(clusterName, testNamespace, 2, 1)
 				Expect(k8sClient.Create(context.Background(), nodeSSHPrivateKeys)).Should(Succeed())
 				Expect(k8sClient.Create(context.Background(), sipCluster)).Should(Succeed())
 
@@ -304,7 +304,7 @@ var _ = Describe("SIPCluster controller", func() {
 				// Validate SIP CR ready condition has been updated
 				var sipCR airshipv1.SIPCluster
 				Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      name,
+					Name:      clusterName,
 					Namespace: testNamespace,
 				}, &sipCR)).To(Succeed())
 
@@ -340,8 +340,8 @@ var _ = Describe("SIPCluster controller", func() {
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
 				// Create SIP cluster
-				name := "subcluster-test3"
-				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 1, 2)
+				clusterName := "subcluster-test3"
+				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(clusterName, testNamespace, 1, 2)
 
 				controlPlaneSpec := sipCluster.Spec.Nodes[airshipv1.RoleControlPlane]
 				controlPlaneSpec.Scheduling = airshipv1.RackAntiAffinity
@@ -374,7 +374,7 @@ var _ = Describe("SIPCluster controller", func() {
 				// Validate SIP CR ready condition has been updated
 				var sipCR airshipv1.SIPCluster
 				Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      name,
+					Name:      clusterName,
 					Namespace: testNamespace,
 				}, &sipCR)).To(Succeed())
 
@@ -407,8 +407,8 @@ var _ = Describe("SIPCluster controller", func() {
 				Expect(k8sClient.Create(context.Background(), networkData)).Should(Succeed())
 
 				// Create SIP cluster
-				name := "subcluster-test3"
-				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(name, testNamespace, 2, 1)
+				clusterName := "subcluster-test3"
+				sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster(clusterName, testNamespace, 2, 1)
 
 				controlPlaneSpec := sipCluster.Spec.Nodes[airshipv1.RoleControlPlane]
 				controlPlaneSpec.Scheduling = airshipv1.RackAntiAffinity
@@ -441,7 +441,7 @@ var _ = Describe("SIPCluster controller", func() {
 				// Validate SIP CR ready condition has been updated
 				var sipCR airshipv1.SIPCluster
 				Expect(k8sClient.Get(context.Background(), types.NamespacedName{
-					Name:      name,
+					Name:      clusterName,
 					Namespace: testNamespace,
 				}, &sipCR)).To(Succeed())
 
