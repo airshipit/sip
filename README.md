@@ -94,13 +94,20 @@ following environment variables with your organization's information:
 
 ```
 HTTP_PROXY=http://username:password@host:port
-HTTPS_PROXY=http://username:password@host:port
-NO_PROXY="localhost,127.0.0.1,10.96.0.0/12"
+http_proxy=http://username:password@host:port
+HTTPS_PROXY=https://username:password@host:port
+https_proxy=https://username:password@host:port
+NO_PROXY="localhost,127.0.0.1,.internal,10.0.2.15,10.96.0.0/12,192.168.0.0/16"
+no_proxy="localhost,127.0.0.1,.internal,10.0.2.15,10.96.0.0/12,192.168.0.0/16"
 PROXY=http://username:password@host:port
 USE_PROXY=true
 ```
 
-10.96.0.0/12 is the Kubernetes service CIDR.
+- `.internal` is the suffix of the Minikube hostname entry
+- `.svc.cluster.local` is the suffix of DNS records established for Kubernetes services
+- `10.0.2.15` is the Kubernetes API Server IP Address
+- `10.96.0.0/12` is the Kubernetes service IP range
+- `192.168.0.0/16` is the Kubernetes pod IP range
 
 #### Deploy kubernetes using minikube and create k8s cluster
 
