@@ -141,9 +141,6 @@ type MachineList struct {
 }
 
 func (ml *MachineList) hasMachine(bmh metal3.BareMetalHost) bool {
-	if &bmh == nil {
-		return false
-	}
 	return ml.Machines[bmh.ObjectMeta.Name] != nil
 }
 
@@ -696,10 +693,7 @@ func (ml *MachineList) getMangementCredentials(machine *Machine, secret *corev1.
 	return nil
 }
 
-/*
-  ScheduleSet is a simple object to encapsulate data that
-  helps our poor man scheduler
-*/
+// ScheduleSet is a simple object to encapsulate data that helps our poor man scheduler
 type ScheduleSet struct {
 	// Defines if this set is actually active
 	active bool
@@ -712,11 +706,9 @@ type ScheduleSet struct {
 func (ss *ScheduleSet) Active() bool {
 	return ss.active
 }
+
 func (ss *ScheduleSet) Exists(value string) bool {
-	if len(ss.set) > 0 {
-		return ss.set[value]
-	}
-	return false
+	return ss.set[value]
 }
 
 func (ss *ScheduleSet) Add(labelValue string) {
@@ -736,15 +728,10 @@ func (ss *ScheduleSet) GetLabels(labels labels.Labels, labelSelector *metav1.Lab
 	return labels.Get(ss.labelName), match, err
 }
 
-/*
-ApplyLabel : marks the appropriate machine labels to the BMH's that
-have benn selected by the scheduling.
-This is done only after the Infrastcuture Services have been  deployed
-*/
+// ApplyLabels adds the appropriate labels to the BMHs that are ready to be scheduled
 func (ml *MachineList) ApplyLabels(sip airshipv1.SIPCluster, c client.Client) error {
-	fmt.Printf("ApplyLabels  %s size:%d\n", ml.String(), len(ml.Machines))
+	fmt.Printf("ApplyLabels %s size:%d\n", ml.String(), len(ml.Machines))
 	for _, machine := range ml.Machines {
-		// Only Add LAbels to Machines that are not amrked to be scheduled
 		if machine.ScheduleStatus == ToBeScheduled {
 			bmh := &machine.BMH
 			fmt.Printf("ApplyLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
@@ -767,7 +754,7 @@ func (ml *MachineList) ApplyLabels(sip airshipv1.SIPCluster, c client.Client) er
 
 // RemoveLabels removes sip related labels
 func (ml *MachineList) RemoveLabels(c client.Client) error {
-	fmt.Printf("ApplyLabels  %s size:%d\n", ml.String(), len(ml.Machines))
+	fmt.Printf("RemoveLabels %s size:%d\n", ml.String(), len(ml.Machines))
 	for _, machine := range ml.Machines {
 		bmh := &machine.BMH
 		fmt.Printf("RemoveLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
