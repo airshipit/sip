@@ -22,6 +22,8 @@ const (
 var _ = Describe("MachineList", func() {
 	var machineList *MachineList
 	var err error
+	unscheduledSelector := testutil.UnscheduledSelector()
+
 	BeforeEach(func() {
 		nodes := map[string]*Machine{}
 		for n := 0; n < numNodes; n++ {
@@ -55,8 +57,8 @@ var _ = Describe("MachineList", func() {
 
 	It("Should produce a list of unscheduled BMH objects", func() {
 		// "Schedule" two nodes
-		machineList.Machines["node00"].BMH.Labels[SipScheduleLabel] = "true"
-		machineList.Machines["node01"].BMH.Labels[SipScheduleLabel] = "true"
+		machineList.Machines["node00"].BMH.Labels[SipClusterLabel] = "subcluster-1"
+		machineList.Machines["node01"].BMH.Labels[SipClusterLabel] = "subcluster-1"
 		scheduledNodes := []metal3.BareMetalHost{
 			machineList.Machines["node00"].BMH,
 			machineList.Machines["node01"].BMH,
@@ -75,7 +77,7 @@ var _ = Describe("MachineList", func() {
 		for _, bmh := range bmhList.Items {
 			for _, scheduled := range scheduledNodes {
 				Expect(bmh).ToNot(Equal(scheduled))
-				Expect(bmh.Labels[SipScheduleLabel]).To(Equal("false"))
+				Expect(testutil.CompareLabels(unscheduledSelector, bmh.Labels)).To(Succeed())
 			}
 		}
 	})
@@ -84,7 +86,7 @@ var _ = Describe("MachineList", func() {
 		// "Schedule" all nodes
 		var objs []runtime.Object
 		for _, machine := range machineList.Machines {
-			machine.BMH.Labels[SipScheduleLabel] = "true"
+			machine.BMH.Labels[SipClusterLabel] = "subcluster-1"
 			objs = append(objs, &machine.BMH)
 		}
 

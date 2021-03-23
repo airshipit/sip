@@ -4,7 +4,6 @@ metadata:
   name: rdm9r006o002
   labels:
     vino.airshipit.org/flavor: control-plane
-    sip.airshipit.org/scheduled: "false"
     sip.airshipit.org/rack: r006
     sip.airshipit.org/server: rdm9r006o002
 spec:
@@ -26,7 +25,6 @@ metadata:
   name: rdm9r006o001
   labels:
     vino.airshipit.org/flavor: control-plane
-    sip.airshipit.org/scheduled: "false"
     sip.airshipit.org/rack: r006
     sip.airshipit.org/server: rdm9r006o001
 spec:
@@ -48,7 +46,6 @@ metadata:
   name: rdm9r007o001
   labels:
     vino.airshipit.org/flavor: control-plane
-    sip.airshipit.org/scheduled: "false"
     sip.airshipit.org/rack: r007
     sip.airshipit.org/server: rdm9r007o001
 spec:
@@ -70,7 +67,6 @@ metadata:
   name: rdm9r007o002
   labels:
     vino.airshipit.org/flavor: worker
-    sip.airshipit.org/scheduled: "false"
     sip.airshipit.org/rack: r007
     sip.airshipit.org/server: rdm9r007o002
 spec:
@@ -92,7 +88,6 @@ metadata:
   name: rdm9r008o002
   labels:
     vino.airshipit.org/flavor: worker
-    sip.airshipit.org/scheduled: "false"
     sip.airshipit.org/rack: r008
     sip.airshipit.org/server: rdm9r008o002
 spec:
@@ -114,7 +109,6 @@ metadata:
   name: rdm9r009o002
   labels:
     vino.airshipit.org/flavor: worker
-    sip.airshipit.org/scheduled: "false"
     sip.airshipit.org/rack: r009
     sip.airshipit.org/server: rdm9r009o002
 spec:

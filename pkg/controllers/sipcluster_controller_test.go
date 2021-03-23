@@ -26,6 +26,7 @@ import (
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -39,6 +40,8 @@ const (
 )
 
 var _ = Describe("SIPCluster controller", func() {
+
+	unscheduledSelector := testutil.UnscheduledSelector()
 
 	AfterEach(func() {
 		opts := []client.DeleteAllOfOption{client.InNamespace(testNamespace)}
@@ -77,10 +80,8 @@ var _ = Describe("SIPCluster controller", func() {
 
 			// Poll BMHs until SIP has scheduled them to the SIP cluster
 			Eventually(func() error {
-				expectedLabels := map[string]string{
-					bmhpkg.SipScheduleLabel: "true",
-					bmhpkg.SipClusterLabel:  bmhpkg.GetClusterLabel(*sipCluster),
-				}
+				expectedLabels := labels.SelectorFromSet(
+					map[string]string{bmhpkg.SipClusterLabel: bmhpkg.GetClusterLabel(*sipCluster)})
 
 				var bmh metal3.BareMetalHost
 				for node := range nodes {
@@ -90,7 +91,7 @@ var _ = Describe("SIPCluster controller", func() {
 					}, &bmh)).Should(Succeed())
 				}
 
-				return compareLabels(expectedLabels, bmh.GetLabels())
+				return testutil.CompareLabels(expectedLabels, bmh.GetLabels())
 			}, 30, 5).Should(Succeed())
 		})
 
@@ -114,9 +115,7 @@ var _ = Describe("SIPCluster controller", func() {
 
 			// Poll BMHs and validate they are not scheduled
 			Consistently(func() error {
-				expectedLabels := map[string]string{
-					bmhpkg.SipScheduleLabel: "false",
-				}
+				expectedLabels := unscheduledSelector
 
 				var bmh metal3.BareMetalHost
 				for node := range nodes {
@@ -126,7 +125,7 @@ var _ = Describe("SIPCluster controller", func() {
 					}, &bmh)).Should(Succeed())
 				}
 
-				return compareLabels(expectedLabels, bmh.GetLabels())
+				return testutil.CompareLabels(expectedLabels, bmh.GetLabels())
 			}, 30, 5).Should(Succeed())
 
 			// Validate SIP CR ready condition has been updated
@@ -161,9 +160,7 @@ var _ = Describe("SIPCluster controller", func() {
 
 			// Poll BMHs and validate they are not scheduled
 			Consistently(func() error {
-				expectedLabels := map[string]string{
-					bmhpkg.SipScheduleLabel: "false",
-				}
+				expectedLabels := unscheduledSelector
 
 				var bmh metal3.BareMetalHost
 				for node := range nodes {
@@ -173,7 +170,7 @@ var _ = Describe("SIPCluster controller", func() {
 					}, &bmh)).Should(Succeed())
 				}
 
-				return compareLabels(expectedLabels, bmh.GetLabels())
+				return testutil.CompareLabels(expectedLabels, bmh.GetLabels())
 			}, 30, 5).Should(Succeed())
 
 			// Validate SIP CR ready condition has been updated
@@ -224,9 +221,7 @@ var _ = Describe("SIPCluster controller", func() {
 
 				// Poll BMHs and validate they are not scheduled
 				Consistently(func() error {
-					expectedLabels := map[string]string{
-						bmhpkg.SipScheduleLabel: "false",
-					}
+					expectedLabels := unscheduledSelector
 
 					var bmh metal3.BareMetalHost
 					for node := range nodes {
@@ -236,7 +231,7 @@ var _ = Describe("SIPCluster controller", func() {
 						}, &bmh)).Should(Succeed())
 					}
 
-					return compareLabels(expectedLabels, bmh.GetLabels())
+					return testutil.CompareLabels(expectedLabels, bmh.GetLabels())
 				}, 30, 5).Should(Succeed())
 
 				// Validate SIP CR ready condition has been updated
@@ -286,9 +281,7 @@ var _ = Describe("SIPCluster controller", func() {
 
 				// Poll BMHs and validate they are not scheduled
 				Consistently(func() error {
-					expectedLabels := map[string]string{
-						bmhpkg.SipScheduleLabel: "false",
-					}
+					expectedLabels := unscheduledSelector
 
 					var bmh metal3.BareMetalHost
 					for node := range nodes {
@@ -298,7 +291,7 @@ var _ = Describe("SIPCluster controller", func() {
 						}, &bmh)).Should(Succeed())
 					}
 
-					return compareLabels(expectedLabels, bmh.GetLabels())
+					return testutil.CompareLabels(expectedLabels, bmh.GetLabels())
 				}, 30, 5).Should(Succeed())
 
 				// Validate SIP CR ready condition has been updated
@@ -356,9 +349,7 @@ var _ = Describe("SIPCluster controller", func() {
 
 				// Poll BMHs and validate they are not scheduled
 				Consistently(func() error {
-					expectedLabels := map[string]string{
-						bmhpkg.SipScheduleLabel: "false",
-					}
+					expectedLabels := unscheduledSelector
 
 					var bmh metal3.BareMetalHost
 					for node := range nodes {
@@ -368,7 +359,7 @@ var _ = Describe("SIPCluster controller", func() {
 						}, &bmh)).Should(Succeed())
 					}
 
-					return compareLabels(expectedLabels, bmh.GetLabels())
+					return testutil.CompareLabels(expectedLabels, bmh.GetLabels())
 				}, 30, 5).Should(Succeed())
 
 				// Validate SIP CR ready condition has been updated
@@ -423,9 +414,7 @@ var _ = Describe("SIPCluster controller", func() {
 
 				// Poll BMHs and validate they are not scheduled
 				Consistently(func() error {
-					expectedLabels := map[string]string{
-						bmhpkg.SipScheduleLabel: "false",
-					}
+					expectedLabels := unscheduledSelector
 
 					var bmh metal3.BareMetalHost
 					for node := range nodes {
@@ -435,7 +424,7 @@ var _ = Describe("SIPCluster controller", func() {
 						}, &bmh)).Should(Succeed())
 					}
 
-					return compareLabels(expectedLabels, bmh.GetLabels())
+					return testutil.CompareLabels(expectedLabels, bmh.GetLabels())
 				}, 30, 5).Should(Succeed())
 
 				// Validate SIP CR ready condition has been updated
@@ -452,19 +441,3 @@ var _ = Describe("SIPCluster controller", func() {
 		})
 	})
 })
-
-func compareLabels(expected map[string]string, actual map[string]string) error {
-	for k, v := range expected {
-		value, exists := actual[k]
-		if !exists {
-			return fmt.Errorf("label %s=%s missing. Has labels %v", k, v, actual)
-		}
-
-		if value != v {
-			return fmt.Errorf("label %s=%s does not match expected label %s=%s. Has labels %v", k, value, k,
-				v, actual)
-		}
-	}
-
-	return nil
-}
