@@ -83,7 +83,13 @@ func (ss ServiceSet) ServiceList() ([]InfraService, error) {
 				ss.client))
 	}
 	for _, svc := range services.Auth {
-		return nil, ErrInfraServiceNotSupported{svc}
+		serviceList = append(serviceList,
+			newAuth(ss.sip.GetName(),
+				ss.sip.GetNamespace(),
+				ss.logger,
+				svc,
+				ss.machines,
+				ss.client))
 	}
 	for _, svc := range services.JumpHost {
 		serviceList = append(serviceList,

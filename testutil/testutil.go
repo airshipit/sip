@@ -291,6 +291,7 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 							},
 						},
 					},
+					//TODO: Add unit test cases for Auth, https://github.com/airshipit/sip/issues/14
 				},
 			},
 			Status: airshipv1.SIPClusterStatus{},

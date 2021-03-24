@@ -56,7 +56,8 @@ sudo -E minikube start \
   --extra-config=controller-manager.allocate-node-cidrs=true \
   --extra-config=controller-manager.cluster-cidr=192.168.0.0/16 \
   --extra-config=kubeadm.pod-network-cidr=192.168.0.0/16 \
-  --extra-config=kubelet.resolv-conf=/run/systemd/resolve/resolv.conf
+  --extra-config=kubelet.resolv-conf=/run/systemd/resolve/resolv.conf \
+  --apiserver-names="$(hostname -f),dex.site.local"
 
 kubectl get nodes -o wide
 kubectl get pod -A

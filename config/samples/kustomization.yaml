@@ -1,5 +1,3 @@
 resources:
-- airship_v1beta1_sipcluster.yaml
-- bmh
-- ssh_private_keys_secret.yaml
-namespace: sipcluster-system
+- sipcluster
+- self-sign-issuer

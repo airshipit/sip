@@ -1,0 +1,3 @@
+resources:
+- self_signing_issuer.yaml
+namespace: cert-manager

@@ -9,6 +9,52 @@
 <p>Package v1 contains API Schema definitions for the airship v1 API group</p>
 Resource Types:
 <ul class="simple"></ul>
+<h3 id="airship.airshipit.org/v1.AuthService">AuthService
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#airship.airshipit.org/v1.SIPClusterServices">SIPClusterServices</a>)
+</p>
+<p>AuthService is an infrastructure service type that represents the sub-cluster authentication service.</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>SIPClusterService</code><br>
+<em>
+<a href="#airship.airshipit.org/v1.SIPClusterService">
+SIPClusterService
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>SIPClusterService</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>caSecret</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <h3 id="airship.airshipit.org/v1.BMCOpts">BMCOpts
 </h3>
 <p>
@@ -388,10 +434,10 @@ SIPClusterStatus
 </h3>
 <p>
 (<em>Appears on:</em>
+<a href="#airship.airshipit.org/v1.AuthService">AuthService</a>, 
 <a href="#airship.airshipit.org/v1.JumpHostService">JumpHostService</a>, 
 <a href="#airship.airshipit.org/v1.LoadBalancerServiceControlPlane">LoadBalancerServiceControlPlane</a>, 
-<a href="#airship.airshipit.org/v1.LoadBalancerServiceWorker">LoadBalancerServiceWorker</a>, 
-<a href="#airship.airshipit.org/v1.SIPClusterServices">SIPClusterServices</a>)
+<a href="#airship.airshipit.org/v1.LoadBalancerServiceWorker">LoadBalancerServiceWorker</a>)
 </p>
 <div class="md-typeset__scrollwrap">
 <div class="md-typeset__table">
@@ -504,8 +550,8 @@ string
 <td>
 <code>auth</code><br>
 <em>
-<a href="#airship.airshipit.org/v1.SIPClusterService">
-[]SIPClusterService
+<a href="#airship.airshipit.org/v1.AuthService">
+[]AuthService
 </a>
 </em>
 </td>

@@ -22,15 +22,11 @@ spec:
         active: 1
         standby: 1 # Slew for upgrades
   services:
-    # NOTE: The auth service has not yet been implemented.
-    # auth:
-    #   - image: sshpod:foo
-    #     # NOTE: nodeLabels not yet implemented.
-    #     nodeLabels:
-    #       kubernetes.io/os: linux
-    #     nodePort: 7023
-    #     nodeInterfaceId: oam-ipv4
-    #     clusterIP: 1.2.3.4 # IP of the base cluster VIP
+    auth:
+      - image: quay.io/dexidp/dex:v2.20.0
+        nodeInterfaceId: oam-ipv4
+        nodePort: 30556
+        caSecret: dex-ca-key-pair
     jumpHost:
       - image: quay.io/airshipit/jump-host:latest
         # NOTE: nodeLabels not yet implemented.

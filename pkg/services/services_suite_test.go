@@ -7,6 +7,7 @@ import (
 	airshipv1 "sipcluster/pkg/api/v1"
 	"sipcluster/pkg/controllers"
 
+	v1alpha3 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha3"
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -38,8 +39,9 @@ var _ = BeforeSuite(func(done Done) {
 		CRDInstallOptions: envtest.CRDInstallOptions{
 			ErrorIfPathMissing: true,
 			Paths: []string{
-				filepath.Join("..", "..", "config", "crd", "bases"),          // SIP CRD
-				filepath.Join("..", "..", "config", "samples", "bmh", "crd"), // BMH CRD
+				filepath.Join("..", "..", "config", "crd", "bases"),                        // SIP CRD
+				filepath.Join("..", "..", "config", "samples", "sipcluster", "bmh", "crd"), // BMH CRD
+				filepath.Join("..", "..", "config", "samples", "cert-manager", "crd"),      // Cert-Manager CRD
 			},
 		},
 	}
@@ -53,6 +55,9 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = metal3.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = v1alpha3.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{

@@ -121,7 +121,6 @@ var _ = Describe("Service Set", func() {
 
 		It("Does not deploy a Jump Host when an invalid SSH key is provided", func() {
 			sip, _ := testutil.CreateSIPCluster("default", "default", 1, 1)
-			sip.Spec.Services.Auth = []airshipv1.SIPClusterService{}
 			sip.Spec.Services.LoadBalancerControlPlane = []airshipv1.LoadBalancerServiceControlPlane{}
 			sip.Spec.Services.LoadBalancerWorker = []airshipv1.LoadBalancerServiceWorker{}
 			sip.Spec.Services.JumpHost[0].SSHAuthorizedKeys = []string{
@@ -253,6 +252,5 @@ func testDeployment(sip *airshipv1.SIPCluster, machineList bmh.MachineList) erro
 			}
 		}
 	}
-
 	return nil
 }

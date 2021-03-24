@@ -16,3 +16,10 @@ until [[ $(kubectl -n sipcluster-system get pod -l control-plane=controller-mana
 done
 kubectl wait -n sipcluster-system pod -l control-plane=controller-manager --for=condition=ready --timeout=240s
 kubectl get po -A
+# Install Cert-Manager
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.1.1/cert-manager.yaml
+kubectl wait --timeout=180s --for=condition=Established crd/clusterissuers.cert-manager.io \
+  crd/issuers.cert-manager.io \
+  crd/certificaterequests.cert-manager.io \
+  crd/certificates.cert-manager.io
+kubectl rollout status --timeout=180s -n cert-manager deployment/cert-manager

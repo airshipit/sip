@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1alpha3
+kind: Issuer
+metadata:
+  name: selfsigned-cert-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1alpha3
+kind: Certificate
+metadata:
+  name: selfsigned-cert
+spec:
+  dnsNames:
+    - dex.site.local
+  secretName: dex-ca-key-pair
+  isCA: true
+  issuerRef:
+    name: selfsigned-cert-issuer
+    kind: Issuer

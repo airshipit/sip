@@ -58,7 +58,7 @@ type SIPClusterServices struct {
 	LoadBalancerWorker []LoadBalancerServiceWorker `json:"loadBalancerWorker,omitempty"`
 
 	// Auth defines the sub-cluster authentication services.
-	Auth []SIPClusterService `json:"auth,omitempty"`
+	Auth []AuthService `json:"auth,omitempty"`
 	// JumpHost defines the sub-cluster jump host services.
 	JumpHost []JumpHostService `json:"jumpHost,omitempty"`
 }
@@ -72,7 +72,7 @@ func (s SIPClusterServices) GetAll() []SIPClusterService {
 		all = append(all, s.SIPClusterService)
 	}
 	for _, s := range s.Auth {
-		all = append(all, s)
+		all = append(all, s.SIPClusterService)
 	}
 	for _, s := range s.JumpHost {
 		all = append(all, s.SIPClusterService)
@@ -102,6 +102,12 @@ type LoadBalancerServiceControlPlane struct {
 // LoadBalancerServiceWorker is an infrastructure service type that represents the sub-cluster load balancer service.
 type LoadBalancerServiceWorker struct {
 	SIPClusterService `json:",inline"`
+}
+
+// AuthService is an infrastructure service type that represents the sub-cluster authentication service.
+type AuthService struct {
+	SIPClusterService `json:",inline"`
+	CaSecret          string `json:"caSecret,omitempty"`
 }
 
 // SIPClusterStatus defines the observed state of SIPCluster
