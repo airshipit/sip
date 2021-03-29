@@ -8,7 +8,6 @@
         pkg:
           - debconf
           - make
-          - wget
           - snapd
       become: yes
     - name:  Set up requirements for kubernetes
