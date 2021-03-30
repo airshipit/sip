@@ -80,8 +80,7 @@ var _ = Describe("SIPCluster controller", func() {
 
 			// Poll BMHs until SIP has scheduled them to the SIP cluster
 			Eventually(func() error {
-				expectedLabels := labels.SelectorFromSet(
-					map[string]string{bmhpkg.SipClusterLabel: bmhpkg.GetClusterLabel(*sipCluster)})
+				expectedLabels := labels.SelectorFromSet(bmhpkg.GetClusterLabels(*sipCluster))
 
 				var bmh metal3.BareMetalHost
 				for node := range nodes {

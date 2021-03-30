@@ -57,8 +57,10 @@ var _ = Describe("MachineList", func() {
 
 	It("Should produce a list of unscheduled BMH objects", func() {
 		// "Schedule" two nodes
-		machineList.Machines["node00"].BMH.Labels[SipClusterLabel] = "subcluster-1"
-		machineList.Machines["node01"].BMH.Labels[SipClusterLabel] = "subcluster-1"
+		machineList.Machines["node00"].BMH.Labels[SipClusterNamespaceLabel] = "default"
+		machineList.Machines["node00"].BMH.Labels[SipClusterNameLabel] = "subcluster-1"
+		machineList.Machines["node01"].BMH.Labels[SipClusterNamespaceLabel] = "default"
+		machineList.Machines["node01"].BMH.Labels[SipClusterNameLabel] = "subcluster-1"
 		scheduledNodes := []metal3.BareMetalHost{
 			machineList.Machines["node00"].BMH,
 			machineList.Machines["node01"].BMH,
@@ -86,7 +88,8 @@ var _ = Describe("MachineList", func() {
 		// "Schedule" all nodes
 		var objs []runtime.Object
 		for _, machine := range machineList.Machines {
-			machine.BMH.Labels[SipClusterLabel] = "subcluster-1"
+			machine.BMH.Labels[SipClusterNamespaceLabel] = "default"
+			machine.BMH.Labels[SipClusterNameLabel] = "subcluster-1"
 			objs = append(objs, &machine.BMH)
 		}
 

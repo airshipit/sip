@@ -62,9 +62,9 @@ const (
 const (
 	BaseAirshipSelector = "sip.airshipit.org"
 
-	// This label is applied to all BMHs scheduled to a given SIPCluster.
-	SipClusterLabelName = "cluster"
-	SipClusterLabel     = BaseAirshipSelector + "/" + SipClusterLabelName
+	// These labels are applied to all BMHs scheduled to a given SIPCluster.
+	SipClusterNamespaceLabel = BaseAirshipSelector + "/" + "cluster-namespace"
+	SipClusterNameLabel      = BaseAirshipSelector + "/" + "cluster-name"
 
 	SipNodeTypeLabelName = "node-type"
 	SipNodeTypeLabel     = BaseAirshipSelector + "/" + SipNodeTypeLabelName
@@ -188,7 +188,7 @@ func (ml *MachineList) getBMHs(c client.Client) (*metal3.BareMetalHostList, erro
 
 	// Select BMH not yet labeled as scheduled by SIP
 	unscheduledSelector := labels.NewSelector()
-	r, err := labels.NewRequirement(SipClusterLabel, selection.DoesNotExist, nil)
+	r, err := labels.NewRequirement(SipClusterNameLabel, selection.DoesNotExist, nil)
 	if err == nil {
 		unscheduledSelector = unscheduledSelector.Add(*r)
 	}
@@ -219,7 +219,7 @@ func (ml *MachineList) identifyNodes(sip airshipv1.SIPCluster,
 		logger.Info("Getting host constraints")
 		scheduleSetMap := ml.initScheduleMaps(nodeRole, nodeCfg.TopologyKey)
 		logger.Info("Matching hosts against constraints")
-		err := ml.scheduleIt(nodeRole, nodeCfg, bmhList, scheduleSetMap, c, GetClusterLabel(sip))
+		err := ml.scheduleIt(nodeRole, nodeCfg, bmhList, scheduleSetMap, c, sip)
 		if err != nil {
 			return err
 		}
@@ -240,13 +240,11 @@ func (ml *MachineList) initScheduleMaps(role airshipv1.BMHRole,
 }
 
 func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.BMHRole,
-	c client.Client, clusterName string) int {
+	c client.Client, sip airshipv1.SIPCluster) int {
 	bmhList := &metal3.BareMetalHostList{}
 
-	scheduleLabels := map[string]string{
-		SipClusterLabel:  clusterName,
-		SipNodeTypeLabel: string(nodeRole),
-	}
+	scheduleLabels := GetClusterLabels(sip)
+	scheduleLabels[SipNodeTypeLabel] = string(nodeRole)
 
 	logger := ml.Log.WithValues("role", nodeRole)
 	logger.Info("Getting list of BaremetalHost already scheduled for SIP cluster from kubernetes")
@@ -284,14 +282,14 @@ func (ml *MachineList) countScheduledAndTobeScheduled(nodeRole airshipv1.BMHRole
 
 func (ml *MachineList) scheduleIt(nodeRole airshipv1.BMHRole, nodeCfg airshipv1.NodeSet,
 	bmList *metal3.BareMetalHostList, scheduleSet *ScheduleSet,
-	c client.Client, clusterName string) error {
+	c client.Client, sip airshipv1.SIPCluster) error {
 	logger := ml.Log.WithValues("role", nodeRole)
 	validBmh := true
 	// Count the expectations stated in the CR
 	// 	Reduce from the list of BMH's already scheduled and  labeled with the Cluster Name
 	// 	Reduce from the number of Machines I have identified  already to be Labeled
 	totalNodes := nodeCfg.Count.Active + nodeCfg.Count.Standby
-	nodeTarget := totalNodes - ml.countScheduledAndTobeScheduled(nodeRole, c, clusterName)
+	nodeTarget := totalNodes - ml.countScheduledAndTobeScheduled(nodeRole, c, sip)
 
 	logger.Info("BMH count that need to be scheduled for SIP cluster discouting nodes ready to be scheduled",
 		"BMH count to be scheduled", nodeTarget)
@@ -704,7 +702,9 @@ func (ml *MachineList) ApplyLabels(sip airshipv1.SIPCluster, c client.Client) er
 		if machine.ScheduleStatus == ToBeScheduled {
 			bmh := &machine.BMH
 			fmt.Printf("ApplyLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
-			bmh.Labels[SipClusterLabel] = GetClusterLabel(sip)
+			for k, v := range GetClusterLabels(sip) {
+				bmh.Labels[k] = v
+			}
 			bmh.Labels[SipNodeTypeLabel] = string(machine.BMHRole)
 
 			// This is bombing when it find 1 error
@@ -726,7 +726,8 @@ func (ml *MachineList) RemoveLabels(c client.Client) error {
 	for _, machine := range ml.Machines {
 		bmh := &machine.BMH
 		fmt.Printf("RemoveLabels bmh.ObjectMeta.Name:%s\n", bmh.ObjectMeta.Name)
-		delete(bmh.Labels, SipClusterLabel)
+		delete(bmh.Labels, SipClusterNamespaceLabel)
+		delete(bmh.Labels, SipClusterNameLabel)
 		delete(bmh.Labels, SipNodeTypeLabel)
 
 		// This is bombing when it find 1 error
@@ -746,10 +747,7 @@ func (ml *MachineList) GetCluster(sip airshipv1.SIPCluster, c client.Client) err
 	ml.init(sip.Spec.Nodes)
 
 	bmhList := &metal3.BareMetalHostList{}
-	scheduleLabels := map[string]string{
-		SipClusterLabel: GetClusterLabel(sip),
-	}
-
+	scheduleLabels := GetClusterLabels(sip)
 	err := c.List(context.Background(), bmhList, client.MatchingLabels(scheduleLabels))
 	if err != nil {
 		return err
@@ -770,6 +768,9 @@ func (ml *MachineList) GetCluster(sip airshipv1.SIPCluster, c client.Client) err
 	return nil
 }
 
-func GetClusterLabel(sip airshipv1.SIPCluster) string {
-	return fmt.Sprintf("%s_%s", sip.GetNamespace(), sip.GetName())
+func GetClusterLabels(sip airshipv1.SIPCluster) map[string]string {
+	return map[string]string{
+		SipClusterNamespaceLabel: sip.GetNamespace(),
+		SipClusterNameLabel:      sip.GetName(),
+	}
 }

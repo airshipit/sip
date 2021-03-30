@@ -21,15 +21,14 @@ var bmhRoleToLabelValue = map[airshipv1.BMHRole]string{
 
 func UnscheduledSelector() labels.Selector {
 	sel := labels.NewSelector()
-	r, err := labels.NewRequirement(sipClusterLabel, selection.DoesNotExist, nil)
+	r, err := labels.NewRequirement(sipClusterNameLabel, selection.DoesNotExist, nil)
 	gomega.Expect(err).Should(gomega.Succeed())
 	return sel.Add(*r)
 }
 
 const (
 	// NOTE(aw442m): These constants have been redefined from the bmh package in order to avoid an import cycle.
-	sipClusterLabelName = "cluster"
-	sipClusterLabel     = "sip.airshipit.org" + "/" + sipClusterLabelName
+	sipClusterNameLabel = "sip.airshipit.org/cluster-name"
 
 	HostLabel = "vino.airshipit.org/host"
 	RackLabel = "vino.airshipit.org/rack"
