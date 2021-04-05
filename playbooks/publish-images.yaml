@@ -48,6 +48,10 @@
             params:
               DOCKER_IMAGE_TAG: latest
               DOCKER_REGISTRY: "{{ image_repo }}"
+              HTTP_PROXY: "{{ proxy.http_proxy }}"
+              HTTPS_PROXY: "{{ proxy.https_proxy }}"
+              NO_PROXY: "{{ proxy.no_proxy }}"
+              DOCKER_IMAGE_PREFIX: "{{ docker_image_prefix }}"
             target: images
 
         - name: Build Images with Commit Tag
@@ -56,6 +60,10 @@
             params:
               DOCKER_IMAGE_TAG: "{{ zuul.newrev }}"
               DOCKER_REGISTRY: "{{ image_repo }}"
+              HTTP_PROXY: "{{ proxy.http_proxy }}"
+              HTTPS_PROXY: "{{ proxy.https_proxy }}"
+              NO_PROXY: "{{ proxy.no_proxy }}"
+              DOCKER_IMAGE_PREFIX: "{{ docker_image_prefix }}"
             target: images
 
         - name: Push SIP Image with Latest Tag
@@ -64,7 +72,8 @@
             params:
               DOCKER_IMAGE_TAG: latest
               DOCKER_REGISTRY: "{{ image_repo }}"
-            target: docker-publish-controller
+              DOCKER_IMAGE_PREFIX: "{{ docker_image_prefix }}"
+            target: docker-push-controller
 
         - name: Push SIP Image with Commit Tag
           make:
@@ -72,7 +81,8 @@
             params:
               DOCKER_IMAGE_TAG: "{{ zuul.newrev }}"
               DOCKER_REGISTRY: "{{ image_repo }}"
-            target: docker-publish-controller
+              DOCKER_IMAGE_PREFIX: "{{ docker_image_prefix }}"
+            target: docker-push-controller
 
         - name: Push Jump Host Image with Latest Tag
           make:
@@ -80,7 +90,8 @@
             params:
               DOCKER_IMAGE_TAG: latest
               DOCKER_REGISTRY: "{{ image_repo }}"
-            target: docker-publish-jump-host
+              DOCKER_IMAGE_PREFIX: "{{ docker_image_prefix }}"
+            target: docker-push-jump-host
 
         - name: Push Jump Host Image with Commit Tag
           make:
@@ -88,4 +99,5 @@
             params:
               DOCKER_IMAGE_TAG: "{{ zuul.newrev }}"
               DOCKER_REGISTRY: "{{ image_repo }}"
-            target: docker-publish-jump-host
+              DOCKER_IMAGE_PREFIX: "{{ docker_image_prefix }}"
+            target: docker-push-jump-host

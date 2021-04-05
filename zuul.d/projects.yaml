@@ -1,4 +1,12 @@
 - project:
+    vars:
+      docker_image_prefix: airshipit
+      image_repo: quay.io
+      proxy:
+        http_proxy: ""
+        https_proxy: ""
+        no_proxy: ""
+
     check:
       jobs:
         - airship-deploy-sip

@@ -26,5 +26,3 @@
     secrets:
       - name: sip_image_repo_credentials
         secret: sip_image_repo_credentials
-    vars:
-      image_repo: quay.io
