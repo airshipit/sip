@@ -20,16 +20,10 @@
         pkg:
           - debconf
           - make
-          - wget
           - snapd
-      become: yes
-
-    - name: Install python3-docker and python3-requests Modules
-      package:
-        name:
           - python3-docker
           - python3-requests
-        state: present
+      become: yes
 
     - name: List Docker Images
       shell: docker image ls
@@ -65,6 +59,9 @@
               NO_PROXY: "{{ proxy.no_proxy }}"
               DOCKER_IMAGE_PREFIX: "{{ docker_image_prefix }}"
             target: images
+
+        - name: List Docker Images
+          shell: docker image ls
 
         - name: Push SIP Image with Latest Tag
           make:

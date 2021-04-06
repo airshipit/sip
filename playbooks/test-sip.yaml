@@ -17,11 +17,9 @@
     - name: Install Dependent Packages
       package:
         name:
-          - docker
           - debconf
           - runc
           - make
-          - wget
           - build-essential
         update_cache: yes
         state: present
@@ -29,20 +27,6 @@
     - name: Run ensure-docker
       include_role:
         name: ensure-docker
-    - name: Ensure docker group exists
-      group:
-        name: docker
-        state: present
-    - name: Add user "{{ ansible_user }}" to docker group
-      become: yes
-      user:
-        name: "{{ ansible_user }}"
-        groups:
-          - docker
-        append: yes
-    - name: Reset ssh connection to add docker group to user
-      meta: reset_connection
-      ignore_errors: true
     - name: Download Extract and install Golang
       become: yes
       unarchive:
@@ -52,7 +36,7 @@
     - name: Download Extract and install Kubebuilder
       become: yes
       shell: |
-        wget  -c https://github.com/kubernetes-sigs/kubebuilder/releases/download/v{{airship_sip.kube_builder.kube_version}}/kubebuilder_{{airship_sip.kube_builder.kube_version}}_linux_amd64.tar.gz -O - | tar -xz -C /usr/local --one-top-level=kubebuilder --strip-components 1
+        curl -L -o - https://github.com/kubernetes-sigs/kubebuilder/releases/download/v{{airship_sip.kube_builder.kube_version}}/kubebuilder_{{airship_sip.kube_builder.kube_version}}_linux_amd64.tar.gz | tar -xz -C /usr/local --one-top-level=kubebuilder --strip-components 1
       args:
         executable: /bin/bash
     - name: Run test suite
