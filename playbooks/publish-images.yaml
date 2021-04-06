@@ -32,8 +32,8 @@
       block:
         - name: Login to Image Registry
           docker_login:
-            username: "{{ airshipctl_image_repo_credentials.username }}"
-            password: "{{ airshipctl_image_repo_credentials.password }}"
+            username: "{{ sip_image_repo_credentials.username }}"
+            password: "{{ sip_image_repo_credentials.password }}"
             registry_url: "{{ image_repo }}"
 
         - name: Build Images with Latest Tag
