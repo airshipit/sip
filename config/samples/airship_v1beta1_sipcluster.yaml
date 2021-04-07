@@ -9,14 +9,16 @@ spec:
   nodes:
     ControlPlane:
       labelSelector:
-        vino.airshipit.org/flavor: control-plane
-        topologyKey: vino.airshipit.org/rack
+        matchLabels:
+          vino.airshipit.org/flavor: control-plane
+      topologyKey: vino.airshipit.org/rack
       count:
         active: 1
         standby: 1
     Worker:
       labelSelector:
-        vino.airshipit.org/flavor: worker
+        matchLabels:
+          vino.airshipit.org/flavor: worker
       topologyKey: vino.airshipit.org/host
       count:
         active: 1
