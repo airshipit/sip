@@ -24,9 +24,9 @@
         update_cache: yes
         state: present
       become: yes
-    - name: Run ensure-docker
+    - name: Run docker-install
       include_role:
-        name: ensure-docker
+        name: docker-install
     - name: Download Extract and install Golang
       become: yes
       unarchive:

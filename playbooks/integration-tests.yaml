@@ -1,8 +1,8 @@
 - hosts: ubuntu-bionic
   tasks:
-    - name: Run ensure-docker
+    - name: Run docker-install
       include_role:
-        name: ensure-docker
+        name: docker-install
     - name: Install Dependent Packages
       apt:
         pkg:
