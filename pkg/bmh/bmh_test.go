@@ -202,7 +202,7 @@ var _ = Describe("MachineList", func() {
 		var objsToApply []runtime.Object
 
 		// Create BMH and NetworkData secret
-		bmh, networkData := testutil.CreateBMH(1, "default", "master", 6)
+		bmh, networkData := testutil.CreateBMH(1, "default", "controlplane", 6)
 		objsToApply = append(objsToApply, bmh)
 		objsToApply = append(objsToApply, networkData)
 
@@ -248,7 +248,7 @@ var _ = Describe("MachineList", func() {
 		var objsToApply []runtime.Object
 
 		// Create BMH and NetworkData secret
-		bmh, networkData := testutil.CreateBMH(1, "default", "master", 6)
+		bmh, networkData := testutil.CreateBMH(1, "default", "controlplane", 6)
 		objsToApply = append(objsToApply, bmh)
 		objsToApply = append(objsToApply, networkData)
 
@@ -301,7 +301,7 @@ var _ = Describe("MachineList", func() {
 		var objsToApply []runtime.Object
 
 		// Create BMH and NetworkData secret
-		bmh, networkData := testutil.CreateBMH(1, "default", "master", 6)
+		bmh, networkData := testutil.CreateBMH(1, "default", "controlplane", 6)
 		objsToApply = append(objsToApply, bmh)
 		objsToApply = append(objsToApply, networkData)
 
@@ -348,7 +348,7 @@ var _ = Describe("MachineList", func() {
 		var objsToApply []runtime.Object
 
 		// Create BMH and NetworkData secret
-		bmh, networkData := testutil.CreateBMH(1, "default", "master", 6)
+		bmh, networkData := testutil.CreateBMH(1, "default", "controlplane", 6)
 		objsToApply = append(objsToApply, bmh)
 		objsToApply = append(objsToApply, networkData)
 
