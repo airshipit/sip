@@ -288,6 +288,10 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 								NodeInterface: "eno3",
 								NodePort:      30002,
 							},
+							NodePortRange: airshipv1.PortRange{
+								Start: 30002,
+								End:   30011,
+							},
 						},
 					},
 				},

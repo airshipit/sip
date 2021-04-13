@@ -54,6 +54,9 @@ spec:
         # nodeLabels:
         #   kubernetes.io/os
         nodePort: 30002
+        nodePortRange:
+          start: 30002
+          end: 30011
         nodeInterfaceId: oam-ipv4
         # NOTE: clusterIP has not yet been implemented.
         # clusterIP: 1.2.3.4 # IP of the base cluster VIP

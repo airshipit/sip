@@ -96,6 +96,17 @@ type LoadBalancerServiceControlPlane struct {
 // LoadBalancerServiceWorker is an infrastructure service type that represents the sub-cluster load balancer service.
 type LoadBalancerServiceWorker struct {
 	SIPClusterService `json:",inline"`
+	// TODO: Remove the inherited single NodePort field via refactoring. It is unused for this
+	// service since we have the below node port range instead.
+	NodePortRange PortRange `json:"nodePortRange"`
+}
+
+// PortRange represents a range of ports.
+type PortRange struct {
+	// Start is the starting port number in the range.
+	Start int `json:"start"`
+	// End is the ending port number in the range.
+	End int `json:"end"`
 }
 
 // SIPClusterStatus defines the observed state of SIPCluster

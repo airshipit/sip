@@ -184,6 +184,20 @@ SIPClusterService
 </p>
 </td>
 </tr>
+<tr>
+<td>
+<code>nodePortRange</code><br>
+<em>
+<a href="#airship.airshipit.org/v1.PortRange">
+PortRange
+</a>
+</em>
+</td>
+<td>
+<p>TODO: Remove the inherited single NodePort field via refactoring. It is unused for this
+service since we have the below node port range instead.</p>
+</td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -293,6 +307,49 @@ NodeCount
 </td>
 <td>
 <p>Count defines the scale expectations for the Nodes</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="airship.airshipit.org/v1.PortRange">PortRange
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#airship.airshipit.org/v1.LoadBalancerServiceWorker">LoadBalancerServiceWorker</a>)
+</p>
+<p>PortRange represents a range of ports.</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>start</code><br>
+<em>
+int
+</em>
+</td>
+<td>
+<p>Start is the starting port number in the range.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>end</code><br>
+<em>
+int
+</em>
+</td>
+<td>
+<p>End is the ending port number in the range.</p>
 </td>
 </tr>
 </tbody>

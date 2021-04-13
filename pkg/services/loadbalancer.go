@@ -16,6 +16,7 @@ package services
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 
 	"html/template"
@@ -112,12 +113,7 @@ func (lb loadBalancer) generateDeploymentAndSecret(instance string, labels map[s
 							Name:            LoadBalancerServiceName,
 							Image:           lb.config.Image,
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Ports: []corev1.ContainerPort{
-								{
-									Name:          "http",
-									ContainerPort: 6443,
-								},
-							},
+							Ports:           lb.getContainerPorts(),
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      ConfigSecretName,
@@ -144,10 +140,21 @@ func (lb loadBalancer) generateDeploymentAndSecret(instance string, labels map[s
 	return deployment, secret, nil
 }
 
+func (lb loadBalancer) getContainerPorts() []corev1.ContainerPort {
+	containerPorts := []corev1.ContainerPort{}
+	for _, servicePort := range lb.servicePorts {
+		containerPorts = append(containerPorts, corev1.ContainerPort{
+			Name:          servicePort.Name,
+			ContainerPort: servicePort.Port,
+		})
+	}
+	return containerPorts
+}
+
 func (lb loadBalancer) generateSecret(instance string) (*corev1.Secret, error) {
 	p := proxy{
-		FrontPort: 6443,
-		Backends:  make([]backend, 0),
+		ContainerPorts: lb.getContainerPorts(),
+		Servers:        make([]server, 0),
 	}
 	for _, machine := range lb.machines.Machines {
 		if machine.BMHRole == lb.bmhRole {
@@ -161,7 +168,7 @@ func (lb loadBalancer) generateSecret(instance string) (*corev1.Secret, error) {
 				)
 				continue
 			}
-			p.Backends = append(p.Backends, backend{IP: ip, Name: machine.BMH.Name, Port: 6443})
+			p.Servers = append(p.Servers, server{IP: ip, Name: machine.BMH.Name})
 		}
 	}
 	secretData, err := lb.generateTemplate(p)
@@ -187,13 +194,7 @@ func (lb loadBalancer) generateService(instance string, labels map[string]string
 			Namespace: lb.sipName.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				{
-					Name:     "http",
-					Port:     6443,
-					NodePort: int32(lb.config.NodePort),
-				},
-			},
+			Ports:    lb.servicePorts,
 			Selector: labels,
 			Type:     corev1.ServiceTypeNodePort,
 		},
@@ -201,24 +202,24 @@ func (lb loadBalancer) generateService(instance string, labels map[string]string
 }
 
 type proxy struct {
-	FrontPort int
-	Backends  []backend
+	ContainerPorts []corev1.ContainerPort
+	Servers        []server
 }
 
-type backend struct {
+type server struct {
 	IP   string
 	Name string
-	Port int
 }
 
 type loadBalancer struct {
-	client   client.Client
-	sipName  types.NamespacedName
-	logger   logr.Logger
-	config   airshipv1.SIPClusterService
-	machines *bmh.MachineList
-	bmhRole  airshipv1.BMHRole
-	template string
+	client       client.Client
+	sipName      types.NamespacedName
+	logger       logr.Logger
+	config       airshipv1.SIPClusterService
+	machines     *bmh.MachineList
+	bmhRole      airshipv1.BMHRole
+	template     string
+	servicePorts []corev1.ServicePort
 }
 
 type loadBalancerControlPlane struct {
@@ -236,17 +237,25 @@ func newLBControlPlane(name, namespace string,
 	config airshipv1.LoadBalancerServiceControlPlane,
 	machines *bmh.MachineList,
 	client client.Client) loadBalancerControlPlane {
+	servicePorts := []corev1.ServicePort{
+		{
+			Name:     "http",
+			Port:     6443,
+			NodePort: int32(config.NodePort),
+		},
+	}
 	return loadBalancerControlPlane{loadBalancer{
 		sipName: types.NamespacedName{
 			Name:      name,
 			Namespace: namespace,
 		},
-		logger:   logger,
-		config:   config.SIPClusterService,
-		machines: machines,
-		client:   client,
-		bmhRole:  airshipv1.RoleControlPlane,
-		template: templateControlPlane,
+		logger:       logger,
+		config:       config.SIPClusterService,
+		machines:     machines,
+		client:       client,
+		bmhRole:      airshipv1.RoleControlPlane,
+		template:     templateControlPlane,
+		servicePorts: servicePorts,
 	},
 		config,
 	}
@@ -257,17 +266,26 @@ func newLBWorker(name, namespace string,
 	config airshipv1.LoadBalancerServiceWorker,
 	machines *bmh.MachineList,
 	client client.Client) loadBalancerWorker {
+	servicePorts := []corev1.ServicePort{}
+	for port := config.NodePortRange.Start; port <= config.NodePortRange.End; port++ {
+		servicePorts = append(servicePorts, corev1.ServicePort{
+			Name:     fmt.Sprintf("port-%d", port),
+			Port:     int32(port),
+			NodePort: int32(port),
+		})
+	}
 	return loadBalancerWorker{loadBalancer{
 		sipName: types.NamespacedName{
 			Name:      name,
 			Namespace: namespace,
 		},
-		logger:   logger,
-		config:   config.SIPClusterService,
-		machines: machines,
-		client:   client,
-		bmhRole:  airshipv1.RoleWorker,
-		template: templateWorker,
+		logger:       logger,
+		config:       config.SIPClusterService,
+		machines:     machines,
+		client:       client,
+		bmhRole:      airshipv1.RoleWorker,
+		template:     templateWorker,
+		servicePorts: servicePorts,
 	},
 		config,
 	}
@@ -318,18 +336,15 @@ defaults
   timeout server          600s
 
 #---------------------------------------------------------------------
-# apiserver frontend which proxys to the masters
-#---------------------------------------------------------------------
-frontend apiserver
-  bind *:{{ .FrontPort }}
+{{- $servers := .Servers }}
+{{- range .ContainerPorts }}
+{{- $containerPort := . }}
+frontend {{ $containerPort.Name }}-frontend
+  bind *:{{ $containerPort.ContainerPort }}
   mode tcp
   option tcplog
-  default_backend kube-apiservers
-
-#---------------------------------------------------------------------
-# round robin balancing for apiserver
-#---------------------------------------------------------------------
-backend kube-apiservers
+  default_backend {{ $containerPort.Name }}-backend
+backend {{ $containerPort.Name }}-backend
   mode tcp
   balance     roundrobin
   option httpchk GET /readyz
@@ -339,56 +354,49 @@ backend kube-apiservers
   # downinter 2s makes it check more frequently to recover from that state sooner.
   # Also changing fall to 4 so that it takes longer (4 failures) for it to take down a backend.
   default-server check check-ssl verify none inter 5s downinter 2s fall 4 on-marked-down shutdown-sessions
-{{- range .Backends }}
-{{- $backEnd := . }}
-  server {{ $backEnd.Name }} {{ $backEnd.IP }}:{{ $backEnd.Port }}
+{{- range $servers }}
+{{- $server := . }}
+  server {{ $server.Name }} {{ $server.IP }}:{{ $containerPort.ContainerPort }}
+{{ end -}}
 {{ end -}}`
 
-// TODO Update this template to work for workload services, as it currently references api server(control plane)
 var templateWorker = `global
-  log stdout format raw local0 notice
-  daemon
+log stdout format raw local0 notice
+daemon
+
 defaults
-  mode                    http
-  log                     global
-  option                  httplog
-  option                  dontlognull
-  retries                 1
-  # Configures the timeout for a connection request to be left pending in a queue
-  # (connection requests are queued once the maximum number of connections is reached).
-  timeout queue           30s
-  # Configures the timeout for a connection to a backend server to be established.
-  timeout connect         30s
-  # Configures the timeout for inactivity during periods when we would expect
-  # the client to be speaking. For usability of 'kubectl exec', the timeout should
-  # be long enough to cover inactivity due to idleness of interactive sessions.
-  timeout client          600s
-  # Configures the timeout for inactivity during periods when we would expect
-  # the server to be speaking. For usability of 'kubectl log -f', the timeout should
-  # be long enough to cover inactivity due to the lack of new logs.
-  timeout server          600s
+mode                    tcp
+log                     global
+option                  tcplog
+option                  dontlognull
+retries                 1
+# Configures the timeout for a connection request to be left pending in a queue
+# (connection requests are queued once the maximum number of connections is reached).
+timeout queue           30s
+# Configures the timeout for a connection to a backend server to be established.
+timeout connect         30s
+# Configures the timeout for inactivity during periods when we would expect
+# the client to be speaking.
+timeout client          600s
+# Configures the timeout for inactivity during periods when we would expect
+# the server to be speaking.
+timeout server          600s
+
 #---------------------------------------------------------------------
-# apiserver frontend which proxys to the masters
-#---------------------------------------------------------------------
-frontend apiserver
-  bind *:{{ .FrontPort }}
-  mode tcp
-  option tcplog
-  default_backend kube-apiservers
-#---------------------------------------------------------------------
-# round robin balancing for apiserver
-#---------------------------------------------------------------------
-backend kube-apiservers
-  mode tcp
+{{- $servers := .Servers }}
+{{- range .ContainerPorts }}
+{{- $containerPort := . }}
+frontend {{ $containerPort.Name }}-frontend
+  bind *:{{ $containerPort.ContainerPort }}
+  default_backend {{ $containerPort.Name }}-backend
+backend {{ $containerPort.Name }}-backend
   balance     roundrobin
-  option httpchk GET /readyz
-  http-check expect status 200
+  option tcp-check
+  tcp-check connect
   option log-health-checks
-  # Observed apiserver returns 500 for around 10s when 2nd cp node joins.
-  # downinter 2s makes it check more frequently to recover from that state sooner.
-  # Also changing fall to 4 so that it takes longer (4 failures) for it to take down a backend.
-  default-server check check-ssl verify none inter 5s downinter 2s fall 4 on-marked-down shutdown-sessions
-{{- range .Backends }}
-{{- $backEnd := . }}
-  server {{ $backEnd.Name }} {{ $backEnd.IP }}:{{ $backEnd.Port }}
+default-server check
+{{- range $servers }}
+{{- $server := . }}
+  server {{ $server.Name }} {{ $server.IP }}:{{ $containerPort.ContainerPort }}
+{{ end -}}
 {{ end -}}`

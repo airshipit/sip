@@ -202,9 +202,26 @@ spec:
                           type: object
                         nodePort:
                           type: integer
+                        nodePortRange:
+                          description: 'TODO: Remove the inherited single NodePort
+                            field via refactoring. It is unused for this service since
+                            we have the below node port range instead.'
+                          properties:
+                            end:
+                              description: End is the ending port number in the range.
+                              type: integer
+                            start:
+                              description: Start is the starting port number in the
+                                range.
+                              type: integer
+                          required:
+                          - end
+                          - start
+                          type: object
                       required:
                       - image
                       - nodePort
+                      - nodePortRange
                       type: object
                     type: array
                 type: object

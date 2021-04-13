@@ -153,6 +153,10 @@ var _ = Describe("MachineList", func() {
 						NodePort:      30002,
 						NodeInterface: "oam-ipv4",
 					},
+					NodePortRange: airshipv1.PortRange{
+						Start: 30002,
+						End:   30011,
+					},
 				},
 			},
 		}
@@ -218,6 +222,10 @@ var _ = Describe("MachineList", func() {
 						NodePort:      30002,
 						NodeInterface: "oam-ipv4",
 					},
+					NodePortRange: airshipv1.PortRange{
+						Start: 30002,
+						End:   30011,
+					},
 				},
 			},
 		}
@@ -280,6 +288,10 @@ var _ = Describe("MachineList", func() {
 						},
 						NodePort:      30002,
 						NodeInterface: "oam-ipv4",
+					},
+					NodePortRange: airshipv1.PortRange{
+						Start: 30002,
+						End:   30011,
 					},
 				},
 			},
@@ -348,6 +360,10 @@ var _ = Describe("MachineList", func() {
 						NodePort:      30002,
 						NodeInterface: "oam-ip4",
 					},
+					NodePortRange: airshipv1.PortRange{
+						Start: 30002,
+						End:   30011,
+					},
 				},
 			},
 		}
@@ -409,6 +425,10 @@ var _ = Describe("MachineList", func() {
 						NodePort:      30002,
 						NodeInterface: "oam-ipv4",
 					},
+					NodePortRange: airshipv1.PortRange{
+						Start: 30002,
+						End:   30011,
+					},
 				},
 			},
 		}
@@ -468,6 +488,10 @@ var _ = Describe("MachineList", func() {
 						},
 						NodePort:      30002,
 						NodeInterface: "oam-ipv4",
+					},
+					NodePortRange: airshipv1.PortRange{
+						Start: 30002,
+						End:   30011,
 					},
 				},
 			},
