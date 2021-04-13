@@ -32,10 +32,25 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+# Proxy options
+HTTP_PROXY          ?= http://proxy.foo.com:8000
+HTTPS_PROXY         ?= https://proxy.foo.com:8000
+NO_PROXY            ?= localhost,127.0.0.1,.svc.cluster.local
+USE_PROXY           ?= false
+
+DOCKER_CMD_FLAGS    ?=
+
 # Docker proxy flags
 DOCKER_PROXY_FLAGS  := --build-arg http_proxy=$(HTTP_PROXY)
 DOCKER_PROXY_FLAGS  += --build-arg https_proxy=$(HTTPS_PROXY)
+DOCKER_PROXY_FLAGS  += --build-arg HTTP_PROXY=$(HTTP_PROXY)
+DOCKER_PROXY_FLAGS  += --build-arg HTTPS_PROXY=$(HTTPS_PROXY)
+DOCKER_PROXY_FLAGS  += --build-arg no_proxy=$(NO_PROXY)
 DOCKER_PROXY_FLAGS  += --build-arg NO_PROXY=$(NO_PROXY)
+
+ifeq ($(USE_PROXY), true)
+DOCKER_CMD_FLAGS += $(DOCKER_PROXY_FLAGS)
+endif
 
 kubernetes:
 	./tools/deployment/install-k8s.sh
@@ -86,14 +101,12 @@ generate: controller-gen
 images: docker-build-controller docker-build-jump-host
 
 # Build the SIP Docker image
-# NOTE: DOCKER_PROXY_FLAGS can be empty.
 docker-build-controller:
-	docker build ${DOCKER_PROXY_FLAGS} --build-arg BASE_IMAGE=${SIP_BASE_IMAGE} . -t ${SIP_IMG}
+	docker build ${DOCKER_CMD_FLAGS} --build-arg BASE_IMAGE=${SIP_BASE_IMAGE} . -t ${SIP_IMG}
 
 # Build the Jump Host Docker image
-# NOTE: DOCKER_PROXY_FLAGS can be empty.
 docker-build-jump-host:
-	docker build ${DOCKER_PROXY_FLAGS} -f images/jump-host/Dockerfile --build-arg BASE_IMAGE=${JUMP_HOST_BASE_IMAGE} . -t ${JUMP_HOST_IMG}
+	docker build ${DOCKER_CMD_FLAGS} -f images/jump-host/Dockerfile --build-arg BASE_IMAGE=${JUMP_HOST_BASE_IMAGE} . -t ${JUMP_HOST_IMG}
 
 docker-push-controller:
 	docker push ${SIP_IMG}

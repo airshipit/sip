@@ -13,7 +13,7 @@
   tasks:
     - name: Setup Docker
       include_role:
-        name: ensure-docker
+        name: docker-install
 
     - name: Install Dependent Packages
       apt:
@@ -42,9 +42,10 @@
             params:
               DOCKER_IMAGE_TAG: latest
               DOCKER_REGISTRY: "{{ image_repo }}"
-              HTTP_PROXY: "{{ proxy.http_proxy }}"
-              HTTPS_PROXY: "{{ proxy.https_proxy }}"
-              NO_PROXY: "{{ proxy.no_proxy }}"
+              USE_PROXY: "{{ proxy.enabled | lower }}"
+              HTTP_PROXY: "{{ proxy.http }}"
+              HTTPS_PROXY: "{{ proxy.https }}"
+              NO_PROXY: "{{ proxy.noproxy }}"
               DOCKER_IMAGE_PREFIX: "{{ docker_image_prefix }}"
             target: images
 
@@ -54,9 +55,10 @@
             params:
               DOCKER_IMAGE_TAG: "{{ zuul.newrev }}"
               DOCKER_REGISTRY: "{{ image_repo }}"
-              HTTP_PROXY: "{{ proxy.http_proxy }}"
-              HTTPS_PROXY: "{{ proxy.https_proxy }}"
-              NO_PROXY: "{{ proxy.no_proxy }}"
+              USE_PROXY: "{{ proxy.enabled | lower }}"
+              HTTP_PROXY: "{{ proxy.http }}"
+              HTTPS_PROXY: "{{ proxy.https }}"
+              NO_PROXY: "{{ proxy.noproxy }}"
               DOCKER_IMAGE_PREFIX: "{{ docker_image_prefix }}"
             target: images
 
