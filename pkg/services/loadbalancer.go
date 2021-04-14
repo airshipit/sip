@@ -16,6 +16,7 @@ package services
 
 import (
 	"bytes"
+	"strings"
 
 	"html/template"
 	airshipv1 "sipcluster/pkg/api/v1"
@@ -44,7 +45,7 @@ func (lb loadBalancer) Deploy() error {
 		lb.config.Image = DefaultBalancerImage
 	}
 
-	instance := LoadBalancerServiceName + "-" + lb.sipName.Name
+	instance := LoadBalancerServiceName + "-" + strings.ToLower(string(lb.bmhRole)) + "-" + lb.sipName.Name
 	labels := map[string]string{
 		// See https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels
 		"app.kubernetes.io/part-of":   "sip",
@@ -149,7 +150,7 @@ func (lb loadBalancer) generateSecret(instance string) (*corev1.Secret, error) {
 		Backends:  make([]backend, 0),
 	}
 	for _, machine := range lb.machines.Machines {
-		if machine.BMHRole == airshipv1.RoleControlPlane {
+		if machine.BMHRole == lb.bmhRole {
 			name := machine.BMH.Name
 			namespace := machine.BMH.Namespace
 			ip, exists := machine.Data.IPOnInterface[lb.config.NodeInterface]
@@ -163,7 +164,7 @@ func (lb loadBalancer) generateSecret(instance string) (*corev1.Secret, error) {
 			p.Backends = append(p.Backends, backend{IP: ip, Name: machine.BMH.Name, Port: 6443})
 		}
 	}
-	secretData, err := generateTemplate(p)
+	secretData, err := lb.generateTemplate(p)
 	if err != nil {
 		return nil, err
 	}
@@ -216,22 +217,59 @@ type loadBalancer struct {
 	logger   logr.Logger
 	config   airshipv1.SIPClusterService
 	machines *bmh.MachineList
+	bmhRole  airshipv1.BMHRole
+	template string
 }
 
-func newLB(name, namespace string,
+type loadBalancerControlPlane struct {
+	loadBalancer
+	config airshipv1.LoadBalancerServiceControlPlane
+}
+
+type loadBalancerWorker struct {
+	loadBalancer
+	config airshipv1.LoadBalancerServiceWorker
+}
+
+func newLBControlPlane(name, namespace string,
 	logger logr.Logger,
-	config airshipv1.SIPClusterService,
+	config airshipv1.LoadBalancerServiceControlPlane,
 	machines *bmh.MachineList,
-	client client.Client) loadBalancer {
-	return loadBalancer{
+	client client.Client) loadBalancerControlPlane {
+	return loadBalancerControlPlane{loadBalancer{
 		sipName: types.NamespacedName{
 			Name:      name,
 			Namespace: namespace,
 		},
 		logger:   logger,
-		config:   config,
+		config:   config.SIPClusterService,
 		machines: machines,
 		client:   client,
+		bmhRole:  airshipv1.RoleControlPlane,
+		template: templateControlPlane,
+	},
+		config,
+	}
+}
+
+func newLBWorker(name, namespace string,
+	logger logr.Logger,
+	config airshipv1.LoadBalancerServiceWorker,
+	machines *bmh.MachineList,
+	client client.Client) loadBalancerWorker {
+	return loadBalancerWorker{loadBalancer{
+		sipName: types.NamespacedName{
+			Name:      name,
+			Namespace: namespace,
+		},
+		logger:   logger,
+		config:   config.SIPClusterService,
+		machines: machines,
+		client:   client,
+		bmhRole:  airshipv1.RoleWorker,
+		template: templateWorker,
+	},
+		config,
 	}
 }
 
@@ -240,8 +278,8 @@ func (lb loadBalancer) Finalize() error {
 	return nil
 }
 
-func generateTemplate(p proxy) ([]byte, error) {
-	tmpl, err := template.New("haproxy-config").Parse(defaultTemplate)
+func (lb loadBalancer) generateTemplate(p proxy) ([]byte, error) {
+	tmpl, err := template.New("haproxy-config").Parse(lb.template)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +293,7 @@ func generateTemplate(p proxy) ([]byte, error) {
 	return rendered, nil
 }
 
-var defaultTemplate = `global
+var templateControlPlane = `global
   log stdout format raw local0 notice
   daemon
 
@@ -288,6 +326,55 @@ frontend apiserver
   option tcplog
   default_backend kube-apiservers
 
+#---------------------------------------------------------------------
+# round robin balancing for apiserver
+#---------------------------------------------------------------------
+backend kube-apiservers
+  mode tcp
+  balance     roundrobin
+  option httpchk GET /readyz
+  http-check expect status 200
+  option log-health-checks
+  # Observed apiserver returns 500 for around 10s when 2nd cp node joins.
+  # downinter 2s makes it check more frequently to recover from that state sooner.
+  # Also changing fall to 4 so that it takes longer (4 failures) for it to take down a backend.
+  default-server check check-ssl verify none inter 5s downinter 2s fall 4 on-marked-down shutdown-sessions
+{{- range .Backends }}
+{{- $backEnd := . }}
+  server {{ $backEnd.Name }} {{ $backEnd.IP }}:{{ $backEnd.Port }}
+{{ end -}}`
+
+// TODO Update this template to work for workload services, as it currently references api server(control plane)
+var templateWorker = `global
+  log stdout format raw local0 notice
+  daemon
+defaults
+  mode                    http
+  log                     global
+  option                  httplog
+  option                  dontlognull
+  retries                 1
+  # Configures the timeout for a connection request to be left pending in a queue
+  # (connection requests are queued once the maximum number of connections is reached).
+  timeout queue           30s
+  # Configures the timeout for a connection to a backend server to be established.
+  timeout connect         30s
+  # Configures the timeout for inactivity during periods when we would expect
+  # the client to be speaking. For usability of 'kubectl exec', the timeout should
+  # be long enough to cover inactivity due to idleness of interactive sessions.
+  timeout client          600s
+  # Configures the timeout for inactivity during periods when we would expect
+  # the server to be speaking. For usability of 'kubectl log -f', the timeout should
+  # be long enough to cover inactivity due to the lack of new logs.
+  timeout server          600s
+#---------------------------------------------------------------------
+# apiserver frontend which proxys to the masters
+#---------------------------------------------------------------------
+frontend apiserver
+  bind *:{{ .FrontPort }}
+  mode tcp
+  option tcplog
+  default_backend kube-apiservers
 #---------------------------------------------------------------------
 # round robin balancing for apiserver
 #---------------------------------------------------------------------

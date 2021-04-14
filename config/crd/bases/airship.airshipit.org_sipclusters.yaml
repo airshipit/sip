@@ -178,10 +178,36 @@ spec:
                     - nodeSSHPrivateKeys
                     type: object
                   type: array
-                loadBalancer:
+                loadBalancerControlPlane:
                   description: LoadBalancer defines the sub-cluster load balancer
                     services.
                   items:
+                    description: LoadBalancerServiceControlPlane is an infrastructure
+                      service type that represents the sub-cluster load balancer service.
+                    properties:
+                      clusterIP:
+                        type: string
+                      image:
+                        type: string
+                      nodeInterfaceId:
+                        type: string
+                      nodeLabels:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      nodePort:
+                        type: integer
+                    required:
+                    - image
+                    - nodePort
+                    type: object
+                  type: array
+                loadBalancerWorker:
+                  description: ' LoadBalancer defines the sub-cluster load balancer
+                    services.'
+                  items:
+                    description: LoadBalancerServiceWorker is an infrastructure service
+                      type that represents the sub-cluster load balancer service.
                     properties:
                       clusterIP:
                         type: string

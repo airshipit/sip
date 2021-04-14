@@ -17,8 +17,10 @@ rules:
   - update
 - apiGroups:
   - ""
+  - apps
   resources:
   - secrets
+  - deployments
   verbs:
   - get
   - list

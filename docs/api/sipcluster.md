@@ -116,6 +116,78 @@ directory, and then configured as identity files in the SSH config file of the d
 </table>
 </div>
 </div>
+<h3 id="airship.airshipit.org/v1.LoadBalancerServiceControlPlane">LoadBalancerServiceControlPlane
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#airship.airshipit.org/v1.SIPClusterServices">SIPClusterServices</a>)
+</p>
+<p>LoadBalancerServiceControlPlane is an infrastructure service type that represents the sub-cluster load balancer service.</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>SIPClusterService</code><br>
+<em>
+<a href="#airship.airshipit.org/v1.SIPClusterService">
+SIPClusterService
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>SIPClusterService</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="airship.airshipit.org/v1.LoadBalancerServiceWorker">LoadBalancerServiceWorker
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#airship.airshipit.org/v1.SIPClusterServices">SIPClusterServices</a>)
+</p>
+<p>LoadBalancerServiceWorker is an infrastructure service type that represents the sub-cluster load balancer service.</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>SIPClusterService</code><br>
+<em>
+<a href="#airship.airshipit.org/v1.SIPClusterService">
+SIPClusterService
+</a>
+</em>
+</td>
+<td>
+<p>
+(Members of <code>SIPClusterService</code> are embedded into this type.)
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <h3 id="airship.airshipit.org/v1.NodeCount">NodeCount
 </h3>
 <p>
@@ -317,6 +389,8 @@ SIPClusterStatus
 <p>
 (<em>Appears on:</em>
 <a href="#airship.airshipit.org/v1.JumpHostService">JumpHostService</a>, 
+<a href="#airship.airshipit.org/v1.LoadBalancerServiceControlPlane">LoadBalancerServiceControlPlane</a>, 
+<a href="#airship.airshipit.org/v1.LoadBalancerServiceWorker">LoadBalancerServiceWorker</a>, 
 <a href="#airship.airshipit.org/v1.SIPClusterServices">SIPClusterServices</a>)
 </p>
 <div class="md-typeset__scrollwrap">
@@ -402,10 +476,23 @@ string
 <tbody>
 <tr>
 <td>
-<code>loadBalancer</code><br>
+<code>loadBalancerControlPlane</code><br>
 <em>
-<a href="#airship.airshipit.org/v1.SIPClusterService">
-[]SIPClusterService
+<a href="#airship.airshipit.org/v1.LoadBalancerServiceControlPlane">
+[]LoadBalancerServiceControlPlane
+</a>
+</em>
+</td>
+<td>
+<p>LoadBalancer defines the sub-cluster load balancer services.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>loadBalancerWorker</code><br>
+<em>
+<a href="#airship.airshipit.org/v1.LoadBalancerServiceWorker">
+[]LoadBalancerServiceWorker
 </a>
 </em>
 </td>

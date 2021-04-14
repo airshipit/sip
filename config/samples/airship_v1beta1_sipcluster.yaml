@@ -8,19 +8,19 @@ metadata:
 spec:
   nodes:
     ControlPlane:
-        labelSelector:
-          vino.airshipit.org/flavor: control-plane
+      labelSelector:
+        vino.airshipit.org/flavor: control-plane
         topologyKey: vino.airshipit.org/rack
-        count:
-            active: 1
-            standby: 1
+      count:
+        active: 1
+        standby: 1
     Worker:
-        labelSelector:
-          vino.airshipit.org/flavor: worker
-        topologyKey: vino.airshipit.org/host
-        count:
-            active: 1
-            standby: 1 # Slew for upgrades
+      labelSelector:
+        vino.airshipit.org/flavor: worker
+      topologyKey: vino.airshipit.org/host
+      count:
+        active: 1
+        standby: 1 # Slew for upgrades
   services:
     # NOTE: The auth service has not yet been implemented.
     # auth:
@@ -36,7 +36,7 @@ spec:
         # NOTE: nodeLabels not yet implemented.
         # nodeLabels:
         #   kubernetes.io/os: linux
-        nodePort: 30001
+        nodePort: 30000
         nodeInterfaceId: oam-ipv4
         # NOTE: clusterIP has not yet been implemented.
         # clusterIP: 1.2.3.4 # IP of the base cluster VIP
@@ -46,13 +46,21 @@ spec:
           - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCyaozS8kZRw2a1d0O4YXhxtJlDPThqIZilGCsXLbukIFOyMUmMTwQAtwWp5epwU1+5ponC2uBENB6xCCj3cl5Rd43d2/B6HxyAPQGKo6/zKYGAKW2nzYDxSWMl6NUSsiJAyXUA7ZlNZQe0m8PmaferlkQyLLZo3NJpizz6U6ZCtxvj43vEl7NYWnLUEIzGP9zMqltIGnD4vYrU9keVKKXSsp+DkApnbrDapeigeGATCammy2xRrUQDuOvGHsfnQbXr2j0onpTIh0PiLrXLQAPDg8UJRgVB+ThX+neI3rQ320djzRABckNeE6e4Kkwzn+QdZsmA2SDvM9IU7boK1jVQlgUPp7zF5q3hbb8Rx7AadyTarBayUkCgNlrMqth+tmTMWttMqCPxJRGnhhvesAHIl55a28Kzz/2Oqa3J9zwzbyDIwlEXho0eAq3YXEPeBhl34k+7gOt/5Zdbh+yacFoxDh0LrshQgboAijcVVaXPeN0LsHEiVvYIzugwIvCkoFMPWoPj/kEGzPY6FCkVneDA7VoLTCoG8dlrN08Lf05/BGC7Wllm66pTNZC/cKXP+cjpQn1iEuiuPxnPldlMHx9sx2y/BRoft6oT/GzqkNy1NTY/xI+MfmxXnF5kwSbcTbzZQ9fZ8xjh/vmpPBgDNrxOEAT4N6OG7GQIhb9HEhXQCQ== example-key
           - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCwpOyZjZ4gB0OTvmofH3llh6cBCWaEiEmHZWSkDXr8Bih6HcXVOtYMcFi/ZnUVGUBPw3ATNQBZUaVCYKeF+nDfKTJ9hmnlsyHxV2LeMsVg1o15Pb6f+QJuavEqtE6HI7mHyId4Z1quVTJXDWDW8OZEG7M3VktauqAn/e9UJvlL0bGmTFD1XkNcbRsWMRWkQgt2ozqlgrpPtvrg2/+bNucxX++VUjnsn+fGgAT07kbnrZwppGnAfjbYthxhv7GeSD0+Z0Lf1kiKy/bhUqXsZIuexOfF0YrRyUH1KBl8GCX2OLBYvXHyusByqsrOPiROqRdjX5PsK6HSAS0lk0niTt1p example-key-2
         nodeSSHPrivateKeys: ssh-private-keys
-    loadBalancer:
+    loadBalancerControlPlane:
       - image: haproxy:2.3.2
         # NOTE: nodeLabels not yet implemented.
         # nodeLabels:
-        #   kubernetes.io/os: linux
-        nodePort: 30000
+        #   kubernetes.io/os
+        nodePort: 30001
         nodeInterfaceId: oam-ipv4
         # NOTE: clusterIP has not yet been implemented.
         # clusterIP: 1.2.3.4 # IP of the base cluster VIP
-
+    loadBalancerWorker:
+      - image: haproxy:2.3.2
+        # NOTE: nodeLabels not yet implemented.
+        # nodeLabels:
+        #   kubernetes.io/os
+        nodePort: 30002
+        nodeInterfaceId: oam-ipv4
+        # NOTE: clusterIP has not yet been implemented.
+        # clusterIP: 1.2.3.4 # IP of the base cluster VIP

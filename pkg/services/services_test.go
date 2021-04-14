@@ -3,6 +3,7 @@ package services_test
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	airshipv1 "sipcluster/pkg/api/v1"
 
@@ -106,7 +107,7 @@ var _ = Describe("Service Set", func() {
 			set := services.NewServiceSet(logger, *sipCluster, machineList, k8sClient)
 
 			serviceList, err := set.ServiceList()
-			Expect(serviceList).To(HaveLen(2))
+			Expect(serviceList).To(HaveLen(3))
 			Expect(err).To(Succeed())
 			for _, svc := range serviceList {
 				err := svc.Deploy()
@@ -121,7 +122,8 @@ var _ = Describe("Service Set", func() {
 		It("Does not deploy a Jump Host when an invalid SSH key is provided", func() {
 			sip, _ := testutil.CreateSIPCluster("default", "default", 1, 1)
 			sip.Spec.Services.Auth = []airshipv1.SIPClusterService{}
-			sip.Spec.Services.LoadBalancer = []airshipv1.SIPClusterService{}
+			sip.Spec.Services.LoadBalancerControlPlane = []airshipv1.LoadBalancerServiceControlPlane{}
+			sip.Spec.Services.LoadBalancerWorker = []airshipv1.LoadBalancerServiceWorker{}
 			sip.Spec.Services.JumpHost[0].SSHAuthorizedKeys = []string{
 				"sshrsaAAAAAAAAAAAAAAAAAAAAAinvalidkey",
 			}
@@ -141,29 +143,62 @@ var _ = Describe("Service Set", func() {
 })
 
 func testDeployment(sip *airshipv1.SIPCluster, machineList bmh.MachineList) error {
-	loadBalancerDeployment := &appsv1.Deployment{}
+	loadBalancerControlPlaneDeployment := &appsv1.Deployment{}
 	err := k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: "default",
-		Name:      services.LoadBalancerServiceName + "-" + sip.GetName(),
-	}, loadBalancerDeployment)
+		Name: services.LoadBalancerServiceName + "-" + strings.ToLower(string(airshipv1.RoleControlPlane)) + "-" +
+			sip.GetName(),
+	}, loadBalancerControlPlaneDeployment)
 	if err != nil {
 		return err
 	}
 
-	loadBalancerSecret := &corev1.Secret{}
+	loadBalancerWorkerDeployment := &appsv1.Deployment{}
 	err = k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: "default",
-		Name:      services.LoadBalancerServiceName + "-" + sip.GetName(),
-	}, loadBalancerSecret)
+		Name: services.LoadBalancerServiceName + "-" + strings.ToLower(string(airshipv1.RoleWorker)) + "-" +
+			sip.GetName(),
+	}, loadBalancerWorkerDeployment)
 	if err != nil {
 		return err
 	}
 
-	loadBalancerService := &corev1.Service{}
+	loadBalancerControlPlaneSecret := &corev1.Secret{}
 	err = k8sClient.Get(context.Background(), types.NamespacedName{
 		Namespace: "default",
-		Name:      services.LoadBalancerServiceName + "-" + sip.GetName(),
-	}, loadBalancerService)
+		Name: services.LoadBalancerServiceName + "-" + strings.ToLower(string(airshipv1.RoleControlPlane)) + "-" +
+			sip.GetName(),
+	}, loadBalancerControlPlaneSecret)
+	if err != nil {
+		return err
+	}
+
+	loadBalancerWorkerSecret := &corev1.Secret{}
+	err = k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: "default",
+		Name: services.LoadBalancerServiceName + "-" + strings.ToLower(string(airshipv1.RoleWorker)) + "-" +
+			sip.GetName(),
+	}, loadBalancerWorkerSecret)
+	if err != nil {
+		return err
+	}
+
+	loadBalancerControlPlaneService := &corev1.Service{}
+	err = k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: "default",
+		Name: services.LoadBalancerServiceName + "-" + strings.ToLower(string(airshipv1.RoleControlPlane)) + "-" +
+			sip.GetName(),
+	}, loadBalancerControlPlaneService)
+	if err != nil {
+		return err
+	}
+
+	loadBalancerWorkerService := &corev1.Service{}
+	err = k8sClient.Get(context.Background(), types.NamespacedName{
+		Namespace: "default",
+		Name: services.LoadBalancerServiceName + "-" + strings.ToLower(string(airshipv1.RoleWorker)) + "-" +
+			sip.GetName(),
+	}, loadBalancerWorkerService)
 	if err != nil {
 		return err
 	}
