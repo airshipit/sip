@@ -16,8 +16,8 @@ SIP_BASE_IMAGE		?= gcr.io/distroless/static:nonroot
 JUMP_HOST_IMG	?= $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)/$(JUMP_HOST_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 SIP_IMG		?= $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_PREFIX)/$(SIP_IMAGE_NAME):$(DOCKER_IMAGE_TAG)
 
-# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true"
+# Produce CRDs that work back to Kubernetes 1.16
+CRD_OPTIONS ?= crd:crdVersions=v1
 
 TOOLBINDIR          := tools/bin
 
