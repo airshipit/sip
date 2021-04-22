@@ -11,21 +11,10 @@ set -ex
 
 export DEBCONF_NONINTERACTIVE_SEEN=true
 export DEBIAN_FRONTEND=noninteractive
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-
-sudo apt-key fingerprint 0EBFCD88
-
-sudo add-apt-repository \
-  "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) \
-  stable"
 
 sudo -E apt-get update
 
 sudo -E apt-get install -y \
-  docker-ce \
-  docker-ce-cli \
-  containerd.io \
   socat \
   jq \
   util-linux \

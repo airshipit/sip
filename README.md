@@ -109,6 +109,10 @@ USE_PROXY=true
 - `10.96.0.0/12` is the Kubernetes service IP range
 - `192.168.0.0/16` is the Kubernetes pod IP range
 
+#### Install Docker
+
+See [https://docs.docker.com/engine/install/ubuntu/][].
+
 #### Deploy kubernetes using minikube and create k8s cluster
 
 ```
