@@ -33,7 +33,6 @@ import (
 
 	// +kubebuilder:scaffold:imports
 
-	v1alpha3 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha3"
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 )
 
@@ -54,9 +53,6 @@ func init() {
 
 	// Add Kubernetes Coree??
 	_ = corev1.AddToScheme(scheme)
-
-	// Add certmanager CRD
-	_ = v1alpha3.AddToScheme(scheme)
 }
 
 func main() {

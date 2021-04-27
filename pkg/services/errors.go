@@ -16,18 +16,7 @@ package services
 
 import (
 	"fmt"
-
-	airshipv1 "sipcluster/pkg/api/v1"
 )
-
-// ErrAuthTypeNotSupported is returned when wrong AuthType is provided
-type ErrInfraServiceNotSupported struct {
-	Service airshipv1.SIPClusterService
-}
-
-func (e ErrInfraServiceNotSupported) Error() string {
-	return fmt.Sprintf("invalid Infrastructure Service: %v", e.Service)
-}
 
 // ErrInvalidAuthorizedKeyFormat occurs when an authorized key in the SIP CR does not meet the expected format.
 type ErrInvalidAuthorizedKeyFormat struct {

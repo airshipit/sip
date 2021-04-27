@@ -22,11 +22,6 @@ spec:
         active: 1
         standby: 1 # Slew for upgrades
   services:
-    auth:
-      - image: quay.io/dexidp/dex:v2.20.0
-        nodeInterfaceId: oam-ipv4
-        nodePort: 30556
-        caSecret: dex-ca-key-pair
     jumpHost:
       - image: quay.io/airshipit/jump-host:latest
         # NOTE: nodeLabels not yet implemented.

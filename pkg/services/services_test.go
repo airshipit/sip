@@ -252,5 +252,6 @@ func testDeployment(sip *airshipv1.SIPCluster, machineList bmh.MachineList) erro
 			}
 		}
 	}
+
 	return nil
 }

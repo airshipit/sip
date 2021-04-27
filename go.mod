@@ -5,7 +5,6 @@ go 1.13
 require (
 	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/go-logr/logr v0.3.0
-	github.com/jetstack/cert-manager v1.2.0
 	github.com/metal3-io/baremetal-operator v0.0.0-20201014161845-a6d4f1fc3228
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.3

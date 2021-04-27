@@ -114,31 +114,6 @@ spec:
               description: Services defines the services that are deployed when a
                 SIPCluster is provisioned.
               properties:
-                auth:
-                  description: Auth defines the sub-cluster authentication services.
-                  items:
-                    description: AuthService is an infrastructure service type that
-                      represents the sub-cluster authentication service.
-                    properties:
-                      caSecret:
-                        type: string
-                      clusterIP:
-                        type: string
-                      image:
-                        type: string
-                      nodeInterfaceId:
-                        type: string
-                      nodeLabels:
-                        additionalProperties:
-                          type: string
-                        type: object
-                      nodePort:
-                        type: integer
-                    required:
-                    - image
-                    - nodePort
-                    type: object
-                  type: array
                 jumpHost:
                   description: JumpHost defines the sub-cluster jump host services.
                   items:
