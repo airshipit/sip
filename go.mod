@@ -1,6 +1,6 @@
 module sipcluster
 
-go 1.13
+go 1.14
 
 require (
 	github.com/PaesslerAG/jsonpath v0.1.1

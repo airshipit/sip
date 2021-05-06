@@ -1,7 +1,7 @@
 ARG BASE_IMAGE=gcr.io/distroless/static:nonroot
 
 # Build the manager binary
-FROM gcr.io/gcp-runtimes/go1-builder:1.13 as builder
+FROM gcr.io/gcp-runtimes/go1-builder:1.14 as builder
 
 ENV PATH "/usr/local/go/bin:$PATH"
 
