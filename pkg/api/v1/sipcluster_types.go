@@ -77,6 +77,7 @@ func (s SIPClusterServices) GetAll() []SIPClusterService {
 // JumpHostService is an infrastructure service type that represents the sub-cluster jump-host service.
 type JumpHostService struct {
 	SIPClusterService `json:",inline"`
+	NodePort          int      `json:"nodePort"`
 	BMC               *BMCOpts `json:"bmc,omitempty"`
 	SSHAuthorizedKeys []string `json:"sshAuthorizedKeys,omitempty"`
 	// NodeSSHPrivateKeys holds the name of a Secret in the same namespace as the SIPCluster CR,
@@ -91,6 +92,7 @@ LoadBalancerServiceControlPlane is an infrastructure service type that represent
 */
 type LoadBalancerServiceControlPlane struct {
 	SIPClusterService `json:",inline"`
+	NodePort          int `json:"nodePort"`
 }
 
 // LoadBalancerServiceWorker is an infrastructure service type that represents the sub-cluster load balancer service.
@@ -165,7 +167,6 @@ type NodeSet struct {
 type SIPClusterService struct {
 	Image         string            `json:"image"`
 	NodeLabels    map[string]string `json:"nodeLabels,omitempty"`
-	NodePort      int               `json:"nodePort"`
 	NodeInterface string            `json:"nodeInterfaceId,omitempty"`
 	ClusterIP     *string           `json:"clusterIP,omitempty"`
 }

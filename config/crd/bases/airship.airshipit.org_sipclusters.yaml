@@ -200,8 +200,6 @@ spec:
                           additionalProperties:
                             type: string
                           type: object
-                        nodePort:
-                          type: integer
                         nodePortRange:
                           description: 'TODO: Remove the inherited single NodePort
                             field via refactoring. It is unused for this service since
@@ -220,7 +218,6 @@ spec:
                           type: object
                       required:
                       - image
-                      - nodePort
                       - nodePortRange
                       type: object
                     type: array
