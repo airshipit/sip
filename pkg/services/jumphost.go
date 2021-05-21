@@ -454,7 +454,7 @@ type bmc struct {
 // generateHostList creates a list of hosts in JSON format to be mounted as a config map to the jump host pod and used
 // to power cycle sub-cluster nodes.
 func generateHostList(machineList bmh.MachineList) ([]byte, error) {
-	hosts := make([]host, len(machineList.Machines))
+	hosts := make([]host, 0)
 	for name, machine := range machineList.Machines {
 		managementIP, err := getManagementIP(machine.BMH.Spec.BMC.Address)
 		if err != nil {
