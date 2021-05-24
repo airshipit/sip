@@ -138,9 +138,9 @@ var _ = Describe("MachineList", func() {
 						NodeLabels: map[string]string{
 							"test": "true",
 						},
-						NodePort:      30001,
 						NodeInterface: "oam-ipv4",
 					},
+					NodePort: 30001,
 				},
 			},
 			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
@@ -150,7 +150,6 @@ var _ = Describe("MachineList", func() {
 						NodeLabels: map[string]string{
 							"test": "true",
 						},
-						NodePort:      30002,
 						NodeInterface: "oam-ipv4",
 					},
 					NodePortRange: airshipv1.PortRange{
@@ -207,9 +206,9 @@ var _ = Describe("MachineList", func() {
 						NodeLabels: map[string]string{
 							"test": "true",
 						},
-						NodePort:      30001,
 						NodeInterface: "oam-ipv4",
 					},
+					NodePort: 30001,
 				},
 			},
 			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
@@ -219,7 +218,6 @@ var _ = Describe("MachineList", func() {
 						NodeLabels: map[string]string{
 							"test": "true",
 						},
-						NodePort:      30002,
 						NodeInterface: "oam-ipv4",
 					},
 					NodePortRange: airshipv1.PortRange{
@@ -274,9 +272,9 @@ var _ = Describe("MachineList", func() {
 						NodeLabels: map[string]string{
 							"test": "true",
 						},
-						NodePort:      30001,
 						NodeInterface: "oam-ipv4",
 					},
+					NodePort: 30001,
 				},
 			},
 			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
@@ -286,7 +284,6 @@ var _ = Describe("MachineList", func() {
 						NodeLabels: map[string]string{
 							"test": "true",
 						},
-						NodePort:      30002,
 						NodeInterface: "oam-ipv4",
 					},
 					NodePortRange: airshipv1.PortRange{
@@ -345,9 +342,9 @@ var _ = Describe("MachineList", func() {
 						NodeLabels: map[string]string{
 							"test": "true",
 						},
-						NodePort:      30001,
 						NodeInterface: "oam-ipv4",
 					},
+					NodePort: 30001,
 				},
 			},
 			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
@@ -357,7 +354,6 @@ var _ = Describe("MachineList", func() {
 						NodeLabels: map[string]string{
 							"test": "true",
 						},
-						NodePort:      30002,
 						NodeInterface: "oam-ip4",
 					},
 					NodePortRange: airshipv1.PortRange{
@@ -410,9 +406,9 @@ var _ = Describe("MachineList", func() {
 						NodeLabels: map[string]string{
 							"test": "true",
 						},
-						NodePort:      30001,
 						NodeInterface: "oam-ipv4",
 					},
+					NodePort: 30001,
 				},
 			},
 			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
@@ -422,7 +418,6 @@ var _ = Describe("MachineList", func() {
 						NodeLabels: map[string]string{
 							"test": "true",
 						},
-						NodePort:      30002,
 						NodeInterface: "oam-ipv4",
 					},
 					NodePortRange: airshipv1.PortRange{
@@ -474,9 +469,9 @@ var _ = Describe("MachineList", func() {
 						NodeLabels: map[string]string{
 							"test": "true",
 						},
-						NodePort:      30001,
 						NodeInterface: "oam-ipv4",
 					},
+					NodePort: 30001,
 				},
 			},
 			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
@@ -486,7 +481,6 @@ var _ = Describe("MachineList", func() {
 						NodeLabels: map[string]string{
 							"test": "true",
 						},
-						NodePort:      30002,
 						NodeInterface: "oam-ipv4",
 					},
 					NodePortRange: airshipv1.PortRange{

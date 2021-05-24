@@ -78,6 +78,16 @@ SIPClusterService
 </tr>
 <tr>
 <td>
+<code>nodePort</code><br>
+<em>
+int
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
 <code>bmc</code><br>
 <em>
 <a href="#airship.airshipit.org/v1.BMCOpts">
@@ -146,6 +156,16 @@ SIPClusterService
 <p>
 (Members of <code>SIPClusterService</code> are embedded into this type.)
 </p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodePort</code><br>
+<em>
+int
+</em>
+</td>
+<td>
 </td>
 </tr>
 </tbody>
@@ -474,16 +494,6 @@ string
 <code>nodeLabels</code><br>
 <em>
 map[string]string
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>nodePort</code><br>
-<em>
-int
 </em>
 </td>
 <td>
