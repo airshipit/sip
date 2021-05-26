@@ -29,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	airshipv1 "sipcluster/pkg/api/v1"
@@ -201,6 +202,24 @@ func (jh jumpHost) generateDeployment(instance string, labels map[string]string,
 									MountPath: mountPathSSH,
 									SubPath:   authorizedKeysFile,
 								},
+							},
+							LivenessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.FromString("ssh"),
+									},
+								},
+								InitialDelaySeconds: 15,
+								PeriodSeconds:       10,
+							},
+							ReadinessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.FromString("ssh"),
+									},
+								},
+								InitialDelaySeconds: 5,
+								PeriodSeconds:       20,
 							},
 						},
 					},
