@@ -18,14 +18,13 @@ package bmh
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"strings"
 
 	airshipv1 "sipcluster/pkg/api/v1"
+	v1 "sipcluster/pkg/api/v1"
 
-	"github.com/PaesslerAG/jsonpath"
 	"github.com/go-logr/logr"
 	metal3 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	kerror "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 type ScheduledState string
@@ -429,7 +429,6 @@ func (ml *MachineList) ExtrapolateBMCAuth(sip airshipv1.SIPCluster, c client.Cli
 			ml.Log.Error(err, "unable to retrieve BMH BMC credentials Secret", "BMH", machine.BMH.Name,
 				"Secret", machine.BMH.Spec.BMC.CredentialsName,
 				"Secret Namespace", machine.BMH.Namespace)
-
 			machine.ScheduleStatus = UnableToSchedule
 			ml.ReadyForScheduleCount[machine.BMHRole]--
 			extrapolateErrs = kerror.NewAggregate([]error{extrapolateErrs, err})
@@ -603,41 +602,30 @@ func (ml *MachineList) ExtrapolateBMCAuth(sip airshipv1.SIPCluster, c client.Cli
 
 func (ml *MachineList) getIP(machine *Machine, networkDataSecret *corev1.Secret,
 	services airshipv1.SIPClusterServices) error {
-	var secretData interface{}
 	// Now I have the Secret
 	// Lets find the IP's for all Interfaces defined in Cfg
+
+	netData := &v1.NetworkData{}
+	err := yaml.Unmarshal(networkDataSecret.Data["networkData"], netData)
+	if err != nil {
+		return err
+	}
 	foundIP := false
 	for _, svcCfg := range services.GetAll() {
 		// Did I already find the IP for these interface
 		if machine.Data.IPOnInterface[svcCfg.NodeInterface] == "" {
-			err := json.Unmarshal(networkDataSecret.Data["networkData"], &secretData)
-			if err != nil {
-				return err
-			}
-			fmt.Printf("Schedule.Extrapolate.getIP secretData:%v\n", secretData)
-
-			queryFilter := fmt.Sprintf("$..networks[? (@.id==\"%s\")].ip_address", svcCfg.NodeInterface)
-			fmt.Printf("Schedule.Extrapolate.getIP queryFilter:%v\n", queryFilter)
-			ipAddress, err := jsonpath.Get(queryFilter, secretData)
-
-			if err == nil {
-				foundIP = true
-				for _, value := range ipAddress.([]interface{}) {
-					machine.Data.IPOnInterface[svcCfg.NodeInterface] = value.(string) //nolint:errcheck
+			for _, d := range netData.OpenstackNetworks {
+				if d.ID == svcCfg.NodeInterface {
+					foundIP = true
+					machine.Data.IPOnInterface[svcCfg.NodeInterface] = d.IP
+					break
 				}
 			}
-			// Skip if error
-			// Should signal that I need to exclude this machine
-			// Which also means I am now short potentially.
-			fmt.Printf("Schedule.Extrapolate.getIP machine.Data.IpOnInterface[%s]:%v\n",
-				svcCfg.NodeInterface, machine.Data.IPOnInterface[svcCfg.NodeInterface])
 		}
-
 		if !foundIP {
 			return &ErrorHostIPNotFound{
 				HostName:    machine.BMH.ObjectMeta.Name,
-				IPInterface: svcCfg.NodeInterface,
-			}
+				IPInterface: svcCfg.NodeInterface}
 		}
 	}
 	return nil

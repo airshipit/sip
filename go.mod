@@ -3,7 +3,6 @@ module sipcluster
 go 1.14
 
 require (
-	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/go-logr/logr v0.3.0
 	github.com/metal3-io/baremetal-operator v0.0.0-20201014161845-a6d4f1fc3228
 	github.com/onsi/ginkgo v1.14.2
@@ -13,4 +12,5 @@ require (
 	k8s.io/apimachinery v0.19.2
 	k8s.io/client-go v0.19.2
 	sigs.k8s.io/controller-runtime v0.7.0
+	sigs.k8s.io/yaml v1.2.0
 )

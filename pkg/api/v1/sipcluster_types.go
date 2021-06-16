@@ -197,3 +197,12 @@ type NodeCount struct {
 func init() {
 	SchemeBuilder.Register(&SIPCluster{}, &SIPClusterList{})
 }
+
+type NetworkData struct {
+	OpenstackNetworks []OpenstackNetwork `json:"networks,omitempty"`
+}
+
+type OpenstackNetwork struct {
+	ID string `json:"id,omitempty"`
+	IP string `json:"ip_address,omitempty"`
+}

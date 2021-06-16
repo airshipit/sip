@@ -166,6 +166,75 @@ var _ = Describe("MachineList", func() {
 		Expect(ml.Machines[bmh.Name].Data.IPOnInterface).To(Equal(map[string]string{"oam-ipv4": "32.68.51.139"}))
 	})
 
+	It("Should retrieve the BMH IP from the BMH's NetworkData secret when netdata is in yaml format", func() {
+		// Create a BMH with a NetworkData secret
+		bmh, networkData := testutil.CreateBMH(1, "default", airshipv1.RoleControlPlane, 6)
+		networkData.Data["networkData"] = []byte(testutil.NetworkDataContentYaml)
+
+		// Create BMH and NetworkData secret
+		var objsToApply []runtime.Object
+		objsToApply = append(objsToApply, bmh)
+		objsToApply = append(objsToApply, networkData)
+
+		// Create BMC credential secret
+		username := "root"
+		password := "test"
+		bmcSecret := testutil.CreateBMCAuthSecret(bmh.Name, bmh.Namespace, username, password)
+
+		bmh.Spec.BMC.CredentialsName = bmcSecret.Name
+		objsToApply = append(objsToApply, bmcSecret)
+
+		m, err := NewMachine(*bmh, airshipv1.RoleControlPlane, NotScheduled)
+		Expect(err).To(BeNil())
+
+		ml := &MachineList{
+			NamespacedName: types.NamespacedName{
+				Name:      "bmh",
+				Namespace: "default",
+			},
+			Machines: map[string]*Machine{
+				bmh.Name: m,
+			},
+			Log: ctrl.Log.WithName("controllers").WithName("SIPCluster"),
+		}
+
+		sipCluster, nodeSSHPrivateKeys := testutil.CreateSIPCluster("subcluster-1", "default", 1, 3)
+		sipCluster.Spec.Services = airshipv1.SIPClusterServices{
+			LoadBalancerControlPlane: []airshipv1.LoadBalancerServiceControlPlane{
+				{
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodeInterface: "oam-ipv4",
+					},
+					NodePort: 30001,
+				},
+			},
+			LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
+				{
+					SIPClusterService: airshipv1.SIPClusterService{
+						Image: "haproxy:latest",
+						NodeLabels: map[string]string{
+							"test": "true",
+						},
+						NodeInterface: "oam-ipv4",
+					},
+					NodePortRange: airshipv1.PortRange{
+						Start: 30002,
+						End:   30011,
+					},
+				},
+			},
+		}
+		objsToApply = append(objsToApply, nodeSSHPrivateKeys)
+		k8sClient := mockClient.NewFakeClient(objsToApply...)
+		Expect(ml.ExtrapolateServiceAddresses(*sipCluster, k8sClient)).To(BeNil())
+
+		Expect(ml.Machines[bmh.Name].Data.IPOnInterface).To(Equal(map[string]string{"oam-ipv4": "32.68.51.139"}))
+	})
+
 	It("Should not retrieve the BMH IP from the BMH's NetworkData secret if no infraServices are defined", func() {
 		// Create a BMH with a NetworkData secret
 		bmh, networkData := testutil.CreateBMH(1, "default", airshipv1.RoleControlPlane, 6)
