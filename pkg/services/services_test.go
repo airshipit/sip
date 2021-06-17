@@ -62,7 +62,7 @@ var _ = Describe("Service Set", func() {
 			BMH: *bmh1,
 			Data: &bmh.MachineData{
 				IPOnInterface: map[string]string{
-					"eno3": ip1,
+					"oam-ipv4": ip1,
 				},
 			},
 		}
@@ -71,7 +71,7 @@ var _ = Describe("Service Set", func() {
 			BMH: *bmh2,
 			Data: &bmh.MachineData{
 				IPOnInterface: map[string]string{
-					"eno3": ip2,
+					"oam-ipv4": ip2,
 				},
 			},
 		}

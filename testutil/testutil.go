@@ -365,7 +365,7 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 						{
 							SIPClusterService: airshipv1.SIPClusterService{
 								Image:         "quay.io/airshipit/jump-host",
-								NodeInterface: "eno3",
+								NodeInterface: "oam-ipv4",
 							},
 							NodePort: 30000,
 							SSHAuthorizedKeys: []string{
@@ -378,7 +378,7 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 					LoadBalancerControlPlane: []airshipv1.LoadBalancerServiceControlPlane{
 						{
 							SIPClusterService: airshipv1.SIPClusterService{
-								NodeInterface: "eno3",
+								NodeInterface: "oam-ipv4",
 							},
 							NodePort: 30001,
 						},
@@ -386,7 +386,7 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 					LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
 						{
 							SIPClusterService: airshipv1.SIPClusterService{
-								NodeInterface: "eno3",
+								NodeInterface: "oam-ipv4",
 							},
 							NodePortRange: airshipv1.PortRange{
 								Start: 30002,

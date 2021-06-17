@@ -1,4 +1,4 @@
-- hosts: ubuntu-bionic
+- hosts: ubuntu-focal
   environment:
     GOROOT: '/usr/local/go'
     GOBIN: /tmp/bin/

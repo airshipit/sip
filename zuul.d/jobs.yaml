@@ -10,6 +10,7 @@
         pass-to-parent: true
 - job:
     name: airship-deploy-sip
+    nodeset: ubuntu-focal
     run: playbooks/integration-tests.yaml
     description: Deploys kubernetes and sip
     roles:
@@ -17,6 +18,7 @@
     timeout: 9600
 - job:
     name: airship-sip-test-suite
+    nodeset: ubuntu-focal
     description: Install kube-builder and tests make functionality.
     run: playbooks/test-sip.yaml
     roles:
@@ -24,6 +26,7 @@
     timeout: 9600
 - job:
     name: airship-sip-publish-images
+    nodeset: ubuntu-focal
     description: Publishes SIP Docker images to image repository.
     run: playbooks/publish-images.yaml
     roles:

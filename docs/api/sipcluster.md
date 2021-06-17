@@ -222,6 +222,34 @@ service since we have the below node port range instead.</p>
 </table>
 </div>
 </div>
+<h3 id="airship.airshipit.org/v1.NetworkData">NetworkData
+</h3>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>networks</code><br>
+<em>
+<a href="#airship.airshipit.org/v1.OpenstackNetwork">
+[]OpenstackNetwork
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <h3 id="airship.airshipit.org/v1.NodeCount">NodeCount
 </h3>
 <p>
@@ -327,6 +355,46 @@ NodeCount
 </td>
 <td>
 <p>Count defines the scale expectations for the Nodes</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="airship.airshipit.org/v1.OpenstackNetwork">OpenstackNetwork
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#airship.airshipit.org/v1.NetworkData">NetworkData</a>)
+</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>id</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>ip_address</code><br>
+<em>
+string
+</em>
+</td>
+<td>
 </td>
 </tr>
 </tbody>
