@@ -380,7 +380,6 @@ func CreateSIPCluster(name string, namespace string, controlPlanes int, workers 
 							SIPClusterService: airshipv1.SIPClusterService{
 								NodeInterface: "oam-ipv4",
 							},
-							NodePort: 30001,
 						},
 					},
 					LoadBalancerWorker: []airshipv1.LoadBalancerServiceWorker{
@@ -425,6 +424,24 @@ func CreateBMCAuthSecret(nodeName string, namespace string, username string, pas
 		Data: map[string][]byte{
 			"username": []byte(username),
 			"password": []byte(password),
+		},
+	}
+}
+
+// CreateTemplateSecret creates a K8s Secret with template for HAProxy configuration
+func CreateTemplateConfigMap(cmname string, templatename string, namespace string,
+	templatedata string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cmname,
+			Namespace: namespace,
+		},
+		Data: map[string]string{
+			templatename: templatedata,
 		},
 	}
 }
