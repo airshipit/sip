@@ -122,6 +122,15 @@ func (lb loadBalancer) generateDeploymentAndSecret(instance string, labels map[s
 							},
 						},
 					},
+					NodeSelector: map[string]string{
+						"node-role.kubernetes.io/master": "",
+					},
+					Tolerations: []corev1.Toleration{
+						{
+							Key:    "node-role.kubernetes.io/master",
+							Effect: "NoSchedule",
+						},
+					},
 					Volumes: []corev1.Volume{
 						{
 							Name: ConfigSecretName,
