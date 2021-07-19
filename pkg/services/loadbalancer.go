@@ -16,6 +16,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 
@@ -236,7 +237,7 @@ func newLBControlPlane(name, namespace string,
 	logger logr.Logger,
 	config airshipv1.LoadBalancerServiceControlPlane,
 	machines *bmh.MachineList,
-	client client.Client) loadBalancerControlPlane {
+	mgrClient client.Client) loadBalancerControlPlane {
 	servicePorts := []corev1.ServicePort{
 		{
 			Name:     "http",
@@ -244,6 +245,17 @@ func newLBControlPlane(name, namespace string,
 			NodePort: int32(config.NodePort),
 		},
 	}
+	//Get template string from the secret
+	templateControlPlane := ""
+	cm := &corev1.ConfigMap{}
+	err := mgrClient.Get(context.Background(), client.ObjectKey{
+		Name:      "loadbalancercontrolplane",
+		Namespace: namespace}, cm)
+	if err != nil {
+		logger.Error(err, "unable to retrieve template info from secret.")
+	}
+	templateControlPlane = cm.Data["loadBalancerControlPlane.cfg"]
+
 	return loadBalancerControlPlane{loadBalancer{
 		sipName: types.NamespacedName{
 			Name:      name,
@@ -252,7 +264,7 @@ func newLBControlPlane(name, namespace string,
 		logger:       logger,
 		config:       config.SIPClusterService,
 		machines:     machines,
-		client:       client,
+		client:       mgrClient,
 		bmhRole:      airshipv1.RoleControlPlane,
 		template:     templateControlPlane,
 		servicePorts: servicePorts,
@@ -265,7 +277,7 @@ func newLBWorker(name, namespace string,
 	logger logr.Logger,
 	config airshipv1.LoadBalancerServiceWorker,
 	machines *bmh.MachineList,
-	client client.Client) loadBalancerWorker {
+	mgrClient client.Client) loadBalancerWorker {
 	servicePorts := []corev1.ServicePort{}
 	for port := config.NodePortRange.Start; port <= config.NodePortRange.End; port++ {
 		servicePorts = append(servicePorts, corev1.ServicePort{
@@ -274,6 +286,18 @@ func newLBWorker(name, namespace string,
 			NodePort: int32(port),
 		})
 	}
+
+	//Get Template as a secret
+	templateWorker := ""
+	cm := &corev1.ConfigMap{}
+	err := mgrClient.Get(context.Background(), client.ObjectKey{
+		Name:      "loadbalancerworker",
+		Namespace: namespace}, cm)
+	if err != nil {
+		logger.Error(err, "unable to retrieve template info from secret.")
+	}
+	templateWorker = cm.Data["loadBalancerWorker.cfg"]
+
 	return loadBalancerWorker{loadBalancer{
 		sipName: types.NamespacedName{
 			Name:      name,
@@ -282,7 +306,7 @@ func newLBWorker(name, namespace string,
 		logger:       logger,
 		config:       config.SIPClusterService,
 		machines:     machines,
-		client:       client,
+		client:       mgrClient,
 		bmhRole:      airshipv1.RoleWorker,
 		template:     templateWorker,
 		servicePorts: servicePorts,
@@ -310,93 +334,3 @@ func (lb loadBalancer) generateTemplate(p proxy) ([]byte, error) {
 	rendered := w.Bytes()
 	return rendered, nil
 }
-
-var templateControlPlane = `global
-  log stdout format raw local0 notice
-  daemon
-
-defaults
-  mode                    http
-  log                     global
-  option                  httplog
-  option                  dontlognull
-  retries                 1
-  # Configures the timeout for a connection request to be left pending in a queue
-  # (connection requests are queued once the maximum number of connections is reached).
-  timeout queue           30s
-  # Configures the timeout for a connection to a backend server to be established.
-  timeout connect         30s
-  # Configures the timeout for inactivity during periods when we would expect
-  # the client to be speaking. For usability of 'kubectl exec', the timeout should
-  # be long enough to cover inactivity due to idleness of interactive sessions.
-  timeout client          600s
-  # Configures the timeout for inactivity during periods when we would expect
-  # the server to be speaking. For usability of 'kubectl log -f', the timeout should
-  # be long enough to cover inactivity due to the lack of new logs.
-  timeout server          600s
-
-#---------------------------------------------------------------------
-{{- $servers := .Servers }}
-{{- range .ContainerPorts }}
-{{- $containerPort := . }}
-frontend {{ $containerPort.Name }}-frontend
-  bind *:{{ $containerPort.ContainerPort }}
-  mode tcp
-  option tcplog
-  default_backend {{ $containerPort.Name }}-backend
-backend {{ $containerPort.Name }}-backend
-  mode tcp
-  balance     roundrobin
-  option httpchk GET /readyz
-  http-check expect status 200
-  option log-health-checks
-  # Observed apiserver returns 500 for around 10s when 2nd cp node joins.
-  # downinter 2s makes it check more frequently to recover from that state sooner.
-  # Also changing fall to 4 so that it takes longer (4 failures) for it to take down a backend.
-  default-server check check-ssl verify none inter 5s downinter 2s fall 4 on-marked-down shutdown-sessions
-{{- range $servers }}
-{{- $server := . }}
-  server {{ $server.Name }} {{ $server.IP }}:{{ $containerPort.ContainerPort }}
-{{ end -}}
-{{ end -}}`
-
-var templateWorker = `global
-log stdout format raw local0 notice
-daemon
-
-defaults
-mode                    tcp
-log                     global
-option                  tcplog
-option                  dontlognull
-retries                 1
-# Configures the timeout for a connection request to be left pending in a queue
-# (connection requests are queued once the maximum number of connections is reached).
-timeout queue           30s
-# Configures the timeout for a connection to a backend server to be established.
-timeout connect         30s
-# Configures the timeout for inactivity during periods when we would expect
-# the client to be speaking.
-timeout client          600s
-# Configures the timeout for inactivity during periods when we would expect
-# the server to be speaking.
-timeout server          600s
-
-#---------------------------------------------------------------------
-{{- $servers := .Servers }}
-{{- range .ContainerPorts }}
-{{- $containerPort := . }}
-frontend {{ $containerPort.Name }}-frontend
-  bind *:{{ $containerPort.ContainerPort }}
-  default_backend {{ $containerPort.Name }}-backend
-backend {{ $containerPort.Name }}-backend
-  balance     roundrobin
-  option tcp-check
-  tcp-check connect
-  option log-health-checks
-default-server check
-{{- range $servers }}
-{{- $server := . }}
-  server {{ $server.Name }} {{ $server.IP }}:{{ $containerPort.ContainerPort }}
-{{ end -}}
-{{ end -}}`

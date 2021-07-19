@@ -3,6 +3,7 @@ package services_test
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"strings"
 
 	airshipv1 "sipcluster/pkg/api/v1"
@@ -82,6 +83,23 @@ var _ = Describe("Service Set", func() {
 				bmh2.GetName(): m2,
 			},
 		}
+
+		//Secret for Template
+		TemplateControlPlane, err := ioutil.ReadFile("../../config/manager/loadbalancer/loadBalancerControlPlane.cfg")
+		if err == nil {
+			lbcontrolplaneTemplateConfigMap := testutil.CreateTemplateConfigMap("loadbalancercontrolplane",
+				"loadBalancerControlPlane.cfg", "default", string(TemplateControlPlane))
+			Expect(k8sClient.Create(context.Background(), lbcontrolplaneTemplateConfigMap)).Should(Succeed())
+		}
+
+		TemplateWorker, err := ioutil.ReadFile("../../config/manager/loadbalancer/loadBalancerWorker.cfg")
+
+		if err == nil {
+			lbworkerTemplateConfigMap := testutil.CreateTemplateConfigMap("loadbalancerworker",
+				"loadBalancerWorker.cfg", "default", string(TemplateWorker))
+			Expect(k8sClient.Create(context.Background(), lbworkerTemplateConfigMap)).Should(Succeed())
+		}
+
 	})
 
 	AfterEach(func() {
@@ -89,6 +107,7 @@ var _ = Describe("Service Set", func() {
 		Expect(k8sClient.DeleteAllOf(context.Background(), &metal3.BareMetalHost{}, opts...)).Should(Succeed())
 		Expect(k8sClient.DeleteAllOf(context.Background(), &airshipv1.SIPCluster{}, opts...)).Should(Succeed())
 		Expect(k8sClient.DeleteAllOf(context.Background(), &corev1.Secret{}, opts...)).Should(Succeed())
+		Expect(k8sClient.DeleteAllOf(context.Background(), &corev1.ConfigMap{}, opts...)).Should(Succeed())
 	})
 
 	Context("When new SIP cluster is created", func() {

@@ -1,0 +1,12 @@
+configMapGenerator:
+  - name: loadbalancercontrolplane
+    files:
+      - loadBalancerControlPlane.cfg
+  - name: loadbalancerworker
+    files:
+     - loadBalancerWorker.cfg
+
+generatorOptions:
+   disableNameSuffixHash: true
+
+namespace: sipcluster-system
